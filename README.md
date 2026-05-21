@@ -1,20 +1,49 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Bible Study Buddy
 
-# Run and deploy your AI Studio app
+**Legacy project name:** Holy Bible GPT.
 
-This contains everything you need to run your app locally.
+Bible Study Buddy is a modernized Christian Bible study assistant that combines chat-based study, verse reflection workflows, devotionals, prayer notes, and saved verses in one clean app.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1EP0TvsSGAeUxYlZWVlqBB_DFMd070PQt
+## Features
+- Bible Chat with suggested prompts and response states.
+- Verse Study workflow (explanation, context, application, prayer, related verses).
+- Devotional section (topic, verse, reflection, prayer, action step).
+- Prayer Notes (add/edit/delete with local persistence).
+- Saved Verses (save/remove with local persistence).
+- Core theological guardrails in `src/lib/bibleAssistantGuidelines.ts`.
 
-## Run Locally
+## Tech Stack
+- React + TypeScript
+- Vite
+- Local storage persistence for notes/verses
 
-**Prerequisites:**  Node.js
-
-
+## Local Setup
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+2. Copy environment template:
+   ```bash
+   cp .env.example .env.local
+   ```
+3. Add your keys (if using external AI or billing endpoints).
+4. Start development server:
+   ```bash
+   npm run dev
+   ```
+
+## Build
+```bash
+npm run build
+```
+
+## Environment Variables
+- `GEMINI_API_KEY`: AI provider key (never hard-code keys).
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`: optional billing support.
+
+## Google Play Store Notes
+This repository is currently a **web Vite app**, not an Expo/React Native project. No Android manifest, Gradle, or Play-specific package files were found in this repo. For Play Store deployment, create a mobile client (Expo recommended) that consumes the same backend/API contracts and reuses this app’s brand/design/theology guardrails.
+
+## Branding
+- Public brand: **Bible Study Buddy**
+- Historical/internal legacy reference: **Holy Bible GPT**
