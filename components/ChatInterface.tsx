@@ -255,13 +255,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <textarea
             ref={inputRef}
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={e => {
+              setInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Ask anything about the Bible… (Enter to send)"
             disabled={isLoading}
             rows={1}
             className="flex-1 px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D4AF37] text-stone-200 bible-font text-base resize-none disabled:opacity-50 leading-relaxed"
-            style={{ minHeight: '48px', maxHeight: '120px' }}
+            style={{ minHeight: '48px', maxHeight: '120px', overflowY: 'auto' }}
           />
           <button
             type="submit"
