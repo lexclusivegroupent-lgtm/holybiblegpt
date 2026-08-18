@@ -204,3 +204,69 @@ export const prefetchAdjacent = (translation: Translation, book: string, chapter
   if (cNum < b.chapters) getVerseText(translation, book, (cNum + 1).toString());
   if (cNum > 1) getVerseText(translation, book, (cNum - 1).toString());
 };
+
+// ── KJV Verse Lookup Utilities ────────────────────────────────────────────────
+
+// Parse "John 3:16" → { book: "John", chapter: "3", verse: 16 }
+export const parseVerseRef = (
+  ref: string
+): { book: string; chapter: string; verse: number } | null => {
+  const trimmed = ref.trim();
+  // Handles: "Genesis 1:1", "1 John 3:16", "Song of Solomon 2:3"
+  const match = trimmed.match(/^((?:\d\s+)?[A-Za-z]+(?:\s+[A-Za-z]+)*)\s+(\d+):(\d+)$/);
+  if (!match) return null;
+  return { book: match[1].trim(), chapter: match[2], verse: parseInt(match[3], 10) };
+};
+
+// Fetch a single verse and return it as a formatted KJV string
+export const getVerse = async (
+  book: string,
+  chapter: string,
+  verseNum: number
+): Promise<string | null> => {
+  try {
+    const verses = await getVerseText(Translation.KJV, book, chapter);
+    const found = verses.find(v => v.number === verseNum);
+    if (!found || found.isNotice) return null;
+    return `"${found.text.trim()}" — ${book} ${chapter}:${verseNum} (KJV)`;
+  } catch {
+    return null;
+  }
+};
+
+// All 66 canonical book names (used by the verse-ref detector)
+const ALL_BOOK_NAMES: string[] = [
+  "Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
+  "1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra",
+  "Nehemiah","Esther","Job","Psalms","Psalm","Proverbs","Ecclesiastes","Song of Solomon",
+  "Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos",
+  "Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi",
+  "Matthew","Mark","Luke","John","Acts","Romans",
+  "1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians",
+  "1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon",
+  "Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation",
+];
+
+// Detect verse references in a message, fetch their KJV text, and append to context.
+// This lets the AI see the actual verse before answering — greatly improves accuracy.
+export const enrichWithVerseContext = async (message: string): Promise<string> => {
+  // Build a regex from book names (longest first to avoid partial matches)
+  const bookPattern = ALL_BOOK_NAMES
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map(b => b.replace(/\s+/g, "\\s+"))
+    .join("|");
+
+  const refRegex = new RegExp(`(${bookPattern})\\s+(\\d+):(\\d+)`, "gi");
+  const found = [...message.matchAll(refRegex)].slice(0, 3); // cap at 3 refs
+  if (found.length === 0) return message;
+
+  const lines: string[] = [];
+  for (const m of found) {
+    const text = await getVerse(m[1], m[2], parseInt(m[3], 10));
+    if (text) lines.push(text);
+  }
+
+  if (lines.length === 0) return message;
+  return `${message}\n\n[KJV verse text for your reference:]\n${lines.join("\n")}`;
+};
