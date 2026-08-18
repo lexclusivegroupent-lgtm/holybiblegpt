@@ -110,6 +110,10 @@
     main {
       transition: opacity 0.3s ease;
     }
+
+    /* Hide scrollbar but keep scrollability (used for horizontal tab strips) */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 
   
