@@ -12,6 +12,7 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, onPray, onSavePrayer }) => {
   const isBot = message.role === Role.BOT;
   const isPrayer = message.mode === AppMode.PRAYER_HELP;
+  const isError = message.isError === true;
   const [prayerSaved, setPrayerSaved] = useState(false);
 
   const parseContent = (text: string) => {
@@ -35,11 +36,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
   return (
     <div className={`flex w-full mb-8 ${isBot ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-[95%] sm:max-w-[85%] px-5 py-5 rounded-[1.75rem] relative transition-all ${
-        isPrayer
-          ? 'bg-[#D4AF37]/5 border border-[#D4AF37]/25 shadow-[0_8px_30px_rgba(212,175,55,0.08)] text-stone-200'
-          : isBot
-            ? 'glass-dark border border-white/5 shadow-xl text-stone-200'
-            : 'bg-stone-900 border border-white/10 text-stone-100 font-medium shadow-lg'
+        isError
+          ? 'bg-red-950/30 border border-red-900/40 text-stone-300'
+          : isPrayer
+            ? 'bg-[#D4AF37]/5 border border-[#D4AF37]/25 shadow-[0_8px_30px_rgba(212,175,55,0.08)] text-stone-200'
+            : isBot
+              ? 'glass-dark border border-white/5 shadow-xl text-stone-200'
+              : 'bg-stone-900 border border-white/10 text-stone-100 font-medium shadow-lg'
       }`}>
 
         {/* Bot / Prayer header */}
@@ -47,14 +50,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
           <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
             <div className="flex items-center gap-2.5">
               <div className={`w-7 h-7 rounded-xl flex items-center justify-center border shadow-inner ${
-                isPrayer
-                  ? 'bg-[#D4AF37]/10 border-[#D4AF37]/30'
-                  : 'bg-stone-950 border-white/10'
+                isError
+                  ? 'bg-red-950/50 border-red-900/50'
+                  : isPrayer
+                    ? 'bg-[#D4AF37]/10 border-[#D4AF37]/30'
+                    : 'bg-stone-950 border-white/10'
               }`}>
-                <span className="text-[#D4AF37] text-xs">{isPrayer ? '🙏' : '♰'}</span>
+                <span className="text-xs">{isError ? '⚠️' : isPrayer ? '🙏' : <span className="text-[#D4AF37]">♰</span>}</span>
               </div>
-              <span className="text-[9px] font-bold text-stone-600 uppercase tracking-[0.3em]">
-                {isPrayer ? 'Scripture Prayer' : 'Holy Bible GPT'}
+              <span className={`text-[9px] font-bold uppercase tracking-[0.3em] ${isError ? 'text-red-400/70' : 'text-stone-600'}`}>
+                {isError ? 'Notice' : isPrayer ? 'Scripture Prayer' : 'Holy Bible GPT'}
               </span>
             </div>
           </div>
@@ -72,7 +77,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
         </div>
 
         {/* Bot footer */}
-        {isBot && (
+        {isBot && !isError && (
           <div className="mt-6 pt-4 border-t border-white/5 space-y-4">
 
             {/* Passage links */}

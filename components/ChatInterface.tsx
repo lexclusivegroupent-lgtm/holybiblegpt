@@ -111,10 +111,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         );
       });
     } catch (err: any) {
+      const errText = err?.message ?? 'AI is temporarily unavailable. Please try again in a moment.';
       setMessages(prev =>
         prev.map(m =>
           m.id === botId
-            ? { ...m, text: err?.message ?? 'AI is unavailable. Please try again.' }
+            ? { ...m, text: errText, isError: true }
             : m
         )
       );
