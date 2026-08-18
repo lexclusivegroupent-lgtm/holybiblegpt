@@ -303,9 +303,10 @@ const BibleReader: React.FC<BibleReaderProps> = ({
       {/* ── Verse Tool Menu ──────────────────────────────────────────────────── */}
       {selectedVerse && (
         <div className="fixed inset-x-0 bottom-0 z-[60] p-4 sm:p-6">
-          <div className="max-w-xl mx-auto glass-dark border border-[#D4AF37]/30 rounded-[2.5rem] p-5 shadow-[0_-20px_50px_rgba(0,0,0,0.6)] space-y-5">
+          <div className="max-w-xl mx-auto glass-dark border border-[#D4AF37]/30 rounded-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.6)] flex flex-col" style={{ maxHeight: '75vh' }}>
 
-            <header className="flex justify-between items-center border-b border-white/5 pb-3">
+            {/* Pinned header */}
+            <header className="flex justify-between items-center border-b border-white/5 px-5 pt-5 pb-3 shrink-0">
               <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-[0.3em]">
                 {state.book} {state.chapter}:{selectedVerse}
               </span>
@@ -317,8 +318,10 @@ const BibleReader: React.FC<BibleReaderProps> = ({
               </button>
             </header>
 
+            {/* Scrollable body */}
+            <div className="overflow-y-auto flex-1 px-5 pb-5">
             {showNoteInput ? (
-              <div className="space-y-3">
+              <div className="space-y-3 pt-5">
                 <textarea
                   autoFocus
                   value={noteInput}
@@ -343,7 +346,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                 </div>
               </div>
             ) : (
-              <>
+              <div className="pt-5 space-y-5">
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     {
@@ -409,8 +412,9 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                   translation={translation}
                   onOpenVerse={(b, c, v) => { onNavigate(b, c); closeVerseMenu(); }}
                 />
-              </>
+              </div>
             )}
+            </div>{/* end scrollable body */}
           </div>
         </div>
       )}

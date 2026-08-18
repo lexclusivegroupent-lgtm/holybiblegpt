@@ -49,7 +49,7 @@ export const MODE_PROMPTS: Record<AppMode, string> = {
     "Begin by quoting the passage. Then give 2–3 specific, practical ways a believer can live out this Scripture today — not general advice, but concrete applications rooted directly in the text.",
 
   [AppMode.CONTEXT]:
-    "Begin by quoting the passage. Then explain the historical, cultural, and literary context in 2–3 paragraphs: Who wrote it? To whom? What was the situation? What would the original readers have understood that modern readers might miss?",
+    "Begin by quoting the passage. Then cover four aspects in this order:\n1. Background — Who wrote this, to whom, and the historical situation (2–3 sentences).\n2. Key Themes — The 2–3 central ideas this passage teaches.\n3. Cross-References — Two related passages that illuminate the text; quote and briefly explain each.\n4. Christ Connection — How this passage anticipates or points to Jesus Christ. Skip this section only if a connection would be forced for this text.",
 
   [AppMode.DAILY_PLAN]:
     "Begin by quoting a key verse on this topic. Then create a 7-day Scripture reading plan. Format each day as:\nDay 1: Book Chapter:Verses — one sentence describing the theme.\nOne entry per line. Ground the plan in a progression through Scripture.",

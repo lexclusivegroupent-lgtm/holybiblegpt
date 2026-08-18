@@ -85,14 +85,14 @@ const CrossReferencePanel: React.FC<CrossReferencePanelProps> = ({
               onClick={() => onOpenVerse(item.book, item.chapter, item.verse.split('-')[0])}
               className="w-full text-left flex gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors group/ref min-h-[44px]"
             >
-              <span className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-wider shrink-0 mt-0.5 w-28 leading-snug">
+              <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider shrink-0 mt-0.5 w-28 leading-snug">
                 {item.ref}
               </span>
-              <span className="text-[10px] text-stone-500 leading-snug italic line-clamp-2 group-hover/ref:text-stone-300 transition-colors flex-1">
+              <span className="text-xs text-stone-400 leading-snug italic line-clamp-2 group-hover/ref:text-stone-200 transition-colors flex-1">
                 {item.loading
                   ? <span className="inline-block w-24 h-3 bg-stone-800 rounded animate-pulse" />
                   : item.text
-                    ? item.text.replace(/^"/, '').replace(/ — .+$/, '')
+                    ? item.text.replace(/"/g, '').replace(/ — .+$/, '').slice(0, 120)
                     : item.ref}
               </span>
               <span className="text-stone-700 group-hover/ref:text-stone-400 text-xs shrink-0 self-center">›</span>

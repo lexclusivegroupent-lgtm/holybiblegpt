@@ -214,6 +214,116 @@ const CROSS_REFS: Record<string, string[]> = {
   // ── Revelation ───────────────────────────────────────────────────────────
   "Revelation 3:20": ["John 14:23", "Song of Solomon 5:2", "Luke 19:5"],
   "Revelation 21:4": ["Isaiah 25:8", "Isaiah 35:10", "Revelation 7:17"],
+  "Revelation 22:20":["1 Corinthians 16:22", "Philippians 4:5", "James 5:8"],
+
+  // ── Messianic Prophecy ───────────────────────────────────────────────────
+  "Isaiah 7:14":    ["Matthew 1:23", "Luke 1:31", "Isaiah 9:6"],
+  "Isaiah 9:6":     ["Luke 2:11", "John 1:1", "Isaiah 7:14"],
+  "Isaiah 53:3":    ["Matthew 8:17", "John 1:11", "Psalm 22:6"],
+  "Isaiah 53:4":    ["Matthew 8:17", "1 Peter 2:24", "Isaiah 53:5"],
+  "Isaiah 53:7":    ["John 1:29", "Acts 8:32-33", "1 Peter 2:23"],
+  "Isaiah 53:11":   ["Romans 5:19", "Philippians 3:9", "2 Corinthians 5:21"],
+  "Micah 5:2":      ["Matthew 2:1", "John 7:42", "Luke 2:4"],
+  "Psalm 110:1":    ["Matthew 22:44", "Acts 2:34-35", "Hebrews 1:13"],
+  "Zechariah 9:9":  ["Matthew 21:5", "John 12:15", "Luke 19:38"],
+  "Genesis 22:8":   ["John 1:29", "Romans 8:32", "Hebrews 11:17-19"],
+  "Psalm 16:10":    ["Acts 2:27", "Acts 13:35", "Luke 24:46"],
+  "Psalm 22:16":    ["John 20:25", "Luke 24:39", "Zechariah 12:10"],
+  "Zechariah 12:10":["John 19:37", "Revelation 1:7", "Psalm 22:16"],
+
+  // ── Salvation / Gospel Chain ──────────────────────────────────────────────
+  "John 1:29":      ["Isaiah 53:7", "Genesis 22:8", "1 Corinthians 5:7"],
+  "Acts 16:31":     ["Romans 10:9", "John 3:16", "Acts 4:12"],
+  "Titus 3:5":      ["John 3:3-5", "Ephesians 2:8-9", "Romans 8:14"],
+  "Romans 10:17":   ["Hebrews 11:6", "Luke 8:21", "John 5:24"],
+  "1 John 5:12":    ["John 3:36", "John 6:53", "Colossians 2:10"],
+
+  // ── Repentance ───────────────────────────────────────────────────────────
+  "Acts 3:19":      ["Luke 13:3", "Isaiah 55:7", "2 Chronicles 7:14"],
+  "Luke 13:3":      ["Acts 3:19", "Ezekiel 18:30", "2 Corinthians 7:10"],
+  "2 Chronicles 7:14":["Joel 2:12", "Hosea 6:1", "Acts 3:19"],
+  "Joel 2:12":      ["2 Chronicles 7:14", "James 4:8", "Zechariah 1:3"],
+  "2 Corinthians 7:10":["Luke 13:3", "Proverbs 28:13", "Acts 3:19"],
+
+  // ── Forgiveness ──────────────────────────────────────────────────────────
+  "Psalm 103:3":    ["Colossians 1:14", "Ephesians 1:7", "Micah 7:18"],
+  "Colossians 1:14":["Ephesians 1:7", "Romans 3:24", "Acts 10:43"],
+  "Matthew 6:14":   ["Mark 11:25", "Ephesians 4:32", "Colossians 3:13"],
+  "Micah 7:18":     ["Exodus 34:6-7", "Psalm 103:3", "1 John 1:9"],
+
+  // ── Prayer ───────────────────────────────────────────────────────────────
+  "Jeremiah 33:3":  ["Matthew 7:7", "Psalm 50:15", "James 5:16"],
+  "1 John 5:14":    ["Matthew 21:22", "Mark 11:24", "John 15:7"],
+  "Psalm 145:18":   ["Romans 10:13", "James 4:8", "Hebrews 4:16"],
+  "Luke 18:1":      ["1 Thessalonians 5:17", "Colossians 4:2", "Romans 12:12"],
+  "Hebrews 4:16":   ["Psalm 145:18", "Ephesians 2:18", "Romans 5:2"],
+
+  // ── Holy Spirit ──────────────────────────────────────────────────────────
+  "Galatians 5:16": ["Romans 8:13", "1 Peter 2:11", "Galatians 5:25"],
+  "1 Corinthians 3:16":["1 Corinthians 6:19", "2 Corinthians 6:16", "Romans 8:9"],
+  "Ephesians 1:13": ["Acts 2:38", "2 Corinthians 1:22", "Ephesians 4:30"],
+  "Romans 8:9":     ["John 14:16-17", "1 Corinthians 3:16", "Galatians 4:6"],
+  "Romans 8:26":    ["John 14:16", "Zechariah 12:10", "2 Corinthians 12:9"],
+  "John 16:13":     ["John 14:26", "1 Corinthians 2:10", "1 John 2:27"],
+
+  // ── Comfort & Suffering ──────────────────────────────────────────────────
+  "2 Corinthians 1:3":["Psalm 34:18", "Isaiah 51:12", "Romans 15:4"],
+  "Psalm 34:18":    ["Isaiah 61:1", "Psalm 51:17", "2 Corinthians 1:3"],
+  "Romans 5:3-4":   ["James 1:2-3", "1 Peter 1:6-7", "2 Corinthians 4:17"],
+  "Lamentations 3:22":["Psalm 36:5", "Numbers 23:19", "Romans 8:38-39"],
+  "Lamentations 3:23":["Psalm 30:5", "Isaiah 33:2", "Psalm 90:14"],
+  "Psalm 34:4":     ["Isaiah 41:10", "Philippians 4:6-7", "Psalm 27:1"],
+  "Isaiah 26:3":    ["Philippians 4:7", "John 14:27", "Psalm 119:165"],
+
+  // ── Wisdom ───────────────────────────────────────────────────────────────
+  "Proverbs 1:7":   ["Proverbs 9:10", "Psalm 111:10", "Job 28:28"],
+  "Proverbs 9:10":  ["Proverbs 1:7", "Psalm 111:10", "Colossians 2:3"],
+  "Colossians 2:3": ["Proverbs 2:3-6", "Isaiah 11:2", "1 Corinthians 1:30"],
+
+  // ── Christ's Return ──────────────────────────────────────────────────────
+  "John 14:3":      ["Acts 1:11", "1 Thessalonians 4:16-17", "Revelation 22:20"],
+  "Acts 1:11":      ["John 14:3", "Matthew 24:30", "Revelation 1:7"],
+  "Matthew 24:44":  ["Luke 12:40", "1 Thessalonians 5:2", "Revelation 22:20"],
+  "Revelation 22:12":["Matthew 16:27", "Isaiah 40:10", "Luke 14:14"],
+
+  // ── More Psalms ──────────────────────────────────────────────────────────
+  "Psalm 8:1":      ["Psalm 19:1", "Romans 1:20", "Isaiah 40:26"],
+  "Psalm 8:4":      ["Hebrews 2:6-7", "Job 7:17", "Psalm 144:3"],
+  "Psalm 16:11":    ["John 15:11", "Psalm 21:6", "Jude 1:24"],
+  "Psalm 27:4":     ["Psalm 23:6", "Philippians 1:23", "Psalm 84:10"],
+  "Psalm 34:8":     ["1 Peter 2:3", "Hebrews 6:5", "Psalm 119:103"],
+  "Psalm 37:7":     ["Psalm 46:10", "Lamentations 3:26", "Isaiah 30:15"],
+  "Psalm 42:1":     ["John 7:37", "Psalm 63:1", "Isaiah 55:1"],
+  "Psalm 84:10":    ["Psalm 27:4", "Revelation 21:22", "Psalm 16:11"],
+  "Psalm 100:4":    ["Hebrews 13:15", "Ephesians 5:20", "1 Thessalonians 5:18"],
+  "Psalm 118:24":   ["1 Thessalonians 5:18", "Philippians 4:4", "Acts 2:24"],
+  "Psalm 147:3":    ["Isaiah 61:1", "Psalm 34:18", "Luke 4:18"],
+
+  // ── More Romans ──────────────────────────────────────────────────────────
+  "Romans 4:3":     ["Genesis 15:6", "Galatians 3:6", "James 2:23"],
+  "Romans 4:25":    ["Isaiah 53:4-5", "1 Corinthians 15:17", "Romans 5:1"],
+  "Romans 8:5":     ["Galatians 5:16", "Colossians 3:2", "Philippians 4:8"],
+  "Romans 8:17":    ["John 1:12", "Galatians 3:29", "1 Peter 4:13"],
+  "Romans 8:34":    ["Hebrews 7:25", "1 John 2:1", "Romans 8:26"],
+
+  // ── More Ephesians ───────────────────────────────────────────────────────
+  "Ephesians 1:4":  ["Romans 8:29", "2 Timothy 1:9", "1 Peter 1:2"],
+  "Ephesians 1:7":  ["Colossians 1:14", "Hebrews 9:22", "Romans 3:24"],
+  "Ephesians 2:4":  ["Romans 5:8", "John 3:16", "1 John 4:9-10"],
+  "Ephesians 3:20": ["John 14:12", "1 Corinthians 2:9", "Psalm 37:4"],
+  "Ephesians 4:2":  ["Colossians 3:12", "Romans 12:10", "Philippians 2:3"],
+  "Ephesians 6:17": ["Hebrews 4:12", "Psalm 119:11", "Isaiah 49:2"],
+
+  // ── More Colossians ──────────────────────────────────────────────────────
+  "Colossians 1:16":["John 1:3", "Genesis 1:1", "Hebrews 1:2"],
+  "Colossians 3:12":["Ephesians 4:2", "Galatians 5:22", "Romans 12:10"],
+  "Colossians 3:16":["Ephesians 5:19", "Psalm 119:11", "James 1:21"],
+  "Colossians 3:17":["1 Corinthians 10:31", "Romans 14:8", "Colossians 3:23"],
+
+  // ── Church & Fellowship ──────────────────────────────────────────────────
+  "Hebrews 10:25":  ["Acts 2:42", "Matthew 18:20", "1 Corinthians 12:27"],
+  "Acts 2:42":      ["Hebrews 10:25", "Colossians 3:16", "1 Corinthians 11:26"],
+  "Matthew 18:20":  ["John 14:23", "Hebrews 10:25", "Acts 2:42"],
 };
 
 // Look up cross-references for a specific verse
