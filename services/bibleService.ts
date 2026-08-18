@@ -13,48 +13,53 @@ export interface BibleBook {
   isHistorical?: boolean;
 }
 
+// ── IndexedDB ─────────────────────────────────────────────────────────────────
+
 const DB_NAME = 'HolyBibleDB_v2';
 const STORE_NAME = 'Chapters_Cache';
 const METADATA_STORE = 'Meta_Store';
-const DB_VERSION = 2; // Incremented for new store
+const DB_VERSION = 2;
+
+let _db: IDBDatabase | null = null;
 
 const openDB = (): Promise<IDBDatabase> => {
+  if (_db) return Promise.resolve(_db);
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = (e) => {
+    request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
       if (!db.objectStoreNames.contains(METADATA_STORE)) db.createObjectStore(METADATA_STORE);
     };
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => { _db = request.result; resolve(_db!); };
     request.onerror = () => reject(request.error);
   });
 };
-
-// In-Memory Cache
-const memoryCache = new Map<string, VerseData[]>();
 
 const getFromDB = async (key: string): Promise<VerseData[] | null> => {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(key);
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
     });
   } catch { return null; }
 };
 
-const saveToDB = async (key: string, data: VerseData[]) => {
+const saveToDB = async (key: string, data: VerseData[]): Promise<void> => {
   try {
     const db = await openDB();
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    store.put(data, key);
-  } catch { }
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(data, key);
+  } catch { /* Non-fatal */ }
 };
+
+// ── In-memory cache (fastest — avoids repeated IndexedDB lookups) ─────────────
+const memoryCache = new Map<string, VerseData[]>();
+
+// ── Book Lists ─────────────────────────────────────────────────────────────────
 
 export const BIBLE_BOOKS: BibleBook[] = [
   { name: "Genesis", chapters: 50 }, { name: "Exodus", chapters: 40 }, { name: "Leviticus", chapters: 27 },
@@ -78,7 +83,7 @@ export const BIBLE_BOOKS: BibleBook[] = [
   { name: "2 Timothy", chapters: 4 }, { name: "Titus", chapters: 3 }, { name: "Philemon", chapters: 1 },
   { name: "Hebrews", chapters: 13 }, { name: "James", chapters: 5 }, { name: "1 Peter", chapters: 5 },
   { name: "2 Peter", chapters: 3 }, { name: "1 John", chapters: 5 }, { name: "2 John", chapters: 1 },
-  { name: "3 John", chapters: 1 }, { name: "Jude", chapters: 1 }, { name: "Revelation", chapters: 22 }
+  { name: "3 John", chapters: 1 }, { name: "Jude", chapters: 1 }, { name: "Revelation", chapters: 22 },
 ];
 
 export const HISTORICAL_BOOKS: BibleBook[] = [
@@ -88,8 +93,10 @@ export const HISTORICAL_BOOKS: BibleBook[] = [
   { name: "Sirach", chapters: 51, isHistorical: true },
   { name: "Baruch", chapters: 6, isHistorical: true },
   { name: "1 Maccabees", chapters: 16, isHistorical: true },
-  { name: "2 Maccabees", chapters: 15, isHistorical: true }
+  { name: "2 Maccabees", chapters: 15, isHistorical: true },
 ];
+
+// ── Network Helpers ───────────────────────────────────────────────────────────
 
 const fetchWithRetry = async (url: string, retries = 2): Promise<any> => {
   for (let i = 0; i <= retries; i++) {
@@ -99,174 +106,211 @@ const fetchWithRetry = async (url: string, retries = 2): Promise<any> => {
       return await res.json();
     } catch (err) {
       if (i === retries) throw err;
-      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      await new Promise(r => setTimeout(r, 800 * (i + 1)));
     }
   }
 };
 
-export const getVerseText = async (translation: Translation, book: string, chapter: string): Promise<VerseData[]> => {
+// ── ESV Fetch (via Cloudflare Worker proxy) ────────────────────────────────────
+
+const fetchESV = async (book: string, chapter: string): Promise<VerseData[]> => {
+  const url = `/api/esv?book=${encodeURIComponent(book)}&chapter=${encodeURIComponent(chapter)}`;
+  const res = await fetch(url);
+
+  if (res.status === 503) {
+    // ESV_API_KEY not configured — fall back to KJV silently
+    throw new Error('ESV_NOT_CONFIGURED');
+  }
+  if (!res.ok) throw new Error(`ESV proxy error: ${res.status}`);
+
+  const data = await res.json() as { verses?: VerseData[]; error?: string };
+  if (!data.verses?.length) throw new Error('No ESV verses returned');
+  return data.verses;
+};
+
+// ── KJV Fetch (public domain via bible-api.com) ────────────────────────────────
+
+const fetchKJV = async (book: string, chapter: string): Promise<VerseData[]> => {
+  const data = await fetchWithRetry(
+    `https://bible-api.com/${encodeURIComponent(book)}%20${chapter}?translation=kjv`
+  );
+  if (!data.verses?.length) throw new Error('No KJV verses returned');
+  return data.verses.map((v: any) => ({ number: v.verse, text: v.text.trim() }));
+};
+
+// ── Primary Verse Fetcher ──────────────────────────────────────────────────────
+
+export const getVerseText = async (
+  translation: Translation,
+  book: string,
+  chapter: string
+): Promise<VerseData[]> => {
   const key = `${translation}_${book}_${chapter}`;
 
-  // 1. Check Memory Cache
+  // 1. Memory cache (fastest)
   if (memoryCache.has(key)) return memoryCache.get(key)!;
 
-  // 2. Check IndexedDB
+  // 2. IndexedDB cache
   const cached = await getFromDB(key);
   if (cached) {
-    memoryCache.set(key, cached); // Populate memory
+    memoryCache.set(key, cached);
     return cached;
   }
 
-  // 3. Fallback to Network
+  // 3. Network
   try {
-    const translationQuery = translation.toLowerCase();
-    const data = await fetchWithRetry(`https://bible-api.com/${book}%20${chapter}?translation=${translationQuery}`);
+    let verses: VerseData[];
 
-    if (!data.verses || data.verses.length === 0) {
-      throw new Error("No verses returned");
+    if (translation === Translation.ESV) {
+      try {
+        verses = await fetchESV(book, chapter);
+      } catch (esvErr: any) {
+        // Graceful fallback: ESV unavailable → use KJV
+        if (esvErr.message === 'ESV_NOT_CONFIGURED') {
+          console.info('ESV API not configured; falling back to KJV.');
+        } else {
+          console.warn('ESV fetch failed; falling back to KJV:', esvErr.message);
+        }
+        verses = await fetchKJV(book, chapter);
+        // Cache under ESV key so we don't retry network on every render
+      }
+    } else {
+      verses = await fetchKJV(book, chapter);
     }
 
-    const verses = data.verses.map((v: any) => ({
-      number: v.verse,
-      text: v.text.trim()
-    }));
-
     saveToDB(key, verses);
-    memoryCache.set(key, verses); // Populate memory
+    memoryCache.set(key, verses);
     return verses;
   } catch (error) {
-    console.error("Bible Engine Error:", error);
-    return [{ number: 0, text: "Chapter unavailable. Please check connection.", isNotice: true }];
+    console.error('Bible Engine Error:', error);
+    return [{ number: 0, text: 'Chapter unavailable. Please check your connection.', isNotice: true }];
   }
 };
 
-export const isChapterOffline = async (translation: Translation, book: string, chapter: string): Promise<boolean> => {
-  return !!(await getFromDB(`${translation}_${book}_${chapter}`));
-};
+export const isChapterOffline = async (
+  translation: Translation,
+  book: string,
+  chapter: string
+): Promise<boolean> => !!(await getFromDB(`${translation}_${book}_${chapter}`));
 
-
-// --- OFFLINE KJV PREPARATION ---
+// ── Offline KJV Preparation ───────────────────────────────────────────────────
 
 export const initializeOfflineKJV = async (onProgress: (msg: string) => void): Promise<void> => {
   try {
-    // Check if already initialized
     const db = await openDB();
-    const isReady = await new Promise((resolve) => {
+    const isReady = await new Promise<boolean>(resolve => {
       const tx = db.transaction(METADATA_STORE, 'readonly');
       const req = tx.objectStore(METADATA_STORE).get('kjv_ready');
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => resolve(!!req.result);
       req.onerror = () => resolve(false);
     });
-
     if (isReady) return;
 
-    onProgress("Downloading KJV data...");
-
-    // Fetch the local JSON file
+    onProgress('Downloading KJV data…');
     const res = await fetch('/bible/kjv.json');
-    if (!res.ok) throw new Error("Local KJV file missing");
+    if (!res.ok) throw new Error('Local KJV file missing');
+    const data: Array<{ book: string; chapter: string; verses: VerseData[] }> = await res.json();
 
-    const data = await res.json();
-
-    onProgress("Optimizing for offline use...");
-
+    onProgress('Caching for offline use…');
     const tx = db.transaction([STORE_NAME, METADATA_STORE], 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-
-    let count = 0;
-    for (const chapterData of data) {
-      const key = `${Translation.KJV}_${chapterData.book}_${chapterData.chapter}`;
-      store.put(chapterData.verses, key);
-      count++;
+    for (const item of data) {
+      const key = `${Translation.KJV}_${item.book}_${item.chapter}`;
+      store.put(item.verses, key);
+      memoryCache.set(key, item.verses);
     }
-
     tx.objectStore(METADATA_STORE).put(true, 'kjv_ready');
 
-    return new Promise((resolve, reject) => {
-      tx.oncomplete = () => {
-        console.log(`Available offline: ${count} chapters`);
-        resolve();
-      };
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
-
-  } catch (error) {
-    console.warn("Offline KJV init failed:", error);
-    // Don't block app, just log
+  } catch (err) {
+    console.warn('Offline KJV init skipped:', err);
   }
 };
 
-export const prefetchAdjacent = (translation: Translation, book: string, chapter: string) => {
-  const cNum = parseInt(chapter);
-  const books = [...BIBLE_BOOKS, ...HISTORICAL_BOOKS];
-  const b = books.find(x => x.name === book);
-  if (!b) return;
-  if (cNum < b.chapters) getVerseText(translation, book, (cNum + 1).toString());
-  if (cNum > 1) getVerseText(translation, book, (cNum - 1).toString());
+export const prefetchAdjacent = (translation: Translation, book: string, chapter: string): void => {
+  const num = parseInt(chapter, 10);
+  const allBooks = [...BIBLE_BOOKS, ...HISTORICAL_BOOKS];
+  const found = allBooks.find(b => b.name === book);
+  if (!found) return;
+  if (num < found.chapters) getVerseText(translation, book, (num + 1).toString());
+  if (num > 1) getVerseText(translation, book, (num - 1).toString());
 };
 
-// ── KJV Verse Lookup Utilities ────────────────────────────────────────────────
+// ── KJV/ESV Verse Lookup Utilities ───────────────────────────────────────────
 
 // Parse "John 3:16" → { book: "John", chapter: "3", verse: 16 }
 export const parseVerseRef = (
   ref: string
 ): { book: string; chapter: string; verse: number } | null => {
-  const trimmed = ref.trim();
-  // Handles: "Genesis 1:1", "1 John 3:16", "Song of Solomon 2:3"
-  const match = trimmed.match(/^((?:\d\s+)?[A-Za-z]+(?:\s+[A-Za-z]+)*)\s+(\d+):(\d+)$/);
+  const match = ref.trim().match(/^((?:\d\s+)?[A-Za-z]+(?:\s+[A-Za-z]+)*)\s+(\d+):(\d+)$/);
   if (!match) return null;
   return { book: match[1].trim(), chapter: match[2], verse: parseInt(match[3], 10) };
 };
 
-// Fetch a single verse and return it as a formatted KJV string
+// Fetch a single verse and return it as a quoted string
 export const getVerse = async (
   book: string,
   chapter: string,
-  verseNum: number
+  verseNum: number,
+  translation: Translation = Translation.KJV
 ): Promise<string | null> => {
   try {
-    const verses = await getVerseText(Translation.KJV, book, chapter);
+    const verses = await getVerseText(translation, book, chapter);
     const found = verses.find(v => v.number === verseNum);
     if (!found || found.isNotice) return null;
-    return `"${found.text.trim()}" — ${book} ${chapter}:${verseNum} (KJV)`;
+    return `"${found.text.trim()}" — ${book} ${chapter}:${verseNum} (${translation})`;
   } catch {
     return null;
   }
 };
 
-// All 66 canonical book names (used by the verse-ref detector)
+// All 66 canonical book names for reference detection
 const ALL_BOOK_NAMES: string[] = [
-  "Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
-  "1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra",
-  "Nehemiah","Esther","Job","Psalms","Psalm","Proverbs","Ecclesiastes","Song of Solomon",
-  "Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos",
-  "Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi",
-  "Matthew","Mark","Luke","John","Acts","Romans",
-  "1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians",
-  "1 Thessalonians","2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon",
-  "Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation",
+  "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
+  "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
+  "Nehemiah", "Esther", "Job", "Psalms", "Psalm", "Proverbs", "Ecclesiastes", "Song of Solomon",
+  "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+  "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi",
+  "Matthew", "Mark", "Luke", "John", "Acts", "Romans",
+  "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians",
+  "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon",
+  "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation",
 ];
 
-// Detect verse references in a message, fetch their KJV text, and append to context.
-// This lets the AI see the actual verse before answering — greatly improves accuracy.
-export const enrichWithVerseContext = async (message: string): Promise<string> => {
-  // Build a regex from book names (longest first to avoid partial matches)
-  const bookPattern = ALL_BOOK_NAMES
-    .slice()
-    .sort((a, b) => b.length - a.length)
-    .map(b => b.replace(/\s+/g, "\\s+"))
-    .join("|");
+// Lazy-build the regex once
+let _verseRefRegex: RegExp | null = null;
+const getVerseRefRegex = (): RegExp => {
+  if (!_verseRefRegex) {
+    const bookPattern = ALL_BOOK_NAMES
+      .slice()
+      .sort((a, b) => b.length - a.length)
+      .map(b => b.replace(/\s+/g, '\\s+'))
+      .join('|');
+    _verseRefRegex = new RegExp(`(${bookPattern})\\s+(\\d+):(\\d+)`, 'gi');
+  }
+  return _verseRefRegex;
+};
 
-  const refRegex = new RegExp(`(${bookPattern})\\s+(\\d+):(\\d+)`, "gi");
-  const found = [...message.matchAll(refRegex)].slice(0, 3); // cap at 3 refs
-  if (found.length === 0) return message;
+// Detect verse references in a message, fetch the actual text, append as context.
+// The AI then sees the real verse text and quotes it accurately.
+export const enrichWithVerseContext = async (
+  message: string,
+  translation: Translation = Translation.KJV
+): Promise<string> => {
+  const regex = getVerseRefRegex();
+  regex.lastIndex = 0;
+  const matches = [...message.matchAll(regex)].slice(0, 3);
+  if (matches.length === 0) return message;
 
   const lines: string[] = [];
-  for (const m of found) {
-    const text = await getVerse(m[1], m[2], parseInt(m[3], 10));
+  for (const m of matches) {
+    const text = await getVerse(m[1], m[2], parseInt(m[3], 10), translation);
     if (text) lines.push(text);
   }
 
   if (lines.length === 0) return message;
-  return `${message}\n\n[KJV verse text for your reference:]\n${lines.join("\n")}`;
+  return `${message}\n\n[${translation} verse text for reference:]\n${lines.join('\n')}`;
 };

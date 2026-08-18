@@ -78,36 +78,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
         </div>
       </div>
 
-      {message.isLimitMessage && (
-        <div className="absolute -bottom-16 left-0 right-0 flex justify-center w-full z-10">
-          <button
-            onClick={async () => {
-              if (onUpgrade) {
-                onUpgrade();
-                return;
-              }
-              // Fallback if no handler provided but wrapper has logic? 
-              // Actually, let's just use window location if simple
-              try {
-                const uid = localStorage.getItem('hbgpt_user_id');
-                if (!uid) return;
-                const res = await fetch('/api/create-checkout-session', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: uid })
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-              } catch (e) {
-                alert("Billing system unavailable.");
-              }
-            }}
-            className="bg-[#D4AF37] text-black font-bold uppercase tracking-widest text-[10px] px-8 py-3 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all border border-white/20 animate-in fade-in slide-in-from-top-4 duration-500"
-          >
-            Upgrade to HolyBibleGPT Plus
-          </button>
-        </div>
-      )}
     </div>
   );
 };

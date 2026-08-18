@@ -3,8 +3,13 @@
   "name": "holybiblegpt",
   "compatibility_date": "2026-08-18",
   "compatibility_flags": ["nodejs_compat"],
+  // Worker script handles /api/esv proxy; all other requests fall through to the SPA.
+  "main": "src/worker.ts",
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
   }
+  // To enable ESV, add the API key as a Cloudflare secret:
+  //   wrangler secret put ESV_API_KEY
+  // Get a free ESV API key at: https://api.esv.org
 }

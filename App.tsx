@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import Header from './components/Header';
-import ChatInterface from './components/ChatInterface';
 import BibleReader from './components/BibleReader';
+
+// Chat is the largest bundle chunk — lazy-load it so the home view is instant
+const ChatInterface = lazy(() => import('./components/ChatInterface'));
 import SideDrawer from './components/SideDrawer';
 import Onboarding from './components/Onboarding';
 import ReportForm from './components/ReportForm';
@@ -149,11 +151,12 @@ const App: React.FC = () => {
         return (
           <ChatInterface
             currentTranslation={currentTranslation}
+            onTranslationChange={setCurrentTranslation}
             onOpenReader={handleOpenReader}
             currentMode={currentMode}
             pendingQuery={pendingQuery?.query}
             isVerseSpecific={pendingQuery?.isVerseSpecific}
-            onQueryProcessed={() => setPendingQuery(null)}
+            onQueryProcessed={() => { setPendingQuery(null); setCurrentMode(AppMode.CHAT); }}
             onClose={() => setActiveTab('read')}
             onReport={() => setShowReportForm(true)}
             onTabChange={setActiveTab}

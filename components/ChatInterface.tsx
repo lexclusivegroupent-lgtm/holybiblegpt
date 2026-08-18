@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Role, Message, AppMode, Translation, PassageLink, AppTab } from '../types';
 import { sendMessageStream } from '../services/aiService';
 import { enrichWithVerseContext } from '../services/bibleService';
@@ -8,6 +8,7 @@ import { MODE_LABELS } from '../constants';
 
 interface ChatInterfaceProps {
   currentTranslation: Translation;
+  onTranslationChange?: (t: Translation) => void;
   onOpenReader: (link: PassageLink) => void;
   currentMode: AppMode;
   pendingQuery?: string | null;
@@ -18,30 +19,21 @@ interface ChatInterfaceProps {
   onTabChange?: (tab: AppTab) => void;
 }
 
-// Ordered list of modes shown in the tab bar
 const CHAT_MODES: AppMode[] = [
-  AppMode.CHAT,
-  AppMode.DEEP_STUDY,
-  AppMode.SIMPLIFY,
-  AppMode.CROSS_REFERENCE,
-  AppMode.WORD_STUDY,
-  AppMode.APPLY,
-  AppMode.CONTEXT,
-  AppMode.THEOLOGIAN,
-  AppMode.PRAYER_HELP,
-  AppMode.DAILY_PLAN,
-  AppMode.KIDS,
+  AppMode.CHAT, AppMode.DEEP_STUDY, AppMode.SIMPLIFY, AppMode.CROSS_REFERENCE,
+  AppMode.WORD_STUDY, AppMode.APPLY, AppMode.CONTEXT, AppMode.THEOLOGIAN,
+  AppMode.PRAYER_HELP, AppMode.DAILY_PLAN, AppMode.KIDS,
 ];
 
-const WELCOME_TEXT =
-  `Welcome. Ask any question about God's Word and I will answer from Scripture — King James Bible preferred.\n\nTry: "What does John 3:16 mean?" or "Explain the Sermon on the Mount" or "How do I pray?"`;
+const WELCOME =
+  `Welcome. Ask any question about God's Word.\n\nExamples:\n• "What does John 3:16 mean?"\n• "Explain the Sermon on the Mount"\n• "How do I deal with fear according to the Bible?"`;
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentTranslation,
+  onTranslationChange,
   onOpenReader,
   currentMode,
   pendingQuery,
-  isVerseSpecific,
   onQueryProcessed,
   onClose,
   onReport,
@@ -49,35 +41,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [localMode, setLocalMode] = useState<AppMode>(currentMode);
   const [messages, setMessages] = useState<Message[]>([
-    { id: '0', role: Role.BOT, text: WELCOME_TEXT, timestamp: Date.now() },
+    { id: '0', role: Role.BOT, text: WELCOME, timestamp: Date.now() },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const pendingProcessed = useRef(false);
 
-  // Sync mode when parent changes it (e.g. from verse study action)
-  useEffect(() => {
-    setLocalMode(currentMode);
-  }, [currentMode]);
+  useEffect(() => { setLocalMode(currentMode); }, [currentMode]);
 
-  // Auto-scroll to bottom when messages update
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
-  // Auto-send a pending query (triggered from BibleReader)
+  // Auto-send a pending query from the BibleReader (once only)
   useEffect(() => {
-    if (pendingQuery && !isLoading) {
-      handleSend(pendingQuery);
-      if (onQueryProcessed) onQueryProcessed();
+    if (pendingQuery && !isLoading && !pendingProcessed.current) {
+      pendingProcessed.current = true;
+      handleSend(pendingQuery).then(() => {
+        pendingProcessed.current = false;
+        onQueryProcessed?.();
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingQuery]);
 
-  const handleSend = async (text: string = input) => {
+  const handleSend = useCallback(async (text: string = input) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
@@ -101,8 +93,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     ]);
 
     try {
-      // Detect verse refs in the user message and inject the actual KJV text
-      const enrichedText = await enrichWithVerseContext(trimmed);
+      // Inject real verse text from the selected translation so the AI quotes accurately
+      const enriched = await enrichWithVerseContext(trimmed, currentTranslation);
 
       const history = messages
         .filter(m => m.id !== '0' && m.text.trim())
@@ -110,30 +102,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           role: (m.role === Role.BOT ? 'assistant' : 'user') as 'assistant' | 'user',
           content: m.text,
         }));
-      history.push({ role: 'user', content: enrichedText });
+      history.push({ role: 'user', content: enriched });
 
-      await sendMessageStream(
-        localMode,
-        currentTranslation,
-        kidsMode,
-        history,
-        chunk => {
-          setMessages(prev =>
-            prev.map(m => (m.id === botId ? { ...m, text: chunk } : m))
-          );
-        }
-      );
-    } catch (error: any) {
-      const errText = error?.message ?? 'AI is unavailable. Please try again.';
+      await sendMessageStream(localMode, currentTranslation, kidsMode, history, chunk => {
+        setMessages(prev =>
+          prev.map(m => (m.id === botId ? { ...m, text: chunk } : m))
+        );
+      });
+    } catch (err: any) {
       setMessages(prev =>
-        prev.map(m => (m.id === botId ? { ...m, text: errText } : m))
+        prev.map(m =>
+          m.id === botId
+            ? { ...m, text: err?.message ?? 'AI is unavailable. Please try again.' }
+            : m
+        )
       );
     } finally {
       setIsLoading(false);
-      // Restore focus to the input after response
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  };
+  }, [input, isLoading, localMode, currentTranslation, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -143,24 +131,51 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleClear = () => {
-    setMessages([{ id: '0', role: Role.BOT, text: WELCOME_TEXT, timestamp: Date.now() }]);
+    setMessages([{ id: '0', role: Role.BOT, text: WELCOME, timestamp: Date.now() }]);
     setInput('');
   };
 
   return (
     <div className="flex flex-col h-full w-full bg-black">
 
-      {/* ── Header ── */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-stone-900/50 shrink-0">
         <div>
           <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37] accent-font">
             Bible Study AI
           </h2>
           <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
-            Free · Powered by Puter.js · KJV Preferred
+            Free · Puter.js · Scripture First
           </p>
         </div>
+
         <div className="flex items-center gap-2">
+          {/* Translation toggle */}
+          {onTranslationChange && (
+            <div className="flex rounded-lg border border-stone-800 overflow-hidden text-[10px] font-bold uppercase tracking-wider">
+              <button
+                onClick={() => onTranslationChange(Translation.KJV)}
+                className={`px-2.5 py-1 transition-colors ${
+                  currentTranslation === Translation.KJV
+                    ? 'bg-[#D4AF37] text-black'
+                    : 'text-stone-500 hover:text-stone-300'
+                }`}
+              >
+                KJV
+              </button>
+              <button
+                onClick={() => onTranslationChange(Translation.ESV)}
+                className={`px-2.5 py-1 transition-colors border-l border-stone-800 ${
+                  currentTranslation === Translation.ESV
+                    ? 'bg-[#D4AF37] text-black'
+                    : 'text-stone-500 hover:text-stone-300'
+                }`}
+              >
+                ESV
+              </button>
+            </div>
+          )}
+
           <button
             onClick={handleClear}
             title="Clear conversation"
@@ -168,6 +183,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           >
             Clear
           </button>
+
           {onClose && (
             <button
               onClick={onClose}
@@ -180,8 +196,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      {/* ── Mode Tabs ── */}
-      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-white/5 bg-black/20 shrink-0">
+      {/* ── Mode Tabs ───────────────────────────────────────────────────── */}
+      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-white/5 bg-black/20 shrink-0 no-scrollbar">
         {CHAT_MODES.map(mode => {
           const m = MODE_LABELS[mode];
           return (
@@ -191,7 +207,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               title={m.description}
               className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-full border transition-all whitespace-nowrap ${
                 localMode === mode
-                  ? 'bg-[#D4AF37] text-black border-[#D4AF37] shadow-sm'
+                  ? 'bg-[#D4AF37] text-black border-[#D4AF37]'
                   : 'border-stone-800 text-stone-500 hover:border-stone-600 hover:text-stone-300'
               }`}
             >
@@ -202,11 +218,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         })}
       </div>
 
-      {/* ── Messages ── */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-6 space-y-5"
-      >
+      {/* ── Messages ────────────────────────────────────────────────────── */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
         {messages.map(msg => (
           <MessageBubble
             key={msg.id}
@@ -219,11 +232,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         {isLoading && (
           <div className="flex items-center gap-1.5 pl-1">
-            {[0, 150, 300].map(delay => (
+            {[0, 150, 300].map(d => (
               <div
-                key={delay}
+                key={d}
                 className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full animate-bounce"
-                style={{ animationDelay: `${delay}ms` }}
+                style={{ animationDelay: `${d}ms` }}
               />
             ))}
             <span className="text-[10px] uppercase tracking-widest text-stone-600 ml-2">
@@ -233,7 +246,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
       </div>
 
-      {/* ── Input ── */}
+      {/* ── Input ───────────────────────────────────────────────────────── */}
       <div className="px-4 py-3 border-t border-white/5 bg-stone-900/20 shrink-0">
         <form
           onSubmit={e => { e.preventDefault(); handleSend(); }}
@@ -253,7 +266,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            aria-label="Send message"
+            aria-label="Send"
             className="w-11 h-11 mb-0.5 rounded-xl bg-[#D4AF37] text-black font-bold text-lg flex items-center justify-center shrink-0 disabled:bg-stone-800 disabled:text-stone-600 transition-colors"
           >
             ↑

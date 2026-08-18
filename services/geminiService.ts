@@ -1,3 +1,0 @@
-
-// This file is deprecated. Please use services/aiService.ts
-export {};
