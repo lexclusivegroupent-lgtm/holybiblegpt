@@ -12,6 +12,7 @@ interface BibleReaderProps {
   onClose: () => void;
   onNavigate: (book: string, chapter: string) => void;
   onStudyVerse?: (mode: AppMode, verse: number) => void;
+  onStudyChapter?: (mode: AppMode) => void;
   onReport?: () => void;
 }
 
@@ -22,6 +23,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
   translation,
   onNavigate,
   onStudyVerse,
+  onStudyChapter,
   onReport,
   onClose
 }) => {
@@ -181,6 +183,16 @@ const BibleReader: React.FC<BibleReaderProps> = ({
           </span>
         </div>
 
+        {/* Study chapter shortcut */}
+        <button
+          onClick={() => onStudyChapter?.(AppMode.CHAT)}
+          className="min-h-[44px] px-2 flex items-center justify-center text-stone-600 hover:text-[#D4AF37] transition-colors rounded-lg hover:bg-white/5 shrink-0 text-base"
+          aria-label="Study this chapter with AI"
+          title="Study with AI"
+        >
+          ✨
+        </button>
+
         {/* Chapter navigation — double-chevrons so they look nothing like Back */}
         <div className="flex items-center gap-0.5 shrink-0">
           <button
@@ -271,7 +283,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                 « Prev Chapter
               </button>
               <button
-                onClick={() => onStudyVerse?.(AppMode.DEEP_STUDY, 1)}
+                onClick={() => onStudyChapter?.(AppMode.DEEP_STUDY)}
                 className="px-5 py-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-all min-h-[44px]"
               >
                 ✨ Study with AI
@@ -372,12 +384,23 @@ const BibleReader: React.FC<BibleReaderProps> = ({
 
                 <div className="h-px bg-white/5" />
 
-                <button
-                  onClick={() => { onStudyVerse?.(AppMode.THEOLOGIAN, selectedVerse!); closeVerseMenu(); }}
-                  className="w-full min-h-[48px] px-6 py-3 bg-[#D4AF37]/10 border border-[#D4AF37] rounded-xl text-[10px] font-bold text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-2"
-                >
-                  ✨ Study This Verse with AI
-                </button>
+                {/* Three AI mode actions */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Study', icon: '✨', mode: AppMode.THEOLOGIAN, desc: 'Deep study' },
+                    { label: 'Pray', icon: '🙏', mode: AppMode.PRAYER_HELP, desc: 'Write a prayer' },
+                    { label: 'Context', icon: '🏛️', mode: AppMode.CONTEXT, desc: 'Historical background' },
+                  ].map(({ label, icon, mode }) => (
+                    <button
+                      key={label}
+                      onClick={() => { onStudyVerse?.(mode, selectedVerse!); closeVerseMenu(); }}
+                      className="flex flex-col items-center gap-1.5 py-3 px-2 bg-stone-950/60 border border-white/5 rounded-xl hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/5 transition-all min-h-[56px] group"
+                    >
+                      <span className="text-lg group-hover:scale-110 transition-transform">{icon}</span>
+                      <span className="text-[8px] font-bold text-stone-500 uppercase tracking-wider group-hover:text-[#D4AF37] transition-colors">{label}</span>
+                    </button>
+                  ))}
+                </div>
 
                 <CrossReferencePanel
                   book={state.book}

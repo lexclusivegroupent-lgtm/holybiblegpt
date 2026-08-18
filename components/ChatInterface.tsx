@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Role, Message, AppMode, Translation, PassageLink, AppTab } from '../types';
 import { sendMessageStream } from '../services/aiService';
 import { enrichWithVerseContext } from '../services/bibleService';
+import { storage } from '../services/storageService';
 import MessageBubble from './MessageBubble';
 import { MODE_LABELS } from '../constants';
 
@@ -12,11 +13,11 @@ interface ChatInterfaceProps {
   onOpenReader: (link: PassageLink) => void;
   currentMode: AppMode;
   pendingQuery?: string | null;
-  isVerseSpecific?: boolean;
   onQueryProcessed?: () => void;
   onClose?: () => void;
   onReport?: () => void;
   onTabChange?: (tab: AppTab) => void;
+  readingContext?: string;
 }
 
 const CHAT_MODES: AppMode[] = [
@@ -38,6 +39,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onClose,
   onReport,
   onTabChange,
+  readingContext,
 }) => {
   const [localMode, setLocalMode] = useState<AppMode>(currentMode);
   const [messages, setMessages] = useState<Message[]>([
@@ -57,7 +59,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [messages, isLoading]);
 
-  // Auto-send a pending query from the BibleReader (once only)
   useEffect(() => {
     if (pendingQuery && !isLoading && !pendingProcessed.current) {
       pendingProcessed.current = true;
@@ -69,18 +70,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingQuery]);
 
-  const handleSend = useCallback(async (text: string = input) => {
+  const handleSend = useCallback(async (text: string = input, modeOverride?: AppMode) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
-    const kidsMode = localMode === AppMode.KIDS;
+    const activeMode = modeOverride ?? localMode;
+    const kidsMode = activeMode === AppMode.KIDS;
 
     const userMsg: Message = {
       id: Date.now().toString(),
       role: Role.USER,
       text: trimmed,
       timestamp: Date.now(),
-      mode: localMode,
+      mode: activeMode,
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -89,11 +91,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const botId = (Date.now() + 1).toString();
     setMessages(prev => [
       ...prev,
-      { id: botId, role: Role.BOT, text: '', timestamp: Date.now(), mode: localMode },
+      { id: botId, role: Role.BOT, text: '', timestamp: Date.now(), mode: activeMode },
     ]);
 
     try {
-      // Inject real verse text from the selected translation so the AI quotes accurately
       const enriched = await enrichWithVerseContext(trimmed, currentTranslation);
 
       const history = messages
@@ -104,7 +105,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }));
       history.push({ role: 'user', content: enriched });
 
-      await sendMessageStream(localMode, currentTranslation, kidsMode, history, chunk => {
+      await sendMessageStream(activeMode, currentTranslation, kidsMode, history, chunk => {
         setMessages(prev =>
           prev.map(m => (m.id === botId ? { ...m, text: chunk } : m))
         );
@@ -122,6 +123,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [input, isLoading, localMode, currentTranslation, messages]);
+
+  const handlePray = useCallback((messageText: string) => {
+    const prompt = `Based on this Scripture teaching, write a short prayer:\n\n"${messageText.slice(0, 400)}"`;
+    handleSend(prompt, AppMode.PRAYER_HELP);
+  }, [handleSend]);
+
+  const handleSavePrayer = useCallback((text: string) => {
+    storage.savePrayer({
+      id: crypto.randomUUID(),
+      title: `Prayer — ${new Date().toLocaleDateString()}`,
+      text,
+      category: 'Growth',
+      timestamp: Date.now(),
+      isAnswered: false,
+    });
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -144,42 +161,40 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37] accent-font">
             Bible Study AI
           </h2>
-          <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
-            Free · Puter.js · Scripture First
-          </p>
+          {readingContext ? (
+            <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
+              Studying {readingContext}
+            </p>
+          ) : (
+            <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
+              Free · Scripture First
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Translation toggle */}
           {onTranslationChange && (
             <div className="flex rounded-lg border border-stone-800 overflow-hidden text-[10px] font-bold uppercase tracking-wider">
-              <button
-                onClick={() => onTranslationChange(Translation.KJV)}
-                className={`px-2.5 py-1 transition-colors ${
-                  currentTranslation === Translation.KJV
-                    ? 'bg-[#D4AF37] text-black'
-                    : 'text-stone-500 hover:text-stone-300'
-                }`}
-              >
-                KJV
-              </button>
-              <button
-                onClick={() => onTranslationChange(Translation.ESV)}
-                className={`px-2.5 py-1 transition-colors border-l border-stone-800 ${
-                  currentTranslation === Translation.ESV
-                    ? 'bg-[#D4AF37] text-black'
-                    : 'text-stone-500 hover:text-stone-300'
-                }`}
-              >
-                ESV
-              </button>
+              {(['KJV', 'ESV'] as const).map((t, i) => (
+                <button
+                  key={t}
+                  onClick={() => onTranslationChange(t as Translation)}
+                  className={`px-2.5 py-1 transition-colors ${i > 0 ? 'border-l border-stone-800' : ''} ${
+                    currentTranslation === t
+                      ? 'bg-[#D4AF37] text-black'
+                      : 'text-stone-500 hover:text-stone-300'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
           )}
 
           <button
             onClick={handleClear}
             title="Clear conversation"
-            className="text-[9px] uppercase tracking-widest text-stone-600 hover:text-stone-400 transition-colors px-2 py-1 rounded border border-stone-800 hover:border-stone-600"
+            className="text-[9px] uppercase tracking-widest text-stone-600 hover:text-stone-400 transition-colors px-2 py-1 rounded border border-stone-800 hover:border-stone-600 min-h-[32px]"
           >
             Clear
           </button>
@@ -187,7 +202,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 text-stone-500 hover:text-white transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-stone-500 hover:text-white transition-colors"
               aria-label="Close chat"
             >
               ✕
@@ -219,19 +234,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* ── Messages ────────────────────────────────────────────────────── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
         {messages.map(msg => (
           <MessageBubble
             key={msg.id}
             message={msg}
             onOpenReader={onOpenReader}
-            onReport={onReport}
-            onUpgrade={() => onTabChange?.('settings')}
+            onPray={handlePray}
+            onSavePrayer={handleSavePrayer}
           />
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-1.5 pl-1">
+          <div className="flex items-center gap-1.5 pl-1 py-2">
             {[0, 150, 300].map(d => (
               <div
                 key={d}
@@ -277,7 +292,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </button>
         </form>
         <p className="text-[9px] text-stone-700 uppercase tracking-widest text-center mt-2">
-          Scripture is the final authority · AI can make mistakes · Always verify with your Bible
+          Scripture is the final authority · AI can make mistakes · Verify with your Bible
         </p>
       </div>
     </div>

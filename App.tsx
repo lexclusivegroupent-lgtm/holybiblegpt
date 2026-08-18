@@ -48,7 +48,7 @@ const App: React.FC = () => {
   const [currentTranslation, setCurrentTranslation] = useState<Translation>(Translation.KJV);
   const [activeTab, setActiveTab] = useState<AppTab>('home');
   const [currentMode, setCurrentMode] = useState<AppMode>(AppMode.CHAT);
-  const [pendingQuery, setPendingQuery] = useState<{ query: string; isVerseSpecific: boolean } | null>(null);
+  const [pendingQuery, setPendingQuery] = useState<{ query: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showHistoricalWarning, setShowHistoricalWarning] = useState(false);
   const [showReportForm, setShowReportForm] = useState(false);
@@ -126,11 +126,20 @@ const App: React.FC = () => {
   };
 
   const handleStudyVerse = (mode: AppMode, verse: number) => {
-    const query = `Please analyze ${readerState.book} ${readerState.chapter}:${verse}`;
+    const modeVerb = mode === AppMode.PRAYER_HELP ? 'Write a prayer for' : 'Please analyze';
+    const query = `${modeVerb} ${readerState.book} ${readerState.chapter}:${verse}`;
     setActiveTab('study');
     setCurrentMode(mode);
-    setPendingQuery({ query, isVerseSpecific: true });
+    setPendingQuery({ query });
     setReaderState(prev => ({ ...prev, verses: verse.toString() }));
+    setIsMenuOpen(false);
+  };
+
+  const handleStudyChapter = (mode: AppMode) => {
+    const query = `Give an overview and key themes of ${readerState.book} chapter ${readerState.chapter}`;
+    setActiveTab('study');
+    setCurrentMode(mode);
+    setPendingQuery({ query });
     setIsMenuOpen(false);
   };
 
@@ -138,7 +147,7 @@ const App: React.FC = () => {
     const query = `Explain this event in the Bible timeline: ${eventTitle} connected to ${book} ${chapter}.`;
     setActiveTab('study');
     setCurrentMode(AppMode.DEEP_STUDY);
-    setPendingQuery({ query, isVerseSpecific: false });
+    setPendingQuery({ query });
     setIsMenuOpen(false);
   };
 
@@ -146,7 +155,7 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'home': return <HomeView onOpenPassage={handleOpenPassage} onTabChange={setActiveTab} translation={currentTranslation} />;
       case 'read':
-        return <BibleReader state={readerState} translation={currentTranslation} onClose={() => setActiveTab('home')} onNavigate={handleNavigateReader} onStudyVerse={handleStudyVerse} onReport={() => setShowReportForm(true)} />;
+        return <BibleReader state={readerState} translation={currentTranslation} onClose={() => setActiveTab('home')} onNavigate={handleNavigateReader} onStudyVerse={handleStudyVerse} onStudyChapter={handleStudyChapter} onReport={() => setShowReportForm(true)} />;
       case 'study':
         return (
           <ChatInterface
@@ -155,11 +164,13 @@ const App: React.FC = () => {
             onOpenReader={handleOpenReader}
             currentMode={currentMode}
             pendingQuery={pendingQuery?.query}
-            isVerseSpecific={pendingQuery?.isVerseSpecific}
             onQueryProcessed={() => { setPendingQuery(null); setCurrentMode(AppMode.CHAT); }}
             onClose={() => setActiveTab('read')}
             onReport={() => setShowReportForm(true)}
             onTabChange={setActiveTab}
+            readingContext={readerState.book !== 'Genesis' || readerState.chapter !== '1'
+              ? `${readerState.book} ${readerState.chapter}`
+              : undefined}
           />
         );
       case 'library': return <LibraryView onOpenPassage={handleOpenPassage} />;
@@ -215,16 +226,18 @@ const App: React.FC = () => {
           {renderContent()}
         </Suspense>
       </main>
-      <footer className="glass-dark border-t border-white/5 py-6 px-6 flex flex-col items-center gap-4">
-        <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-[9px] font-bold uppercase tracking-widest text-stone-600">
-          <button onClick={() => setActiveTab('privacy')} className="hover:text-[#D4AF37] transition-colors">Privacy</button>
-          <button onClick={() => setActiveTab('terms')} className="hover:text-[#D4AF37] transition-colors">Terms</button>
-          <button onClick={() => setActiveTab('about')} className="hover:text-[#D4AF37] transition-colors">About</button>
-          <button onClick={() => setActiveTab('faq')} className="hover:text-[#D4AF37] transition-colors">FAQ</button>
-          <button onClick={() => setActiveTab('contact')} className="hover:text-[#D4AF37] transition-colors">Contact</button>
-        </div>
-        <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">POWERED BY THE CHRISTIAN’S DECK</a>
-      </footer>
+      {activeTab !== 'read' && activeTab !== 'study' && (
+        <footer className="glass-dark border-t border-white/5 py-5 px-6 flex flex-col items-center gap-3">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[9px] font-bold uppercase tracking-widest text-stone-600">
+            <button onClick={() => setActiveTab('privacy')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Privacy</button>
+            <button onClick={() => setActiveTab('terms')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Terms</button>
+            <button onClick={() => setActiveTab('about')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">About</button>
+            <button onClick={() => setActiveTab('faq')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">FAQ</button>
+            <button onClick={() => setActiveTab('contact')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Contact</button>
+          </div>
+          <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">POWERED BY THE CHRISTIAN'S DECK</a>
+        </footer>
+      )}
       {showOnboarding && <Onboarding onAccept={() => setShowOnboarding(false)} />}
       {showHistoricalWarning && <HistoricalWarning onContinue={() => { storage.acceptWarning(); setShowHistoricalWarning(false); }} onGoBack={() => setShowHistoricalWarning(false)} />}
       {showReportForm && <ReportForm onClose={() => setShowReportForm(false)} />}
