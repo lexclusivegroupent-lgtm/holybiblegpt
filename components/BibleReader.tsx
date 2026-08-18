@@ -4,6 +4,7 @@ import { Translation, ReaderState, AppMode, Highlight } from '../types';
 import { getVerseText, VerseData, BIBLE_BOOKS, HISTORICAL_BOOKS, prefetchAdjacent, isChapterOffline } from '../services/bibleService';
 import { HISTORICAL_INTRODUCTIONS } from '../constants';
 import { storage } from '../services/storageService';
+import CrossReferencePanel from './CrossReferencePanel';
 
 interface BibleReaderProps {
   state: ReaderState;
@@ -377,6 +378,14 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                 >
                   ✨ Study This Verse with AI
                 </button>
+
+                <CrossReferencePanel
+                  book={state.book}
+                  chapter={state.chapter}
+                  verse={selectedVerse}
+                  translation={translation}
+                  onOpenVerse={(b, c, v) => { onNavigate(b, c); closeVerseMenu(); }}
+                />
               </>
             )}
           </div>
