@@ -10,10 +10,9 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
+      // No secrets baked into the frontend bundle.
+      // AI is handled client-side via Puter.js (loaded from CDN in index.html).
+      define: {},
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

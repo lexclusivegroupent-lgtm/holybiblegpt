@@ -1,74 +1,99 @@
 
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { AI_CONFIG } from "./aiConfig";
 import { GLOBAL_BEHAVIOR, MODE_PROMPTS } from "../constants";
 import { AppMode, Translation } from "../types";
 
-const DAILY_LIMIT = 3;
-
-const checkRateLimit = (): boolean => {
-  const today = new Date().toDateString();
-  const usageStr = localStorage.getItem('hbgpt_ai_usage');
-  let usage = usageStr ? JSON.parse(usageStr) : { date: today, count: 0 };
-
-  if (usage.date !== today) {
-    usage = { date: today, count: 0 };
+// Puter.js is loaded via CDN in index.html — no npm install needed
+declare global {
+  interface Window {
+    puter?: {
+      ai: {
+        chat(
+          messages: Array<{ role: string; content: string }> | string,
+          options?: { model?: string; stream?: boolean }
+        ): Promise<any>;
+      };
+    };
   }
+}
 
-  if (usage.count >= DAILY_LIMIT) return false;
+// Wait up to 6 seconds for Puter.js to finish loading from CDN
+const waitForPuter = (): Promise<NonNullable<typeof window.puter>> =>
+  new Promise((resolve, reject) => {
+    if (window.puter) { resolve(window.puter); return; }
+    let attempts = 0;
+    const id = setInterval(() => {
+      if (window.puter) {
+        clearInterval(id);
+        resolve(window.puter!);
+      } else if (++attempts > 30) {
+        clearInterval(id);
+        reject(new Error(
+          "Puter.js did not load. Please check your internet connection and refresh the page."
+        ));
+      }
+    }, 200);
+  });
 
-  usage.count++;
-  localStorage.setItem('hbgpt_ai_usage', JSON.stringify(usage));
-  return true;
-};
-
-/**
- * Sends a message stream to Google Gemini.
- * Uses direct generateContentStream to satisfy "do not define model first" guidelines.
- */
 export const sendMessageStream = async (
   mode: AppMode,
   translation: Translation,
   kidsMode: boolean,
-  history: { role: 'user' | 'assistant', content: string }[],
+  history: { role: 'user' | 'assistant'; content: string }[],
   onChunk: (text: string) => void
-) => {
-  const systemInstruction = GLOBAL_BEHAVIOR(translation) + "\n" + MODE_PROMPTS[mode] +
-    (kidsMode ? "\nIMPORTANT: User is a child. Use very simple words. Short answers. Gentle tone. Hide adult topics." : "");
+): Promise<string> => {
+  const systemContent =
+    GLOBAL_BEHAVIOR(translation) +
+    "\n\n" +
+    (MODE_PROMPTS[mode] ?? MODE_PROMPTS[AppMode.CHAT]) +
+    (kidsMode
+      ? "\n\nSPECIAL INSTRUCTION: The user is a young child. Use ONLY very simple words and very short sentences. A warm, loving, gentle tone. Avoid all adult, complex, or frightening content."
+      : "");
 
-  if (!checkRateLimit()) {
-    throw new Error("You reached today’s AI limit. Please keep reading. New questions reset tomorrow.");
-  }
+  const messages: Array<{ role: string; content: string }> = [
+    { role: "system", content: systemContent },
+    ...history.map(h => ({ role: h.role, content: h.content })),
+  ];
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const puter = await waitForPuter();
 
   try {
-    const result = await ai.models.generateContentStream({
-      model: AI_CONFIG.model,
-      contents: history.map(h => ({
-        role: h.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: h.content }]
-      })),
-      config: {
-        systemInstruction: systemInstruction,
-        maxOutputTokens: AI_CONFIG.maxOutputTokens,
-        temperature: AI_CONFIG.temperature
-      }
+    const response = await puter.ai.chat(messages, {
+      model: "gpt-4o-mini",
+      stream: true,
     });
 
     let fullText = "";
-    for await (const chunk of result) {
-      const responseChunk = chunk as GenerateContentResponse;
-      const text = responseChunk.text;
-      if (text) {
-        fullText += text;
-        onChunk(fullText);
+
+    // Handle async-iterable streaming response
+    if (response != null && typeof (response as any)[Symbol.asyncIterator] === "function") {
+      for await (const chunk of response as AsyncIterable<any>) {
+        // Puter.js may return {text: "..."} or OpenAI delta format
+        const text =
+          chunk?.text ??
+          chunk?.choices?.[0]?.delta?.content ??
+          "";
+        if (text) {
+          fullText += text;
+          onChunk(fullText);
+        }
       }
+    } else {
+      // Non-streaming fallback
+      const text =
+        (response as any)?.message?.content?.[0]?.text ??
+        (response as any)?.text ??
+        String(response ?? "");
+      fullText = text;
+      onChunk(fullText);
     }
+
     return fullText;
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    // Exact requested error string
-    throw new Error("AI unavailable. Please continue with Bible study.");
+  } catch (error: any) {
+    console.error("Puter AI Error:", error);
+    throw new Error(
+      typeof error?.message === "string"
+        ? error.message
+        : "AI is unavailable. Please try again or read Scripture directly."
+    );
   }
 };

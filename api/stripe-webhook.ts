@@ -4,7 +4,7 @@ import { kv } from '@vercel/kv';
 import micro from 'micro'; // Need to read raw body
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-01-27.acacia',
+    apiVersion: '2025-12-15.clover',
 });
 
 // Disable body parsing for this route to verify signature

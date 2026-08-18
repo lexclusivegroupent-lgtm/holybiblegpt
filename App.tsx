@@ -144,8 +144,21 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'home': return <HomeView onOpenPassage={handleOpenPassage} onTabChange={setActiveTab} translation={currentTranslation} />;
       case 'read':
-      case 'study': // Keep reader visible during study
         return <BibleReader state={readerState} translation={currentTranslation} onClose={() => setActiveTab('home')} onNavigate={handleNavigateReader} onStudyVerse={handleStudyVerse} onReport={() => setShowReportForm(true)} />;
+      case 'study':
+        return (
+          <ChatInterface
+            currentTranslation={currentTranslation}
+            onOpenReader={handleOpenReader}
+            currentMode={currentMode}
+            pendingQuery={pendingQuery?.query}
+            isVerseSpecific={pendingQuery?.isVerseSpecific}
+            onQueryProcessed={() => setPendingQuery(null)}
+            onClose={() => setActiveTab('read')}
+            onReport={() => setShowReportForm(true)}
+            onTabChange={setActiveTab}
+          />
+        );
       case 'library': return <LibraryView onOpenPassage={handleOpenPassage} />;
       case 'learn': return <LearningView onOpenPassage={handleOpenPassage} onStudyEvent={handleStudyEvent} />;
       case 'references': return <ReferencedView onOpenPassage={handleOpenPassage} />;
@@ -189,30 +202,15 @@ const App: React.FC = () => {
         currentTranslation={currentTranslation}
         onTranslationChange={setCurrentTranslation}
       />
-      <main className="flex-1 flex overflow-hidden relative" role="main">
-        <div className={`fixed inset-y-0 left-0 z-40 w-full sm:w-[400px] xl:relative xl:w-[400px] bg-black border-r border-stone-800 transition-transform duration-500 ease-in-out transform ${activeTab === 'study' ? 'translate-x-0' : '-translate-x-full xl:absolute xl:-left-[400px]'}`}>
-          <ChatInterface
-            currentTranslation={currentTranslation}
-            onOpenReader={handleOpenReader}
-            currentMode={currentMode}
-            pendingQuery={pendingQuery?.query}
-            isVerseSpecific={pendingQuery?.isVerseSpecific}
-            onQueryProcessed={() => setPendingQuery(null)}
-            onClose={() => setActiveTab('read')}
-            onReport={() => setShowReportForm(true)}
-            onTabChange={setActiveTab}
-          />
-        </div>
-        <div className="flex-1 h-full overflow-hidden flex flex-col">
-          <Suspense fallback={
-            <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-              <div className="w-12 h-12 border-t-2 border-[#D4AF37] rounded-full animate-spin"></div>
-              <div className="text-stone-700 uppercase tracking-widest text-[10px] animate-pulse">Illuminating...</div>
-            </div>
-          }>
-            {renderContent()}
-          </Suspense>
-        </div>
+      <main className="flex-1 overflow-hidden flex flex-col" role="main">
+        <Suspense fallback={
+          <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+            <div className="w-12 h-12 border-t-2 border-[#D4AF37] rounded-full animate-spin"></div>
+            <div className="text-stone-700 uppercase tracking-widest text-[10px] animate-pulse">Illuminating...</div>
+          </div>
+        }>
+          {renderContent()}
+        </Suspense>
       </main>
       <footer className="glass-dark border-t border-white/5 py-6 px-6 flex flex-col items-center gap-4">
         <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-[9px] font-bold uppercase tracking-widest text-stone-600">

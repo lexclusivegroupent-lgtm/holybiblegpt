@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { kv } from '@vercel/kv';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-01-27.acacia',
+    apiVersion: '2025-12-15.clover',
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
