@@ -65,7 +65,7 @@ export interface Message {
   mode?: AppMode;
   links?: PassageLink[];
   isJson?: boolean;
-  isLimitMessage?: boolean;
+  isError?: boolean;
 }
 
 export type PrayerCategory = 'Family' | 'Health' | 'Church' | 'Growth' | 'Other';

@@ -23,7 +23,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     { id: 'home', label: 'My Walk', icon: '🏠' },
     { id: 'read', label: 'Reader', icon: '📖' },
     { id: 'prayer', label: 'Sanctuary', icon: '🙏' },
-    { id: 'study', label: 'Study Tools', icon: '💬' },
+    { id: 'study', label: 'AI Bible Study', icon: '✨' },
     { id: 'library', label: 'My Library', icon: '📚' },
     { id: 'theology', label: 'Theology', icon: '🏛️' },
     { id: 'harmony', label: 'Gospels', icon: '🔄' },
@@ -42,7 +42,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     <button
       key={link.id}
       onClick={() => onTabChange(link.id)}
-      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all group ${activeTab === link.id
+      className={`w-full flex items-center gap-4 px-4 min-h-[48px] rounded-xl text-left transition-all group ${activeTab === link.id
           ? 'bg-[#D4AF37] text-black shadow-lg scale-[1.02]'
           : 'text-stone-400 hover:bg-white/5 hover:text-stone-100'
         }`}
@@ -62,7 +62,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
               <span className="text-[#D4AF37] text-xl" aria-hidden="true">♰</span>
               <span className="accent-font text-sm font-bold gold-gradient-text uppercase tracking-widest">Navigation</span>
             </div>
-            <button onClick={onClose} className="p-2 text-stone-500 hover:text-white transition-colors" aria-label="Close Menu">✕</button>
+            <button onClick={onClose} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-stone-500 hover:text-white transition-colors rounded-lg hover:bg-white/5" aria-label="Close Menu">✕</button>
           </header>
 
           <nav className="flex-1 overflow-y-auto py-4 px-2 no-scrollbar">

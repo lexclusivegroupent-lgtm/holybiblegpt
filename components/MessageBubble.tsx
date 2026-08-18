@@ -1,17 +1,19 @@
 
 import React, { useState } from 'react';
-import { Message, Role, PassageLink } from '../types';
+import { Message, Role, PassageLink, AppMode } from '../types';
 
 interface MessageBubbleProps {
   message: Message;
   onOpenReader: (link: PassageLink) => void;
-  onReport?: () => void;
-  onUpgrade?: () => void;
+  onPray?: (messageText: string) => void;
+  onSavePrayer?: (text: string) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, onReport, onUpgrade }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, onPray, onSavePrayer }) => {
   const isBot = message.role === Role.BOT;
-  const [feedback, setFeedback] = useState<'helpful' | 'not-helpful' | null>(null);
+  const isPrayer = message.mode === AppMode.PRAYER_HELP;
+  const isError = message.isError === true;
+  const [prayerSaved, setPrayerSaved] = useState(false);
 
   const parseContent = (text: string) => {
     const links: PassageLink[] = [];
@@ -26,88 +28,110 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
 
   const { cleanText, links } = parseContent(message.text);
 
+  const handleSavePrayer = () => {
+    onSavePrayer?.(cleanText);
+    setPrayerSaved(true);
+  };
+
   return (
-    <div className={`flex w-full mb-10 ${isBot ? 'justify-start' : 'justify-end'}`}>
-      <div className={`max-w-[95%] sm:max-w-[85%] px-6 py-6 rounded-[2rem] relative group transition-all ${isBot
-        ? 'glass-dark border border-white/5 shadow-2xl text-stone-200'
-        : 'bg-stone-900 border border-white/10 text-stone-100 font-medium shadow-xl'
-        }`}>
+    <div className={`flex w-full mb-8 ${isBot ? 'justify-start' : 'justify-end'}`}>
+      <div className={`max-w-[95%] sm:max-w-[85%] px-5 py-5 rounded-[1.75rem] relative transition-all ${
+        isError
+          ? 'bg-red-950/30 border border-red-900/40 text-stone-300'
+          : isPrayer
+            ? 'bg-[#D4AF37]/5 border border-[#D4AF37]/25 shadow-[0_8px_30px_rgba(212,175,55,0.08)] text-stone-200'
+            : isBot
+              ? 'glass-dark border border-white/5 shadow-xl text-stone-200'
+              : 'bg-stone-900 border border-white/10 text-stone-100 font-medium shadow-lg'
+      }`}>
+
+        {/* Bot / Prayer header */}
         {isBot && (
-          <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-stone-950 rounded-xl flex items-center justify-center border border-white/10 shadow-inner">
-                <span className="text-[#D4AF37] text-xs">♰</span>
+          <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-7 h-7 rounded-xl flex items-center justify-center border shadow-inner ${
+                isError
+                  ? 'bg-red-950/50 border-red-900/50'
+                  : isPrayer
+                    ? 'bg-[#D4AF37]/10 border-[#D4AF37]/30'
+                    : 'bg-stone-950 border-white/10'
+              }`}>
+                <span className="text-xs">{isError ? '⚠️' : isPrayer ? '🙏' : <span className="text-[#D4AF37]">♰</span>}</span>
               </div>
-              <span className="text-[10px] font-bold text-stone-600 uppercase tracking-[0.3em]">Holy Bible GPT Response</span>
+              <span className={`text-[9px] font-bold uppercase tracking-[0.3em] ${isError ? 'text-red-400/70' : 'text-stone-600'}`}>
+                {isError ? 'Notice' : isPrayer ? 'Scripture Prayer' : 'Holy Bible GPT'}
+              </span>
             </div>
           </div>
         )}
 
-        <div className={`whitespace-pre-wrap leading-relaxed ${isBot ? 'bible-font text-xl font-light' : 'text-sm font-medium'}`}>
+        {/* Message text */}
+        <div className={`whitespace-pre-wrap leading-relaxed ${
+          isPrayer
+            ? 'bible-font text-lg font-light italic text-stone-300'
+            : isBot
+              ? 'bible-font text-lg font-light'
+              : 'text-sm font-medium'
+        }`}>
           {cleanText}
         </div>
 
-        {isBot && (
-          <div className="mt-8 pt-6 border-t border-white/5 space-y-6">
-            <p className="text-[10px] text-[#D4AF37] italic font-medium">
-              Check everything with Scripture. AI makes mistakes.
-            </p>
+        {/* Bot footer */}
+        {isBot && !isError && (
+          <div className="mt-6 pt-4 border-t border-white/5 space-y-4">
 
+            {/* Passage links */}
             {links.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {links.map((link, idx) => (
                   <button
                     key={idx}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-stone-950 border border-white/5 rounded-xl text-[10px] font-bold text-[#D4AF37] hover:border-[#D4AF37]/40 hover:bg-stone-900 transition-all shadow-lg"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-stone-950 border border-white/5 rounded-xl text-[9px] font-bold text-[#D4AF37] hover:border-[#D4AF37]/40 hover:bg-stone-900 transition-all shadow-md min-h-[36px]"
                     onClick={() => onOpenReader(link)}
                   >
-                    📖 Read {link.book} {link.chapter}
+                    📖 {link.book} {link.chapter}
                   </button>
                 ))}
               </div>
             )}
 
-            <div className="mt-6 flex items-center justify-center gap-2 opacity-50">
-              <span className="text-[9px] text-stone-600 uppercase tracking-widest font-bold">Generated by AI • Verify with Scripture</span>
-            </div>
+            {/* Prayer actions */}
+            {isPrayer ? (
+              <button
+                onClick={handleSavePrayer}
+                disabled={prayerSaved}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all min-h-[36px] ${
+                  prayerSaved
+                    ? 'text-emerald-500 border border-emerald-500/30 bg-emerald-500/5'
+                    : 'text-[#D4AF37] border border-[#D4AF37]/30 hover:bg-[#D4AF37]/10'
+                }`}
+              >
+                {prayerSaved ? '✓ Saved to Journal' : '🙏 Save to Prayer Journal'}
+              </button>
+            ) : (
+              /* Pray button for regular responses */
+              message.id !== '0' && message.text.trim().length > 20 && (
+                <button
+                  onClick={() => onPray?.(cleanText)}
+                  className="flex items-center gap-1.5 text-[9px] font-bold text-stone-600 uppercase tracking-widest hover:text-[#D4AF37] transition-colors"
+                >
+                  <span>🙏</span> Pray about this
+                </button>
+              )
+            )}
+
+            {/* Disclaimer */}
+            <p className="text-[9px] text-stone-700 italic">
+              {isPrayer ? 'Prayer inspired by Scripture · Saved to Prayer Journal' : 'Check everything with Scripture · AI makes mistakes'}
+            </p>
           </div>
         )}
 
-        <div className={`mt-4 text-[9px] ${isBot ? 'text-stone-800' : 'text-stone-600'} uppercase font-bold tracking-widest`}>
+        {/* Timestamp */}
+        <div className={`mt-3 text-[8px] ${isBot ? 'text-stone-800' : 'text-stone-600'} uppercase font-bold tracking-widest`}>
           {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
-
-      {message.isLimitMessage && (
-        <div className="absolute -bottom-16 left-0 right-0 flex justify-center w-full z-10">
-          <button
-            onClick={async () => {
-              if (onUpgrade) {
-                onUpgrade();
-                return;
-              }
-              // Fallback if no handler provided but wrapper has logic? 
-              // Actually, let's just use window location if simple
-              try {
-                const uid = localStorage.getItem('hbgpt_user_id');
-                if (!uid) return;
-                const res = await fetch('/api/create-checkout-session', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: uid })
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-              } catch (e) {
-                alert("Billing system unavailable.");
-              }
-            }}
-            className="bg-[#D4AF37] text-black font-bold uppercase tracking-widest text-[10px] px-8 py-3 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all border border-white/20 animate-in fade-in slide-in-from-top-4 duration-500"
-          >
-            Upgrade to HolyBibleGPT Plus
-          </button>
-        </div>
-      )}
     </div>
   );
 };
