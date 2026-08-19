@@ -33,21 +33,19 @@ const PrayerJournal: React.FC = () => {
   };
 
   const handleAIHelp = async () => {
-    if (!storage.canUseAI() || isAIHelping) return;
+    if (isAIHelping) return;
     setIsAIHelping(true);
-    const prompt = `Help me write a prayer about ${newCategory} ${newTitle ? `specifically regarding: ${newTitle}` : ''}. Keep it short and rooted in Scripture.`;
-    
+    const prompt = `Help me write a prayer about ${newCategory}${newTitle ? ` specifically regarding: ${newTitle}` : ''}. Keep it short and rooted in Scripture.`;
     try {
       await sendMessageStream(
-        AppMode.PRAYER_HELP, 
-        storage.getSettings().nightMode ? 'KJV' as any : 'KJV' as any, 
-        false, 
-        [{ role: 'user', content: prompt }], 
+        AppMode.PRAYER_HELP,
+        'KJV' as any,
+        false,
+        [{ role: 'user', content: prompt }],
         (chunk) => setNewText(chunk)
       );
-      storage.incrementAIUsage();
-    } catch (e) {
-      setNewText("Help me write this...");
+    } catch {
+      setNewText('Lord, help me to express what is on my heart…');
     } finally {
       setIsAIHelping(false);
     }
@@ -99,11 +97,12 @@ const PrayerJournal: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center px-2">
                <label className="text-[10px] font-bold text-stone-600 uppercase tracking-widest">Prayer Petition</label>
-               <button 
+               <button
                 onClick={handleAIHelp}
-                className={`text-[9px] font-bold uppercase tracking-widest ${storage.canUseAI() ? 'text-[#D4AF37] hover:underline' : 'text-stone-700 cursor-not-allowed'}`}
+                disabled={isAIHelping}
+                className="text-[9px] font-bold uppercase tracking-widest text-[#D4AF37] hover:underline disabled:text-stone-700 disabled:cursor-not-allowed"
                >
-                 {isAIHelping ? 'Spiritualing...' : '✨ Help me write this'}
+                 {isAIHelping ? 'Writing…' : '✨ Help me write this'}
                </button>
             </div>
             <textarea 
