@@ -138,6 +138,16 @@ const fetchKJV = async (book: string, chapter: string): Promise<VerseData[]> => 
   return data.verses.map((v: any) => ({ number: v.verse, text: v.text.trim() }));
 };
 
+// ── WEB Fetch (World English Bible, public domain) ────────────────────────────
+
+const fetchWEB = async (book: string, chapter: string): Promise<VerseData[]> => {
+  const data = await fetchWithRetry(
+    `https://bible-api.com/${encodeURIComponent(book)}%20${chapter}?translation=web`
+  );
+  if (!data.verses?.length) throw new Error('No WEB verses returned');
+  return data.verses.map((v: any) => ({ number: v.verse, text: v.text.trim() }));
+};
+
 // ── Primary Verse Fetcher ──────────────────────────────────────────────────────
 
 export const getVerseText = async (
@@ -165,15 +175,15 @@ export const getVerseText = async (
       try {
         verses = await fetchESV(book, chapter);
       } catch (esvErr: any) {
-        // Graceful fallback: ESV unavailable → use KJV
         if (esvErr.message === 'ESV_NOT_CONFIGURED') {
           console.info('ESV API not configured; falling back to KJV.');
         } else {
           console.warn('ESV fetch failed; falling back to KJV:', esvErr.message);
         }
         verses = await fetchKJV(book, chapter);
-        // Cache under ESV key so we don't retry network on every render
       }
+    } else if (translation === Translation.WEB) {
+      verses = await fetchWEB(book, chapter);
     } else {
       verses = await fetchKJV(book, chapter);
     }
