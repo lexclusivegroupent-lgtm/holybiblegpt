@@ -1,5 +1,5 @@
 
-import { Bookmark, Highlight, HistoryItem, PrayerEntry, AppSettings, DailyUsage } from '../types';
+import { Bookmark, Highlight, HistoryItem, PrayerEntry, AppSettings } from '../types';
 
 const KEYS = {
   BOOKMARKS: 'hbgpt_bookmarks',
@@ -12,10 +12,7 @@ const KEYS = {
   PRAYERS: 'hbgpt_prayers',
   SETTINGS: 'hbgpt_settings',
   WARNING_ACCEPTED: 'hbgpt_warning_accepted',
-  AI_USAGE: 'hbgpt_ai_usage'
 };
-
-const MAX_DAILY_AI = 3;
 
 export const storage = {
   getBookmarks: (): Bookmark[] => JSON.parse(localStorage.getItem(KEYS.BOOKMARKS) || '[]'),
@@ -57,26 +54,15 @@ export const storage = {
     storage.saveSettings(settings);
   },
 
-  getAIUsage: (): DailyUsage => {
-    const today = new Date().toDateString();
-    const stored = JSON.parse(localStorage.getItem(KEYS.AI_USAGE) || 'null');
-    if (!stored || stored.date !== today) {
-      return { date: today, count: 0 };
-    }
-    return stored;
-  },
-  incrementAIUsage: () => {
-    const usage = storage.getAIUsage();
-    usage.count += 1;
-    localStorage.setItem(KEYS.AI_USAGE, JSON.stringify(usage));
-  },
-  canUseAI: () => storage.getAIUsage().count < MAX_DAILY_AI,
-  getRemainingAI: () => Math.max(0, MAX_DAILY_AI - storage.getAIUsage().count),
-
   getNotes: (): Record<string, string> => JSON.parse(localStorage.getItem(KEYS.NOTES) || '{}'),
   saveNote: (ref: string, text: string) => {
     const notes = storage.getNotes();
     notes[ref] = text;
+    localStorage.setItem(KEYS.NOTES, JSON.stringify(notes));
+  },
+  deleteNote: (ref: string) => {
+    const notes = storage.getNotes();
+    delete notes[ref];
     localStorage.setItem(KEYS.NOTES, JSON.stringify(notes));
   },
 
@@ -101,8 +87,22 @@ export const storage = {
   getStreak: (): number => {
     const progress = storage.getProgress();
     if (progress.length === 0) return 0;
-    // Simple mock logic for streak calculation based on dates
-    return progress.length;
+    const dateSet = new Set(progress);
+    const today = new Date();
+    const todayStr = today.toLocaleDateString();
+    // Start from today if already marked, otherwise from yesterday
+    const offset = dateSet.has(todayStr) ? 0 : 1;
+    let streak = 0;
+    for (let i = offset; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      if (dateSet.has(d.toLocaleDateString())) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
   },
   isWarningAccepted: (): boolean => localStorage.getItem(KEYS.WARNING_ACCEPTED) === 'true',
   acceptWarning: () => localStorage.setItem(KEYS.WARNING_ACCEPTED, 'true'),
@@ -111,26 +111,4 @@ export const storage = {
     if (!p.includes(dateStr)) localStorage.setItem(KEYS.PROGRESS, JSON.stringify([...p, dateStr]));
   },
 
-  // Monetization & Identity
-  getUserId: (): string => {
-    let uid = localStorage.getItem('hbgpt_user_id');
-    if (!uid) {
-      uid = crypto.randomUUID();
-      localStorage.setItem('hbgpt_user_id', uid);
-    }
-    return uid;
-  },
-
-  isPro: async (): Promise<boolean> => {
-    // Check local cache first (short TTL or session based? For now, trust server primarily but cache for speed)
-    // Actually, simple fetch to our new API
-    try {
-      const uid = storage.getUserId();
-      const res = await fetch(`/api/check-status?userId=${uid}`);
-      const data = await res.json();
-      return data.isPro === true;
-    } catch {
-      return false; // Default to free on error
-    }
-  }
 };

@@ -20,7 +20,8 @@ export enum AppMode {
 
 export enum Translation {
   KJV = 'KJV',
-  ESV = 'ESV'
+  ESV = 'ESV',
+  WEB = 'WEB'
 }
 
 export interface Highlight {
@@ -95,9 +96,5 @@ export interface AppSettings {
   };
 }
 
-export interface DailyUsage {
-  date: string;
-  count: number;
-}
 
-export type AppTab = 'home' | 'study' | 'read' | 'library' | 'learn' | 'references' | 'support' | 'prayer' | 'settings' | 'privacy' | 'about' | 'terms' | 'instructions' | 'search' | 'contact' | 'faq' | 'changelog' | 'faith' | 'disclaimer' | 'translations' | 'guidelines' | 'roadmap' | 'thanks' | 'kids' | 'groups' | 'theology' | 'harmony';
+export type AppTab = 'home' | 'study' | 'read' | 'library' | 'learn' | 'references' | 'support' | 'prayer' | 'settings' | 'privacy' | 'about' | 'terms' | 'instructions' | 'search' | 'contact' | 'faq' | 'changelog' | 'faith' | 'disclaimer' | 'translations' | 'guidelines' | 'roadmap' | 'thanks' | 'kids' | 'groups' | 'theology' | 'harmony' | 'notes';

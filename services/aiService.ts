@@ -11,19 +11,25 @@ declare global {
           options?: { model?: string; stream?: boolean }
         ): Promise<any>;
       };
+      auth: {
+        isSignedIn(): boolean;
+        signIn(): Promise<void>;
+        signOut(): Promise<void>;
+        getUser(): Promise<{ username: string; email?: string }>;
+      };
     };
     __puterLoadFailed?: boolean;
   }
 }
 
 // Wait up to 8 seconds for Puter.js to finish loading from CDN.
-// index.html sets window.__puterLoadFailed on script onerror so we can fail fast.
-const waitForPuter = (): Promise<NonNullable<typeof window.puter>> =>
+// index.html sets window.__puterLoadFailed on script onerror for fast-fail.
+export const waitForPuter = (): Promise<NonNullable<typeof window.puter>> =>
   new Promise((resolve, reject) => {
     if (window.puter) { resolve(window.puter); return; }
     if (window.__puterLoadFailed) {
       reject(new Error(
-        "The AI service could not load. Please check your internet connection and refresh the page."
+        "The AI service could not load. Please check your internet connection and refresh."
       ));
       return;
     }
@@ -35,7 +41,7 @@ const waitForPuter = (): Promise<NonNullable<typeof window.puter>> =>
       } else if (window.__puterLoadFailed) {
         clearInterval(id);
         reject(new Error(
-          "The AI service could not load. Please check your internet connection and refresh the page."
+          "The AI service could not load. Please check your internet connection and refresh."
         ));
       } else if (++attempts > 40) {
         clearInterval(id);
@@ -45,6 +51,41 @@ const waitForPuter = (): Promise<NonNullable<typeof window.puter>> =>
       }
     }, 200);
   });
+
+export type PuterStatus = 'checking' | 'ready' | 'needs-signin' | 'load-failed';
+
+// Check whether the user is authenticated with Puter (non-throwing)
+export const getPuterAuthState = async (): Promise<PuterStatus> => {
+  try {
+    const puter = await waitForPuter();
+    const signedIn = puter.auth?.isSignedIn?.() ?? false;
+    console.log("[HolyBibleGPT] Puter auth state:", signedIn ? "signed-in" : "needs-signin");
+    return signedIn ? 'ready' : 'needs-signin';
+  } catch (e: any) {
+    console.warn("[HolyBibleGPT] Puter load failed:", e?.message);
+    return 'load-failed';
+  }
+};
+
+// Explicitly trigger the Puter sign-in popup
+export const signIntoPuter = async (): Promise<void> => {
+  const puter = await waitForPuter();
+  await puter.auth.signIn();
+};
+
+// Returns true if the error message suggests the user needs to sign in
+export const isAuthError = (message: string): boolean => {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('sign in') ||
+    lower.includes('unauthorized') ||
+    lower.includes('unauthenticated') ||
+    lower.includes('auth') ||
+    lower.includes('pop-up') ||
+    lower.includes('popup') ||
+    lower.includes('blocked')
+  );
+};
 
 // Wrap a promise with an absolute deadline
 const withTimeout = <T>(promise: Promise<T>, ms: number, msg: string): Promise<T> =>
@@ -63,32 +104,22 @@ const classifyError = (error: any): string => {
   if (
     raw.includes('sign in') || raw.includes('signin') || raw.includes('log in') ||
     raw.includes('login') || raw.includes('not logged') || raw.includes('unauthenticated') ||
-    raw.includes('unauthorized') || raw.includes('authentication') || raw.includes('auth required')
+    raw.includes('unauthorized') || raw.includes('authentication')
   ) {
-    return (
-      'Please sign in to Puter to use the free AI — a sign-in window should appear. ' +
-      'Complete it and try your question again.'
-    );
+    return 'Please sign in to Puter to use the free AI — tap "Sign In to Puter" above and allow the pop-up.';
   }
 
   if (raw.includes('popup') || raw.includes('pop-up') || raw.includes('window was blocked')) {
-    return (
-      'A sign-in pop-up was blocked by your browser. ' +
-      'Allow pop-ups for this site in your browser settings, then try again.'
-    );
+    return 'The sign-in pop-up was blocked. Allow pop-ups for this site, then tap "Sign In to Puter" again.';
   }
 
-  if (
-    raw.includes('rate') || raw.includes('limit') || raw.includes('quota') ||
-    raw.includes('too many') || raw.includes('429')
-  ) {
+  if (raw.includes('rate') || raw.includes('limit') || raw.includes('quota') ||
+      raw.includes('too many') || raw.includes('429')) {
     return 'AI is temporarily rate-limited. Please wait a moment and try again.';
   }
 
-  if (
-    raw.includes('network') || raw.includes('failed to fetch') ||
-    raw.includes('connection') || raw.includes('offline')
-  ) {
+  if (raw.includes('network') || raw.includes('failed to fetch') ||
+      raw.includes('connection') || raw.includes('offline')) {
     return 'Connection issue. Please check your internet connection and try again.';
   }
 
@@ -100,7 +131,7 @@ const classifyError = (error: any): string => {
     return 'AI model is temporarily unavailable. Please try again in a moment.';
   }
 
-  // Surface short, legible messages from Puter directly
+  // Surface the raw message if it's short and legible
   if (error?.message && error.message.length > 0 && error.message.length < 200) {
     return `AI error: ${error.message}. Please try again.`;
   }
@@ -152,7 +183,6 @@ export const sendMessageStream = async (
         }
       }
     } else {
-      // Non-async-iterable response treated as complete text
       const text =
         (response as any)?.message?.content?.[0]?.text ??
         (response as any)?.choices?.[0]?.message?.content ??
@@ -163,11 +193,13 @@ export const sendMessageStream = async (
     }
 
     if (fullText.trim()) return fullText;
-    // Empty streaming response — fall through to non-streaming
     throw new Error("empty_stream");
   } catch (streamErr: any) {
-    // Don't surface streaming errors yet — try non-streaming fallback first
-    console.warn("Puter streaming attempt failed, trying non-streaming fallback:", streamErr?.message);
+    console.warn("[HolyBibleGPT] Streaming attempt failed:", {
+      message: streamErr?.message,
+      name: streamErr?.name,
+      raw: streamErr,
+    });
   }
 
   // ── Attempt 2: non-streaming fallback ────────────────────────────────────
@@ -190,7 +222,12 @@ export const sendMessageStream = async (
     }
     throw new Error("Empty response from AI");
   } catch (error: any) {
-    console.error("Puter AI Error (both attempts failed):", error);
+    console.error("[HolyBibleGPT] Both AI attempts failed:", {
+      message: error?.message,
+      name: error?.name,
+      stack: error?.stack,
+      raw: error,
+    });
     throw new Error(classifyError(error));
   }
 };

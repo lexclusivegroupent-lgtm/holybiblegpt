@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Role, Message, AppMode, Translation, PassageLink, AppTab } from '../types';
-import { sendMessageStream } from '../services/aiService';
+import { sendMessageStream, getPuterAuthState, signIntoPuter, isAuthError, PuterStatus } from '../services/aiService';
 import { enrichWithVerseContext } from '../services/bibleService';
 import { storage } from '../services/storageService';
 import MessageBubble from './MessageBubble';
@@ -47,9 +47,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [puterStatus, setPuterStatus] = useState<PuterStatus>('checking');
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingProcessed = useRef(false);
+
+  // Check Puter auth state on mount
+  useEffect(() => {
+    getPuterAuthState().then(status => setPuterStatus(status));
+  }, []);
 
   useEffect(() => { setLocalMode(currentMode); }, [currentMode]);
 
@@ -69,6 +77,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingQuery]);
+
+  const handlePuterSignIn = async () => {
+    setIsSigningIn(true);
+    setSignInError(null);
+    try {
+      await signIntoPuter();
+      // Confirm sign-in actually succeeded
+      const status = await getPuterAuthState();
+      setPuterStatus(status);
+      if (status !== 'ready') {
+        setSignInError('Sign-in was not completed. Please try again.');
+      }
+    } catch (e: any) {
+      const msg = e?.message ?? '';
+      if (msg.toLowerCase().includes('popup') || msg.toLowerCase().includes('blocked')) {
+        setSignInError(
+          'Pop-up was blocked by your browser. Allow pop-ups for this site in browser settings, then try again.'
+        );
+      } else {
+        setSignInError(msg || 'Sign-in failed. Please try again.');
+      }
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   const handleSend = useCallback(async (text: string = input, modeOverride?: AppMode) => {
     const trimmed = text.trim();
@@ -112,6 +145,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       });
     } catch (err: any) {
       const errText = err?.message ?? 'AI is temporarily unavailable. Please try again in a moment.';
+      // If the error signals an auth problem, surface the sign-in banner again
+      if (isAuthError(errText)) {
+        setPuterStatus('needs-signin');
+      }
       setMessages(prev =>
         prev.map(m =>
           m.id === botId
@@ -153,6 +190,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setInput('');
   };
 
+  const needsSignIn = puterStatus === 'needs-signin';
+  const loadFailed = puterStatus === 'load-failed';
+  const isReady = puterStatus === 'ready';
+  const inputDisabled = isLoading || needsSignIn || loadFailed;
+
   return (
     <div className="flex flex-col h-full w-full bg-black">
 
@@ -168,7 +210,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </p>
           ) : (
             <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
-              Free · Scripture First
+              {isReady ? 'Free · Scripture First' : puterStatus === 'checking' ? 'Connecting…' : 'Sign in to continue'}
             </p>
           )}
         </div>
@@ -234,6 +276,70 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         })}
       </div>
 
+      {/* ── Puter Sign-in Banner ─────────────────────────────────────────── */}
+      {(needsSignIn || loadFailed) && (
+        <div className="mx-4 mt-4 p-4 rounded-2xl border shrink-0 space-y-3
+          bg-[#D4AF37]/5 border-[#D4AF37]/20">
+
+          {needsSignIn ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔑</span>
+                <p className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
+                  Free Sign-In Required
+                </p>
+              </div>
+              <p className="text-xs text-stone-400 leading-relaxed">
+                Holy Bible GPT uses <strong className="text-stone-300">Puter</strong> for free, unlimited AI — no subscription needed. Create a free Puter account to unlock the full study experience.
+              </p>
+              <p className="text-[10px] text-stone-600 leading-snug">
+                ⚠️ When prompted, <strong className="text-stone-500">allow pop-ups</strong> for this site so the sign-in window can open.
+              </p>
+              {signInError && (
+                <p className="text-[10px] text-red-400/80 leading-snug border border-red-900/30 bg-red-950/20 rounded-xl px-3 py-2">
+                  {signInError}
+                </p>
+              )}
+              <button
+                onClick={handlePuterSignIn}
+                disabled={isSigningIn}
+                className="w-full min-h-[44px] bg-[#D4AF37] text-black text-[10px] font-bold uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {isSigningIn ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                    Opening sign-in…
+                  </>
+                ) : (
+                  '🔑 Sign In to Puter (Free)'
+                )}
+              </button>
+              <p className="text-[9px] text-stone-700 text-center">
+                puter.com · free forever · no credit card
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                <p className="text-xs font-bold text-red-400/80 uppercase tracking-wider">
+                  AI Service Unavailable
+                </p>
+              </div>
+              <p className="text-xs text-stone-400 leading-relaxed">
+                The AI service failed to load. Please check your internet connection and refresh the page.
+              </p>
+              <button
+                onClick={() => { setPuterStatus('checking'); getPuterAuthState().then(s => setPuterStatus(s)); }}
+                className="w-full min-h-[44px] border border-white/10 text-stone-500 text-[10px] font-bold uppercase tracking-widest rounded-xl hover:text-white hover:border-white/20 transition-colors"
+              >
+                Retry
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Messages ────────────────────────────────────────────────────── */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
         {messages.map(msg => (
@@ -277,15 +383,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything about the Bible… (Enter to send)"
-            disabled={isLoading}
+            placeholder={
+              needsSignIn
+                ? 'Sign in above to ask questions…'
+                : loadFailed
+                  ? 'AI service unavailable — please refresh'
+                  : puterStatus === 'checking'
+                    ? 'Connecting to AI…'
+                    : 'Ask anything about the Bible… (Enter to send)'
+            }
+            disabled={inputDisabled}
             rows={1}
-            className="flex-1 px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D4AF37] text-stone-200 bible-font text-base resize-none disabled:opacity-50 leading-relaxed"
+            className="flex-1 px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D4AF37] text-stone-200 bible-font text-base resize-none disabled:opacity-40 leading-relaxed"
             style={{ minHeight: '48px', maxHeight: '120px', overflowY: 'auto' }}
           />
           <button
             type="submit"
-            disabled={isLoading || !input.trim()}
+            disabled={inputDisabled || !input.trim()}
             aria-label="Send"
             className="w-11 h-11 mb-0.5 rounded-xl bg-[#D4AF37] text-black font-bold text-lg flex items-center justify-center shrink-0 disabled:bg-stone-800 disabled:text-stone-600 transition-colors"
           >

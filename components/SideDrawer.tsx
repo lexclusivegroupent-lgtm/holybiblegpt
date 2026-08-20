@@ -24,6 +24,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     { id: 'read', label: 'Reader', icon: '📖' },
     { id: 'prayer', label: 'Sanctuary', icon: '🙏' },
     { id: 'study', label: 'AI Bible Study', icon: '✨' },
+    { id: 'notes', label: 'My Notes', icon: '📝' },
     { id: 'library', label: 'My Library', icon: '📚' },
     { id: 'theology', label: 'Theology', icon: '🏛️' },
     { id: 'harmony', label: 'Gospels', icon: '🔄' },

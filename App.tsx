@@ -39,6 +39,7 @@ const StudyGroupsView = lazy(() => import('./components/StudyGroupsView'));
 const TheologyView = lazy(() => import('./components/TheologyView'));
 const GospelHarmonyView = lazy(() => import('./components/GospelHarmonyView'));
 const NotFoundView = lazy(() => import('./components/NotFoundView'));
+const NotesView = lazy(() => import('./components/NotesView'));
 
 import { Translation, ReaderState, PassageLink, AppMode, AppTab } from './types';
 import { storage } from './services/storageService';
@@ -197,6 +198,7 @@ const App: React.FC = () => {
       case 'groups': return <StudyGroupsView />;
       case 'theology': return <TheologyView />;
       case 'harmony': return <GospelHarmonyView />;
+      case 'notes': return <NotesView onOpenPassage={handleOpenPassage} onTabChange={setActiveTab} />;
       default: return <NotFoundView onGoHome={() => setActiveTab('home')} />;
     }
   };
