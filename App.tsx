@@ -197,7 +197,7 @@ const App: React.FC = () => {
       case 'kids': return <KidsModeView onOpenPassage={handleOpenPassage} />;
       case 'groups': return <StudyGroupsView />;
       case 'theology': return <TheologyView />;
-      case 'harmony': return <GospelHarmonyView />;
+      case 'harmony': return <GospelHarmonyView onOpenPassage={handleOpenPassage} />;
       case 'notes': return <NotesView onOpenPassage={handleOpenPassage} onTabChange={setActiveTab} />;
       default: return <NotFoundView onGoHome={() => setActiveTab('home')} />;
     }
