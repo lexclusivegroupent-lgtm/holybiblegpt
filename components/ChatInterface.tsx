@@ -53,13 +53,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingProcessed = useRef(false);
+  const activeModeRef = useRef<AppMode>(currentMode);
 
   // Check Puter auth state on mount
   useEffect(() => {
     getPuterAuthState().then(status => setPuterStatus(status));
   }, []);
 
-  useEffect(() => { setLocalMode(currentMode); }, [currentMode]);
+  useEffect(() => {
+    setLocalMode(currentMode);
+    activeModeRef.current = currentMode;
+  }, [currentMode]);
+
+  useEffect(() => { activeModeRef.current = localMode; }, [localMode]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -107,7 +113,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
-    const activeMode = modeOverride ?? localMode;
+    const activeMode = modeOverride ?? activeModeRef.current;
     const kidsMode = activeMode === AppMode.KIDS;
 
     const userMsg: Message = {
@@ -160,7 +166,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setIsLoading(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [input, isLoading, localMode, currentTranslation, messages]);
+  }, [input, isLoading, currentTranslation, messages]);
 
   const handlePray = useCallback((messageText: string) => {
     const prompt = `Based on this Scripture teaching, write a short prayer:\n\n"${messageText.slice(0, 400)}"`;
@@ -263,7 +269,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               key={mode}
               onClick={() => setLocalMode(mode)}
               title={m.description}
-              className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-full border transition-all whitespace-nowrap ${
+              className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 min-h-[40px] text-[10px] font-bold uppercase tracking-wider rounded-full border transition-all whitespace-nowrap ${
                 localMode === mode
                   ? 'bg-[#D4AF37] text-black border-[#D4AF37]'
                   : 'border-stone-800 text-stone-500 hover:border-stone-600 hover:text-stone-300'
@@ -274,6 +280,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </button>
           );
         })}
+      </div>
+
+      {/* ── Active Mode Description ─────────────────────────────────────── */}
+      <div className="px-4 py-1.5 bg-black/10 border-b border-white/5 shrink-0">
+        <p className="text-[9px] text-stone-600 uppercase tracking-widest text-center">
+          {MODE_LABELS[localMode]?.icon} {MODE_LABELS[localMode]?.description}
+        </p>
       </div>
 
       {/* ── Puter Sign-in Banner ─────────────────────────────────────────── */}
@@ -390,7 +403,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   ? 'AI service unavailable — please refresh'
                   : puterStatus === 'checking'
                     ? 'Connecting to AI…'
-                    : 'Ask anything about the Bible… (Enter to send)'
+                    : `${MODE_LABELS[localMode]?.label ?? 'Ask'} mode — type your question… (Enter to send)`
             }
             disabled={inputDisabled}
             rows={1}
