@@ -23,13 +23,37 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
   const streak = storage.getStreak();
 
   const encouragements = [
-    { ref: "Philippians 4:13", text: "I can do all things through Christ which strengtheneth me.", focus: "Strength" },
-    { ref: "Joshua 1:9", text: "Be strong and of a good courage; be not afraid, neither be thou dismayed.", focus: "Courage" },
-    { ref: "Matthew 11:28", text: "Come unto me, all ye that labour and are heavy laden, and I will give you rest.", focus: "Rest" },
-    { ref: "Romans 8:28", text: "And we know that all things work together for good to them that love God.", focus: "Trust" },
-    { ref: "Psalm 23:1", text: "The LORD is my shepherd; I shall not want.", focus: "Peace" },
-    { ref: "Isaiah 40:31", text: "They that wait upon the LORD shall renew their strength.", focus: "Endurance" },
-    { ref: "John 3:16", text: "For God so loved the world, that he gave his only begotten Son.", focus: "Love" },
+    { ref: "Philippians 4:13",  text: "I can do all things through Christ which strengtheneth me.",                                    focus: "Strength"   },
+    { ref: "Joshua 1:9",        text: "Be strong and of a good courage; be not afraid, neither be thou dismayed.",                      focus: "Courage"    },
+    { ref: "Matthew 11:28",     text: "Come unto me, all ye that labour and are heavy laden, and I will give you rest.",                 focus: "Rest"       },
+    { ref: "Romans 8:28",       text: "And we know that all things work together for good to them that love God.",                       focus: "Trust"      },
+    { ref: "Psalm 23:1",        text: "The LORD is my shepherd; I shall not want.",                                                      focus: "Peace"      },
+    { ref: "Isaiah 40:31",      text: "They that wait upon the LORD shall renew their strength.",                                        focus: "Endurance"  },
+    { ref: "John 3:16",         text: "For God so loved the world, that he gave his only begotten Son.",                                 focus: "Love"       },
+    { ref: "Proverbs 3:5",      text: "Trust in the LORD with all thine heart; and lean not unto thine own understanding.",              focus: "Wisdom"     },
+    { ref: "Jeremiah 29:11",    text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace.",             focus: "Hope"       },
+    { ref: "Psalm 119:105",     text: "Thy word is a lamp unto my feet, and a light unto my path.",                                      focus: "Scripture"  },
+    { ref: "Romans 8:38",       text: "For I am persuaded, that neither death, nor life, nor angels…shall be able to separate us from the love of God.", focus: "Security" },
+    { ref: "2 Timothy 3:16",    text: "All scripture is given by inspiration of God, and is profitable for doctrine.",                   focus: "The Word"   },
+    { ref: "Psalm 46:1",        text: "God is our refuge and strength, a very present help in trouble.",                                 focus: "Refuge"     },
+    { ref: "Matthew 6:33",      text: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you.", focus: "Priority" },
+    { ref: "Galatians 2:20",    text: "I am crucified with Christ: nevertheless I live; yet not I, but Christ liveth in me.",            focus: "Union"      },
+    { ref: "Hebrews 4:12",      text: "For the word of God is quick, and powerful, and sharper than any twoedged sword.",                focus: "Power"      },
+    { ref: "John 14:6",         text: "Jesus saith unto him, I am the way, the truth, and the life.",                                   focus: "Christ"     },
+    { ref: "Psalm 27:1",        text: "The LORD is my light and my salvation; whom shall I fear?",                                       focus: "Confidence" },
+    { ref: "Isaiah 53:5",       text: "But he was wounded for our transgressions, he was bruised for our iniquities.",                  focus: "Atonement"  },
+    { ref: "Romans 5:8",        text: "But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",  focus: "Grace"      },
+    { ref: "1 John 4:19",       text: "We love him, because he first loved us.",                                                         focus: "Love"       },
+    { ref: "Ephesians 2:8",     text: "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God.",     focus: "Salvation"  },
+    { ref: "James 1:5",         text: "If any of you lack wisdom, let him ask of God, that giveth to all men liberally.",               focus: "Wisdom"     },
+    { ref: "1 Corinthians 13:4",text: "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself.",          focus: "Love"       },
+    { ref: "Micah 6:8",         text: "What doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly.",    focus: "Justice"    },
+    { ref: "Psalm 139:14",      text: "I will praise thee; for I am fearfully and wonderfully made.",                                    focus: "Identity"   },
+    { ref: "2 Corinthians 5:17",text: "Therefore if any man be in Christ, he is a new creature: old things are passed away.",            focus: "Renewal"    },
+    { ref: "Philippians 4:7",   text: "And the peace of God, which passeth all understanding, shall keep your hearts and minds.",         focus: "Peace"      },
+    { ref: "Lamentations 3:23", text: "They are new every morning: great is thy faithfulness.",                                          focus: "Faithfulness"},
+    { ref: "Deuteronomy 31:6",  text: "Be strong and of a good courage, fear not…for the LORD thy God, he it is that doth go with thee.", focus: "Courage"  },
+    { ref: "Revelation 21:4",   text: "And God shall wipe away all tears from their eyes; and there shall be no more death.",            focus: "Eternity"   },
   ];
 
   const dailyVerse = encouragements[new Date().getDate() % encouragements.length];
@@ -59,13 +83,15 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
           <p className="text-[10px] text-stone-600 uppercase tracking-[0.3em]">Daily Discipleship</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-[#D4AF37]/5 px-4 py-3 rounded-2xl border border-[#D4AF37]/20">
-            <span className="text-xl">🔥</span>
-            <div>
-              <p className="text-[8px] font-bold text-[#D4AF37] uppercase tracking-widest leading-none">Streak</p>
-              <p className="text-lg font-bold text-stone-200 leading-none mt-1">{streak} Days</p>
+          {streak > 0 && (
+            <div className="flex items-center gap-2 bg-[#D4AF37]/5 px-4 py-3 rounded-2xl border border-[#D4AF37]/20">
+              <span className="text-xl">📖</span>
+              <div>
+                <p className="text-[8px] font-bold text-[#D4AF37] uppercase tracking-widest leading-none">{streak} {streak === 1 ? 'Day' : 'Days'} in the Word</p>
+                <p className="text-[9px] text-stone-600 leading-none mt-1">Keep reading</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 

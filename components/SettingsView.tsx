@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storage } from '../services/storageService';
-import { initializeOfflineKJV } from '../services/bibleService';
+import { initializeOfflineKJV, getCachedChapterCount } from '../services/bibleService';
 import { AppSettings, AppTab } from '../types';
 
 interface SettingsViewProps {
@@ -12,6 +12,11 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) => {
   const [settings, setSettings] = useState<AppSettings>(storage.getSettings());
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [cachedCount, setCachedCount] = useState<number>(0);
+
+  useEffect(() => {
+    getCachedChapterCount().then(setCachedCount);
+  }, []);
 
   const update = (newSettings: Partial<AppSettings>) => {
     const s = { ...settings, ...newSettings };
@@ -23,6 +28,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
     setSyncStatus("Starting...");
     try {
       await initializeOfflineKJV(setSyncStatus);
+      const count = await getCachedChapterCount();
+      setCachedCount(count);
       setSyncStatus(null);
       alert("KJV Offline Ready");
     } catch {
@@ -129,7 +136,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
         {/* Offline KJV */}
         <div className="glass-dark border border-white/5 p-8 rounded-[2rem] space-y-6 text-center">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">Offline Bible</h3>
-          <p className="text-xs text-stone-500 leading-relaxed px-4">Download the full KJV for 100% offline reading — no internet needed.</p>
+          <p className="text-xs text-stone-500 leading-relaxed px-4">
+            Chapters you read are saved automatically for offline use. You can also download the full KJV at once below.
+          </p>
+          {cachedCount > 0 && (
+            <div className="flex items-center justify-center gap-2 py-2 px-4 bg-emerald-950/20 border border-emerald-900/30 rounded-xl">
+              <span className="text-emerald-500 text-sm">●</span>
+              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
+                {cachedCount} chapter{cachedCount !== 1 ? 's' : ''} cached offline
+              </p>
+            </div>
+          )}
           <button
             onClick={startSync}
             disabled={syncStatus !== null}
@@ -139,7 +156,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
                 : 'bg-[#D4AF37] text-black shadow-xl hover:scale-[1.01] active:scale-95'
             }`}
           >
-            {syncStatus ?? 'Download Offline KJV'}
+            {syncStatus ?? 'Download Full KJV Offline'}
           </button>
         </div>
 

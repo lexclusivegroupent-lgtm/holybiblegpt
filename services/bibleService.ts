@@ -240,6 +240,18 @@ export const initializeOfflineKJV = async (onProgress: (msg: string) => void): P
   }
 };
 
+export const getCachedChapterCount = async (): Promise<number> => {
+  try {
+    const db = await openDB();
+    return new Promise(resolve => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).count();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(0);
+    });
+  } catch { return 0; }
+};
+
 export const prefetchAdjacent = (translation: Translation, book: string, chapter: string): void => {
   const num = parseInt(chapter, 10);
   const allBooks = [...BIBLE_BOOKS, ...HISTORICAL_BOOKS];

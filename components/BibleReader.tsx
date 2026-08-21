@@ -183,14 +183,14 @@ const BibleReader: React.FC<BibleReaderProps> = ({
           </span>
         </div>
 
-        {/* Study chapter shortcut */}
+        {/* Chapter overview shortcut */}
         <button
-          onClick={() => onStudyChapter?.(AppMode.CHAT)}
+          onClick={() => onStudyChapter?.(AppMode.CHAPTER_OVERVIEW)}
           className="min-h-[44px] px-2 flex items-center justify-center text-stone-600 hover:text-[#D4AF37] transition-colors rounded-lg hover:bg-white/5 shrink-0 text-base"
-          aria-label="Study this chapter with AI"
-          title="Study with AI"
+          aria-label="Chapter overview"
+          title="Chapter Overview"
         >
-          ✨
+          📋
         </button>
 
         {/* Chapter navigation — double-chevrons so they look nothing like Back */}
@@ -283,10 +283,10 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                 « Prev Chapter
               </button>
               <button
-                onClick={() => onStudyChapter?.(AppMode.DEEP_STUDY)}
+                onClick={() => onStudyChapter?.(AppMode.CHAPTER_OVERVIEW)}
                 className="px-5 py-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-all min-h-[44px]"
               >
-                ✨ Study with AI
+                📋 Chapter Overview
               </button>
               <button
                 onClick={() => hasNext && onNavigate(state.book, (chapterNum + 1).toString())}

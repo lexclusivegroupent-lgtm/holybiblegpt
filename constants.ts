@@ -62,20 +62,24 @@ export const MODE_PROMPTS: Record<AppMode, string> = {
 
   [AppMode.THEOLOGIAN]:
     "Begin by quoting the passage. Then provide a theologically rigorous response: examine the text in its biblical-theological context, note the key interpretive positions among evangelical scholars (with their scriptural support), state clearly what Scripture most plainly teaches, and identify where faithful disagreement exists. Prioritize the biblical text over tradition.",
+
+  [AppMode.CHAPTER_OVERVIEW]:
+    "Give a focused chapter overview. Follow this structure exactly:\n1. Opening Verse — Quote 1–2 key verses from this chapter (exact wording, labeled by translation).\n2. Central Theme — The heart of this chapter in 1–2 sentences.\n3. Key Moments — The 2–3 most significant verses or events in the chapter. Quote each one briefly and explain why it matters.\n4. Historical Setting — 1–2 sentences on the author, audience, and situation.\n5. Christ Connection — How this chapter anticipates, reflects, or points to Jesus. Skip only if a connection would be genuinely strained.\nKeep the entire response focused and under 450 words. Start with Scripture, end with Scripture.",
 };
 
 export const MODE_LABELS: Record<AppMode, { label: string; icon: string; description: string }> = {
-  [AppMode.CHAT]:            { label: 'Ask',      icon: '💬', description: 'Quick Bible guidance' },
-  [AppMode.SIMPLIFY]:        { label: 'Simplify', icon: '✨', description: 'Plain language' },
-  [AppMode.DEEP_STUDY]:      { label: 'Explain',  icon: '📖', description: 'Deep study' },
-  [AppMode.CROSS_REFERENCE]: { label: 'Related',  icon: '🔗', description: 'Cross references' },
-  [AppMode.WORD_STUDY]:      { label: 'Word',     icon: '🔡', description: 'Hebrew & Greek' },
-  [AppMode.APPLY]:           { label: 'Apply',    icon: '👟', description: 'Practical use' },
-  [AppMode.CONTEXT]:         { label: 'Context',  icon: '🏛️', description: 'Historical setting' },
-  [AppMode.DAILY_PLAN]:      { label: 'Plan',     icon: '📅', description: 'Reading plan' },
-  [AppMode.KIDS]:            { label: 'Kids',     icon: '🎨', description: 'For children' },
-  [AppMode.PRAYER_HELP]:     { label: 'Prayer',   icon: '🙏', description: 'Help me pray' },
-  [AppMode.THEOLOGIAN]:      { label: 'Theology', icon: '🎓', description: 'Scholar level' },
+  [AppMode.CHAT]:             { label: 'Ask',      icon: '💬', description: 'Quick Bible guidance' },
+  [AppMode.SIMPLIFY]:         { label: 'Simplify', icon: '✨', description: 'Plain language' },
+  [AppMode.DEEP_STUDY]:       { label: 'Explain',  icon: '📖', description: 'Deep study' },
+  [AppMode.CROSS_REFERENCE]:  { label: 'Related',  icon: '🔗', description: 'Cross references' },
+  [AppMode.WORD_STUDY]:       { label: 'Word',     icon: '🔡', description: 'Hebrew & Greek' },
+  [AppMode.APPLY]:            { label: 'Apply',    icon: '👟', description: 'Practical use' },
+  [AppMode.CONTEXT]:          { label: 'Context',  icon: '🏛️', description: 'Historical setting' },
+  [AppMode.DAILY_PLAN]:       { label: 'Plan',     icon: '📅', description: 'Reading plan' },
+  [AppMode.KIDS]:             { label: 'Kids',     icon: '🎨', description: 'For children' },
+  [AppMode.PRAYER_HELP]:      { label: 'Prayer',   icon: '🙏', description: 'Help me pray' },
+  [AppMode.THEOLOGIAN]:       { label: 'Theology', icon: '🎓', description: 'Scholar level' },
+  [AppMode.CHAPTER_OVERVIEW]: { label: 'Overview', icon: '📋', description: 'Chapter overview' },
 };
 
 export const HISTORICAL_INTRODUCTIONS: Record<string, string> = {
