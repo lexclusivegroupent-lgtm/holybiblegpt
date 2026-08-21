@@ -43,7 +43,80 @@ const NotesView = lazy(() => import('./components/NotesView'));
 
 import { Translation, ReaderState, PassageLink, AppMode, AppTab } from './types';
 import { storage } from './services/storageService';
-import { initializeOfflineKJV } from './services/bibleService';
+import { initializeOfflineKJV, BIBLE_BOOKS, HISTORICAL_BOOKS } from './services/bibleService';
+
+// ── URL ↔ App-state utilities ───────────────────────────────────────────────
+
+const ALL_BOOKS = [...BIBLE_BOOKS, ...HISTORICAL_BOOKS];
+const bookToSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
+const slugToBook = (slug: string): string | null =>
+  ALL_BOOKS.find(b => bookToSlug(b.name) === slug)?.name ?? null;
+
+// Tabs that get a real URL path (read gets /bible/book/chapter instead)
+const TAB_ROUTES: Partial<Record<AppTab, string>> = {
+  home: '/',
+  about: '/about',
+  faq: '/faq',
+  privacy: '/privacy',
+  terms: '/terms',
+  contact: '/contact',
+  search: '/search',
+  library: '/library',
+  prayer: '/prayer',
+  settings: '/settings',
+  learn: '/learn',
+  references: '/references',
+  harmony: '/harmony',
+  kids: '/kids',
+  faith: '/faith',
+  disclaimer: '/disclaimer',
+  translations: '/translations',
+  guidelines: '/guidelines',
+  instructions: '/instructions',
+  changelog: '/changelog',
+  groups: '/groups',
+  theology: '/theology',
+  notes: '/notes',
+  support: '/support',
+};
+const ROUTE_TO_TAB: Record<string, AppTab> = Object.fromEntries(
+  Object.entries(TAB_ROUTES).map(([k, v]) => [v, k as AppTab])
+);
+
+// Per-page title + description used both for document.title and OG tags
+const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
+  home:         ['Holy Bible GPT – Free Scripture-First Bible Study', 'Free AI Bible study companion. Read, study, and grow with Scripture. No account or subscription — powered by the Word of God.'],
+  study:        ['Scripture Study Companion – Holy Bible GPT', 'Ask Bible questions and receive Scripture-first answers powered by free AI. KJV, ESV, and WEB translations.'],
+  about:        ['About Holy Bible GPT – Scripture-First, Always Free', 'Learn how Holy Bible GPT works: a Scripture-first study tool that quotes the Word of God before everything else.'],
+  faq:          ['FAQ – Holy Bible GPT', 'Frequently asked questions about Holy Bible GPT, free AI Bible study, and how to use the Scripture study tools.'],
+  privacy:      ['Privacy Policy – Holy Bible GPT', 'No accounts, no data collection. Holy Bible GPT stores everything on your device only. Your data stays with you.'],
+  terms:        ['Terms of Service – Holy Bible GPT', 'Terms of service for the Holy Bible GPT free Scripture study app.'],
+  contact:      ['Contact – Holy Bible GPT', 'Get in touch with the Holy Bible GPT team. Send feedback, report an issue, or ask a question.'],
+  search:       ['Search the Bible – Holy Bible GPT', 'Search Scripture by topic or verse reference. AI-powered verse discovery finds what you are looking for.'],
+  library:      ['My Library – Holy Bible GPT', 'Your saved bookmarks, highlights, notes, and reading history — all stored privately on your device.'],
+  prayer:       ['Prayer Journal – Holy Bible GPT', 'Record your prayers, track answered prayers, and grow in your prayer life with a personal prayer journal.'],
+  learn:        ['Bible Timeline – Holy Bible GPT', 'Explore key events in Scripture from Creation to Revelation across the Biblical timeline.'],
+  references:   ['Scripture References – Holy Bible GPT', 'Cross-reference Scripture and explore how passages connect across the whole Bible.'],
+  harmony:      ['Gospel Harmony – Holy Bible GPT', 'See parallel accounts of the life of Christ across Matthew, Mark, Luke, and John — side by side.'],
+  kids:         ['Kids Bible Mode – Holy Bible GPT', 'Child-friendly Bible study with simple, gentle language for young readers and families.'],
+  faith:        ['What We Believe – Holy Bible GPT', 'The faith foundation behind Holy Bible GPT and our commitment to Scripture as the final authority.'],
+  theology:     ['Theology Topics – Holy Bible GPT', 'Explore major theological themes and doctrines grounded in Scripture.'],
+  instructions: ['How to Use – Holy Bible GPT', 'A quick guide to getting the most out of Holy Bible GPT for daily Bible study.'],
+  disclaimer:   ['AI Disclaimer – Holy Bible GPT', 'Understanding the role and limits of AI in Holy Bible GPT.'],
+};
+
+function updateMeta(title: string, desc: string, path: string) {
+  document.title = title;
+  const sel = <T extends Element>(q: string) => document.querySelector<T>(q);
+  sel<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', desc);
+  sel<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', title);
+  sel<HTMLMetaElement>('meta[property="og:description"]')?.setAttribute('content', desc);
+  sel<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', `https://holybiblegpt.com${path}`);
+  sel<HTMLMetaElement>('meta[name="twitter:title"]')?.setAttribute('content', title);
+  sel<HTMLMetaElement>('meta[name="twitter:description"]')?.setAttribute('content', desc);
+  const canonical = sel<HTMLLinkElement>('link[rel="canonical"]');
+  if (canonical) canonical.href = `https://holybiblegpt.com${path}`;
+}
 
 const App: React.FC = () => {
   const [currentTranslation, setCurrentTranslation] = useState<Translation>(Translation.KJV);
@@ -65,7 +138,44 @@ const App: React.FC = () => {
   const [isPreparing, setIsPreparing] = useState(false);
   const [prepMessage, setPrepMessage] = useState("");
 
+  // ── URL-sync effect: runs whenever the active tab or reader position changes ──
   useEffect(() => {
+    let path: string;
+    let title: string;
+    let desc: string;
+
+    if (activeTab === 'read') {
+      const slug = bookToSlug(readerState.book);
+      path = `/bible/${slug}/${readerState.chapter}`;
+      title = `${readerState.book} ${readerState.chapter} – Bible Reading – Holy Bible GPT`;
+      desc = `Read ${readerState.book} chapter ${readerState.chapter} (KJV, ESV, WEB). Study, highlight, bookmark, and explore Scripture.`;
+    } else {
+      path = TAB_ROUTES[activeTab] ?? '/';
+      const [t, d] = PAGE_META[activeTab] ?? PAGE_META.home!;
+      title = t;
+      desc = d;
+    }
+
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, '', path);
+    }
+    updateMeta(title, desc, path);
+  }, [activeTab, readerState.book, readerState.chapter]);
+
+  useEffect(() => {
+    // ── Parse initial URL so deep-links and shared links work ──
+    const path = window.location.pathname;
+    const bibleMatch = path.match(/^\/bible\/([^/]+)\/(\d+)$/);
+    if (bibleMatch) {
+      const book = slugToBook(bibleMatch[1]);
+      if (book) {
+        setReaderState(prev => ({ ...prev, book, chapter: bibleMatch[2] }));
+        setActiveTab('read');
+      }
+    } else if (ROUTE_TO_TAB[path] && ROUTE_TO_TAB[path] !== 'home') {
+      setActiveTab(ROUTE_TO_TAB[path]);
+    }
+
     const accepted = localStorage.getItem('hbgpt_onboarding_accepted');
     if (!accepted) setShowOnboarding(true);
 

@@ -79,8 +79,8 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5">
         <div className="space-y-1">
-          <h2 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest leading-none">My Walk</h2>
-          <p className="text-[10px] text-stone-600 uppercase tracking-[0.3em]">Daily Discipleship</p>
+          <h1 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest leading-none">My Walk</h1>
+          <p className="text-[10px] text-stone-600 uppercase tracking-[0.3em]">Daily Discipleship · Holy Bible GPT</p>
         </div>
         <div className="flex items-center gap-3">
           {streak > 0 && (

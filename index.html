@@ -4,15 +4,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bible Study Buddy | Scripture, Prayer, and Daily Growth</title>
-  <meta name="description"
-    content="A simple Bible study companion for scripture, prayer, and daily growth.">
+
+  <!-- ── Primary SEO ───────────────────────────────────────────────────────── -->
+  <title>Holy Bible GPT – Free Scripture-First Bible Study</title>
+  <meta name="description" content="Free AI Bible study companion. Read, study, and grow with Scripture. No account or subscription needed — powered by the Word of God.">
+  <meta name="keywords" content="Bible study, free Bible app, AI Bible, KJV, ESV, scripture, devotional, Bible reader, Bible GPT">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://holybiblegpt.com/">
+
+  <!-- ── Open Graph (social sharing) ──────────────────────────────────────── -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Holy Bible GPT">
+  <meta property="og:url" content="https://holybiblegpt.com/">
+  <meta property="og:title" content="Holy Bible GPT – Free Scripture-First Bible Study">
+  <meta property="og:description" content="Free AI Bible study companion. Read, study, and grow with Scripture. No account or subscription needed — powered by the Word of God.">
+  <meta property="og:image" content="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:locale" content="en_US">
+
+  <!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Holy Bible GPT – Free Scripture-First Bible Study">
+  <meta name="twitter:description" content="Free AI Bible study companion. Read, study, and grow with Scripture. No account or subscription — powered by the Word of God.">
+  <meta name="twitter:image" content="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
+
+  <!-- ── PWA & Icons ───────────────────────────────────────────────────────── -->
   <meta name="theme-color" content="#000000">
-  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Holy Bible GPT">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/png" href="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
   <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
 
+  <!-- ── Structured Data ───────────────────────────────────────────────────── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://holybiblegpt.com/#website",
+        "url": "https://holybiblegpt.com/",
+        "name": "Holy Bible GPT",
+        "description": "Free AI Bible study companion. Scripture-first answers, reader, devotionals, and prayer tools.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://holybiblegpt.com/search?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://holybiblegpt.com/#app",
+        "name": "Holy Bible GPT",
+        "url": "https://holybiblegpt.com/",
+        "description": "Free Scripture-first Bible study powered by AI. Read KJV, ESV, and WEB translations. Ask Bible questions, study passages, journal prayers, and grow daily.",
+        "applicationCategory": "ReligiousApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+
+  <!-- ── External Resources ───────────────────────────────────────────────── -->
   <script src="https://js.puter.com/v2/" onerror="window.__puterLoadFailed=true"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,24 +146,11 @@
       text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
     }
 
-    ::-webkit-scrollbar {
-      width: 4px;
-    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.15); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.4); }
 
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: rgba(212, 175, 55, 0.15);
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(212, 175, 55, 0.4);
-    }
-
-    /* Accessibility: Focus styles */
     button:focus-visible,
     select:focus-visible,
     input:focus-visible {
@@ -106,17 +158,12 @@
       outline-offset: 2px;
     }
 
-    /* Performance: Smooth layout shifts */
-    main {
-      transition: opacity 0.3s ease;
-    }
+    main { transition: opacity 0.3s ease; }
 
-    /* Hide scrollbar but keep scrollability (used for horizontal tab strips) */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 
-  
   <script type="module" src="/index.tsx"></script>
 </head>
 
