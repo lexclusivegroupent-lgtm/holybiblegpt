@@ -202,7 +202,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-stone-900/50 shrink-0">
         <div>
           <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37] accent-font">
-            Bible Study AI
+            Scripture Study Companion
           </h2>
           {readingContext ? (
             <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
@@ -210,7 +210,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </p>
           ) : (
             <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
-              {isReady ? 'Free · Scripture First' : puterStatus === 'checking' ? 'Connecting…' : 'Sign in to continue'}
+              {isReady ? 'Study aid · Not a pastor or authority' : puterStatus === 'checking' ? 'Connecting…' : 'Sign in to continue'}
             </p>
           )}
         </div>
@@ -218,7 +218,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="flex items-center gap-2">
           {onTranslationChange && (
             <div className="flex rounded-lg border border-stone-800 overflow-hidden text-[10px] font-bold uppercase tracking-wider">
-              {(['KJV', 'ESV'] as const).map((t, i) => (
+              {(['KJV', 'ESV', 'WEB'] as const).map((t, i) => (
                 <button
                   key={t}
                   onClick={() => onTranslationChange(t as Translation)}
@@ -406,8 +406,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             ↑
           </button>
         </form>
-        <p className="text-[9px] text-stone-700 uppercase tracking-widest text-center mt-2">
-          Scripture is the final authority · AI can make mistakes · Verify with your Bible
+        <p className="text-[9px] text-stone-600 tracking-wide text-center mt-2 leading-relaxed">
+          Scripture is the final authority — AI can make mistakes. Always verify with your Bible, pray, and consult your church.
         </p>
       </div>
     </div>
