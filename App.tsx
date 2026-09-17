@@ -85,7 +85,7 @@ const ROUTE_TO_TAB: Record<string, AppTab> = Object.fromEntries(
 
 // Per-page title + description used both for document.title and OG tags
 const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
-  home:         ['Holy Bible GPT – Free Scripture-First Bible Study', 'Free AI Bible study companion. Read, study, and grow with Scripture. No account or subscription — powered by the Word of God.'],
+  home:         ['Holy Bible GPT – Free Scripture-First Bible Study', "Free Scripture-first Bible study by The Christian's Deck. Read the Bible, ask questions, use cross-references, and pray from Scripture. The AI is a study aid — God's Word holds final authority."],
   study:        ['Scripture Study Companion – Holy Bible GPT', 'Ask Bible questions and receive Scripture-first answers powered by free AI. KJV, ESV, and WEB translations.'],
   about:        ['About Holy Bible GPT – Scripture-First, Always Free', 'Learn how Holy Bible GPT works: a Scripture-first study tool that quotes the Word of God before everything else.'],
   faq:          ['FAQ – Holy Bible GPT', 'Frequently asked questions about Holy Bible GPT, free AI Bible study, and how to use the Scripture study tools.'],
