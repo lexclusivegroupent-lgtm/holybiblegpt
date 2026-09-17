@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Keep the ESV proxy private (server-side only, not useful to crawl)
+Disallow: /api/
+
+# Keep generated assets out of the index (they're cache-busted anyway)
+Disallow: /assets/
+
+Sitemap: https://holybiblegpt.com/sitemap.xml

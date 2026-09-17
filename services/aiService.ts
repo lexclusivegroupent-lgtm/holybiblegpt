@@ -1,5 +1,5 @@
 
-import { GLOBAL_BEHAVIOR, MODE_PROMPTS } from "../constants";
+import { GLOBAL_BEHAVIOR, MODE_PROMPTS, MODE_LABELS } from "../constants";
 import { AppMode, Translation } from "../types";
 
 declare global {
@@ -146,13 +146,17 @@ export const sendMessageStream = async (
   history: { role: 'user' | 'assistant'; content: string }[],
   onChunk: (text: string) => void
 ): Promise<string> => {
-  const systemContent =
-    GLOBAL_BEHAVIOR(translation) +
-    "\n\n" +
-    (MODE_PROMPTS[mode] ?? MODE_PROMPTS[AppMode.CHAT]) +
-    (kidsMode
-      ? "\n\nSPECIAL INSTRUCTION: The user is a young child. Use ONLY very simple words and very short sentences. A warm, loving, gentle tone. Avoid all adult, complex, or frightening content."
-      : "");
+  const modeLabel = MODE_LABELS[mode]?.label ?? 'General';
+  const systemContent = [
+    GLOBAL_BEHAVIOR(translation),
+    "---",
+    `ACTIVE STUDY MODE: ${modeLabel}`,
+    "Follow the instruction below for this response's format and focus. Maintain all Scripture accuracy and quotation rules above. When this mode calls for a different structure, use the mode format instead of the default 4-step structure:",
+    MODE_PROMPTS[mode] ?? MODE_PROMPTS[AppMode.CHAT],
+    kidsMode
+      ? "SPECIAL INSTRUCTION: The user is a young child. Use ONLY very simple words and very short sentences. A warm, loving, gentle tone. Avoid all adult, complex, or frightening content."
+      : "",
+  ].filter(Boolean).join("\n\n");
 
   const messages: Array<{ role: string; content: string }> = [
     { role: "system", content: systemContent },

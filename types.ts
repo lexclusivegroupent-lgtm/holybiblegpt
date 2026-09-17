@@ -15,7 +15,8 @@ export enum AppMode {
   DAILY_PLAN = 'daily_plan',
   KIDS = 'kids',
   PRAYER_HELP = 'prayer_help',
-  THEOLOGIAN = 'theologian'
+  THEOLOGIAN = 'theologian',
+  CHAPTER_OVERVIEW = 'chapter_overview'
 }
 
 export enum Translation {
