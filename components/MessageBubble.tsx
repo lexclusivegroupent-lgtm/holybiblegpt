@@ -9,18 +9,47 @@ interface MessageBubbleProps {
   onSavePrayer?: (text: string) => void;
 }
 
-// Detect lines that are Scripture quotations so they can be styled prominently
-const isScriptureLine = (line: string): boolean => {
-  const t = line.trim();
-  return (t.startsWith('"') || t.startsWith('“')) && t.length > 10;
+// Detect lines that are ALL-CAPS section labels, e.g. "SCRIPTURE", "WHAT IS CLEAR"
+const isSectionLabel = (line: string): boolean =>
+  /^[A-Z][A-Z\s]{2,35}$/.test(line.trim());
+
+// Convert ALL-CAPS label to Sentence case for display
+const toSentenceCase = (s: string): string =>
+  s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+// Render a text string with clickable inline Bible references
+// Matches: "Romans 8:2", "1 Corinthians 13:4", "Song of Solomon 1:1", "Psalm 119:105"
+const renderWithRefs = (
+  text: string,
+  onOpen: (l: PassageLink) => void
+): React.ReactNode => {
+  const re = /\b((?:[123]\s+)?(?:Song of )?[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(\d+):(\d+(?:-\d+)?)\b/g;
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    const [full, book, chapter, verses] = m;
+    parts.push(
+      <button
+        key={m.index}
+        onClick={() => onOpen({ book, chapter, verses })}
+        className="text-[#D4AF37] underline decoration-dotted underline-offset-2 hover:opacity-75 transition-opacity"
+      >
+        {full}
+      </button>
+    );
+    last = m.index + full.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
 };
 
-const isRefLine = (line: string): boolean => {
-  const t = line.trim();
-  return /^[—–-]\s/.test(t) && /\d+:\d+/.test(t);
-};
-
-const renderText = (text: string, isPrayer: boolean) => {
+const renderBotText = (
+  text: string,
+  isPrayer: boolean,
+  onOpen: (l: PassageLink) => void
+) => {
   if (isPrayer) {
     return (
       <p className="bible-font text-xl font-light italic text-stone-300 leading-[1.8] whitespace-pre-wrap">
@@ -29,43 +58,98 @@ const renderText = (text: string, isPrayer: boolean) => {
     );
   }
 
-  return (
-    <div className="space-y-0.5">
-      {text.split('\n').map((line, i) => {
-        if (!line.trim()) return <div key={i} className="h-2" />;
+  const lines = text.split('\n');
+  const out: React.ReactNode[] = [];
+  let i = 0;
 
-        if (isScriptureLine(line)) {
-          return (
-            <div key={i} className="my-4 pl-4 border-l-2 border-[#D4AF37]/50 bg-[#D4AF37]/4 rounded-r-lg py-1">
-              <p className="bible-font text-xl italic text-stone-100 leading-[1.7]">{line}</p>
-            </div>
-          );
-        }
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
 
-        if (isRefLine(line)) {
-          return (
-            <p key={i} className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider mt-[-6px] mb-3 pl-4">
-              {line}
-            </p>
-          );
-        }
+    // Empty line → spacing
+    if (!trimmed) {
+      out.push(<div key={`g${i}`} className="h-2" />);
+      i++;
+      continue;
+    }
 
-        if (/^key scriptures:/i.test(line.trim())) {
-          return (
-            <p key={i} className="text-[9px] font-bold text-stone-500 uppercase tracking-widest mt-5 mb-1">
-              {line}
-            </p>
-          );
-        }
+    // ALL-CAPS section label
+    if (isSectionLabel(trimmed)) {
+      out.push(
+        <p key={`sl${i}`} className={`text-sm font-bold text-stone-200 mb-1 ${out.length > 0 ? 'mt-5' : 'mt-0'}`}>
+          {toSentenceCase(trimmed)}
+        </p>
+      );
+      i++;
+      continue;
+    }
 
-        return (
-          <p key={i} className="bible-font text-base text-stone-300 leading-relaxed">
-            {line}
-          </p>
-        );
-      })}
-    </div>
-  );
+    // "Key Scriptures" label — skip if nothing follows
+    if (/^key scriptures\s*:?$/i.test(trimmed)) {
+      const hasContent = lines.slice(i + 1).some(l => l.trim() !== '');
+      if (!hasContent) { i++; continue; }
+      out.push(
+        <p key={`ks${i}`} className="text-[9px] font-bold text-stone-500 uppercase tracking-widest mt-5 mb-1">
+          Key Scriptures
+        </p>
+      );
+      i++;
+      continue;
+    }
+
+    // Scripture verse quote: starts with " or "
+    if (/^[""]/.test(trimmed) && trimmed.length > 10) {
+      out.push(
+        <p key={`vq${i}`} className="bible-font text-xl italic text-stone-100 leading-[1.7] my-2">
+          {renderWithRefs(trimmed, onOpen)}
+        </p>
+      );
+      i++;
+      continue;
+    }
+
+    // Attribution: starts with — and contains a verse reference
+    if (/^[—–]/.test(trimmed)) {
+      out.push(
+        <p key={`at${i}`} className="text-[10px] font-bold text-[#D4AF37] tracking-wide mt-[-4px] mb-2">
+          {trimmed}
+        </p>
+      );
+      i++;
+      continue;
+    }
+
+    // Numbered list: collect consecutive "1. text", "2. text" lines
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+\.\s+/, ''));
+        i++;
+      }
+      out.push(
+        <ol key={`ol${i}`} className="space-y-2 my-2">
+          {items.map((item, j) => (
+            <li key={j} className="flex items-start gap-2.5">
+              <span className="text-stone-500 text-[11px] font-bold shrink-0 mt-[3px] w-4 text-right leading-tight">{j + 1}.</span>
+              <span className="bible-font text-base text-stone-300 leading-relaxed flex-1">
+                {renderWithRefs(item, onOpen)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    // Regular paragraph
+    out.push(
+      <p key={`p${i}`} className="bible-font text-base text-stone-300 leading-relaxed">
+        {renderWithRefs(trimmed, onOpen)}
+      </p>
+    );
+    i++;
+  }
+
+  return <div className="space-y-1">{out}</div>;
 };
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, onPray, onSavePrayer }) => {
@@ -108,27 +192,25 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
 
         {/* Bot header */}
         {isBot && (
-          <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-xl flex items-center justify-center border shadow-inner ${
-                isError
-                  ? 'bg-red-950/50 border-red-900/50'
-                  : isPrayer
-                    ? 'bg-[#D4AF37]/10 border-[#D4AF37]/30'
-                    : 'bg-stone-950 border-white/10'
-              }`}>
-                <span className="text-xs">{isError ? '⚠️' : isPrayer ? '🙏' : <span className="text-[#D4AF37]">♰</span>}</span>
-              </div>
-              <span className={`text-[9px] font-bold uppercase tracking-[0.3em] ${isError ? 'text-red-400/70' : 'text-stone-600'}`}>
-                {isError ? 'Notice' : isPrayer ? 'Scripture Prayer' : 'Study Companion'}
-              </span>
+          <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-white/5">
+            <div className={`w-7 h-7 rounded-xl flex items-center justify-center border shadow-inner ${
+              isError
+                ? 'bg-red-950/50 border-red-900/50'
+                : isPrayer
+                  ? 'bg-[#D4AF37]/10 border-[#D4AF37]/30'
+                  : 'bg-stone-950 border-white/10'
+            }`}>
+              <span className="text-xs">{isError ? '⚠️' : isPrayer ? '🙏' : <span className="text-[#D4AF37]">♰</span>}</span>
             </div>
+            <span className={`text-[9px] font-bold uppercase tracking-[0.3em] ${isError ? 'text-red-400/70' : 'text-stone-600'}`}>
+              {isError ? 'Notice' : isPrayer ? 'Scripture Prayer' : 'Study Companion'}
+            </span>
           </div>
         )}
 
-        {/* Message text — Scripture-first visual hierarchy */}
+        {/* Message body */}
         {isBot && !isError
-          ? renderText(cleanText, isPrayer)
+          ? renderBotText(cleanText, isPrayer, onOpenReader)
           : (
             <div className={`whitespace-pre-wrap leading-relaxed ${
               isBot ? 'bible-font text-lg font-light text-stone-300' : 'text-sm font-medium'
@@ -142,7 +224,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
         {isBot && !isError && (
           <div className="mt-6 pt-4 border-t border-white/5 space-y-4">
 
-            {/* Passage links — one-tap "Read full chapter" */}
+            {/* Passage links from [link_to_passage] tags */}
             {links.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {links.map((link, idx) => (
@@ -157,7 +239,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
               </div>
             )}
 
-            {/* Next steps row */}
+            {/* Pray about this */}
             {!isWelcome && !isPrayer && cleanText.trim().length > 30 && (
               <div className="flex flex-wrap gap-2">
                 <button
@@ -169,7 +251,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
               </div>
             )}
 
-            {/* Prayer actions */}
+            {/* Save prayer */}
             {isPrayer && (
               <button
                 onClick={handleSavePrayer}
@@ -184,11 +266,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
               </button>
             )}
 
-            {/* Permanent trust line — always visible */}
+            {/* Trust line */}
             <div className={`flex items-start gap-2 py-2 px-3 rounded-xl ${
-              isPrayer
-                ? 'bg-[#D4AF37]/5 border border-[#D4AF37]/10'
-                : 'bg-stone-900/50 border border-white/5'
+              isPrayer ? 'bg-[#D4AF37]/5 border border-[#D4AF37]/10' : 'bg-stone-900/50 border border-white/5'
             }`}>
               <span className="text-[10px] shrink-0 mt-0.5">✝️</span>
               <p className="text-[9px] text-stone-500 leading-snug">
