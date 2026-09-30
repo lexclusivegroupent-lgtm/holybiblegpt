@@ -51,13 +51,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
         <div className="glass-dark border border-[#D4AF37]/20 p-6 rounded-[2rem] space-y-3">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔑</span>
-            <h3 className="text-sm font-bold uppercase tracking-[0.3em] text-[#D4AF37]">Free AI via Puter</h3>
+            <h3 className="text-sm font-bold uppercase tracking-[0.3em] text-[#D4AF37]">Free AI Study Helper</h3>
           </div>
           <p className="text-xs text-stone-400 leading-relaxed">
-            Holy Bible GPT uses <strong className="text-stone-300">Puter.com</strong> for unlimited, free AI Bible study — no subscription or credit card required. Sign in with your free Puter account to ask questions, study Scripture, and generate prayers.
+            Holy Bible GPT keeps the AI study helper completely free by using a free third-party AI service — no subscription or credit card required. A free sign-in is needed to activate it. Bible reading, notes, and Gospel Harmony work without any account.
           </p>
           <p className="text-[10px] text-stone-600 leading-snug">
-            AI responses are powered by GPT-4o-mini via Puter · Scripture is the final authority
+            The AI is a study aid, not a pastor or spiritual authority · Scripture is the final authority
           </p>
         </div>
 

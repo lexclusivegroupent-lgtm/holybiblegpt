@@ -216,7 +216,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </p>
           ) : (
             <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
-              {isReady ? 'Study aid · Not a pastor or authority' : puterStatus === 'checking' ? 'Connecting…' : 'Sign in to continue'}
+              {isReady ? 'Study aid · Not a pastor or authority' : puterStatus === 'checking' ? 'Connecting…' : 'Bible reading works now · Sign in to use the AI'}
             </p>
           )}
         </div>
@@ -289,7 +289,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </p>
       </div>
 
-      {/* ── Puter Sign-in Banner ─────────────────────────────────────────── */}
+      {/* ── AI Sign-in Banner ────────────────────────────────────────────── */}
       {(needsSignIn || loadFailed) && (
         <div className="mx-4 mt-4 p-4 rounded-2xl border shrink-0 space-y-3
           bg-[#D4AF37]/5 border-[#D4AF37]/20">
@@ -299,11 +299,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-lg">🔑</span>
                 <p className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-                  Free Sign-In Required
+                  Free account needed for the AI
                 </p>
               </div>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Holy Bible GPT uses <strong className="text-stone-300">Puter</strong> for free, unlimited AI — no subscription needed. Create a free Puter account to unlock the full study experience.
+                Bible reading, notes, Gospel Harmony, and daily verse all work right now — no account needed. The AI study helper requires a free sign-in so Holy Bible GPT can stay completely free for everyone.
               </p>
               <p className="text-[10px] text-stone-600 leading-snug">
                 ⚠️ When prompted, <strong className="text-stone-500">allow pop-ups</strong> for this site so the sign-in window can open.
@@ -324,11 +324,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     Opening sign-in…
                   </>
                 ) : (
-                  '🔑 Sign In to Puter (Free)'
+                  '🔑 Sign in — free, no credit card'
                 )}
               </button>
               <p className="text-[9px] text-stone-700 text-center">
-                puter.com · free forever · no credit card
+                Free forever · The AI is a study aid, not a pastor · Scripture is the final authority
               </p>
             </>
           ) : (

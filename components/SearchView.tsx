@@ -75,7 +75,7 @@ Only output real, accurate Scripture. No commentary between entries.`;
       }
     } catch (err: any) {
       if (err.message === 'puter_unavailable') {
-        setResults([{ book: 'Sign In Required', chapter: '', text: 'Sign in to your free Puter account (puter.com) to unlock AI topic search.' }]);
+        setResults([{ book: 'Sign In Required', chapter: '', text: 'A free sign-in is needed so Holy Bible GPT can offer this AI feature at no cost. Use the Study tab to sign in, then come back to search by topic.' }]);
       } else {
         setResults([{ book: 'Notice', chapter: '', text: 'Topic search requires an internet connection. Try again shortly.' }]);
       }
@@ -158,7 +158,7 @@ Only output real, accurate Scripture. No commentary between entries.`;
       {results.length === 0 && !isSearching && (
         <div className="text-center pt-8 space-y-3">
           <p className="text-[9px] text-stone-700 uppercase tracking-widest leading-relaxed">
-            Topic search uses AI to find relevant verses · Sign in to Puter (free) to enable
+            Topic search uses the AI study helper · a free sign-in is needed to enable it
           </p>
           <p className="text-[9px] text-stone-800 uppercase tracking-widest">
             Direct references (e.g. Romans 8:28) always work without sign-in
