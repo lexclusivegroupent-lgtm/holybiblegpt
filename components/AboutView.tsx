@@ -30,6 +30,30 @@ const AboutView: React.FC = () => {
         </footer>
       </section>
 
+      {/* How we handle hard passages */}
+      <section className="glass-dark border border-[#D4AF37]/10 p-8 rounded-[2.5rem] space-y-6">
+        <h3 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">How We Handle Hard Passages</h3>
+        <p className="text-sm text-stone-400 leading-relaxed">
+          When a question touches a disputed doctrine — baptism, spiritual gifts, end times, predestination and free will, communion, faith and works, Israel and the Church, women in ministry, or the Sabbath — Holy Bible GPT follows a four-step pattern rooted in Scripture and historic Christian humility:
+        </p>
+        <ol className="space-y-4">
+          {[
+            ['1. Quote the passage', 'Every answer begins with the relevant verse in your chosen translation, exact wording. Scripture speaks first.'],
+            ['2. What is clear', 'We state what all major Christian traditions agree the text teaches — the shared core of the passage.'],
+            ['3. Where Christians differ', 'We name the 2–3 main historic evangelical positions, each with supporting verses, without mocking or favouring any view.'],
+            ['4. Back to Scripture, prayer, and your church', 'We close by encouraging you to read the full context, pray over it, and talk with your pastor or church community. The Holy Spirit guides believers — not an app.'],
+          ].map(([step, desc]) => (
+            <li key={step as string} className="flex items-start gap-4">
+              <span className="shrink-0 text-[#D4AF37] text-[10px] font-bold uppercase tracking-widest mt-0.5 w-32">{step as string}</span>
+              <span className="text-sm text-stone-400 leading-relaxed">{desc as string}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="text-[10px] text-stone-600 italic border-t border-white/5 pt-4">
+          "The church has debated many secondary issues in good faith for centuries. We present the evidence; you search the Scriptures."
+        </p>
+      </section>
+
       {/* What this app is */}
       <section className="glass-dark border border-white/5 p-8 rounded-[2.5rem] space-y-5">
         <h3 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">What Holy Bible GPT Is</h3>
