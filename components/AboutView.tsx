@@ -54,6 +54,49 @@ const AboutView: React.FC = () => {
         </p>
       </section>
 
+      {/* How to Study the Bible */}
+      <section className="space-y-6">
+        <div className="text-center space-y-2">
+          <h3 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">How to Study the Bible</h3>
+          <p className="text-xs text-stone-600 uppercase tracking-widest">Observe · Interpret · Compare · Apply</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            {
+              step: '1 · Observe',
+              icon: '👁️',
+              desc: 'Read the passage carefully. What does it actually say? Note key words, who is speaking, what is happening, and what the text repeats or emphasises.',
+            },
+            {
+              step: '2 · Interpret',
+              icon: '🏛️',
+              desc: 'Ask what it meant to the first hearers. Consider the historical setting, the covenant background, and the biblical genre — narrative, psalm, proverb, prophecy, epistle, or apocalyptic each read differently.',
+            },
+            {
+              step: '3 · Compare',
+              icon: '🔗',
+              desc: 'Let Scripture interpret Scripture. Find 1–2 related passages that shed light on the same truth. The Bible is its own best commentary.',
+            },
+            {
+              step: '4 · Apply',
+              icon: '👟',
+              desc: 'Only after observing, interpreting, and comparing — ask what God is calling you to believe, repent of, or do today. Application flows from the text, not the other way around.',
+            },
+          ].map(({ step, icon, desc }) => (
+            <div key={step} className="glass-dark border border-white/5 p-6 rounded-[1.5rem] space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{icon}</span>
+                <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">{step}</span>
+              </div>
+              <p className="text-sm text-stone-400 leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-[11px] text-stone-700 italic leading-relaxed px-4">
+          Holy Bible GPT does not replace your Bible. It helps you open it, understand it, and pray from it.
+        </p>
+      </section>
+
       {/* What this app is */}
       <section className="glass-dark border border-white/5 p-8 rounded-[2.5rem] space-y-5">
         <h3 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">What Holy Bible GPT Is</h3>
