@@ -465,12 +465,14 @@ const BibleReader: React.FC<BibleReaderProps> = ({
 
                 <div className="h-px bg-white/5" />
 
-                {/* Three AI mode actions */}
-                <div className="grid grid-cols-3 gap-2">
+                {/* AI study actions */}
+                <div className="grid grid-cols-5 gap-1.5">
                   {[
-                    { label: 'Study', icon: '✨', mode: AppMode.THEOLOGIAN, desc: 'Deep study' },
-                    { label: 'Pray', icon: '🙏', mode: AppMode.PRAYER_HELP, desc: 'Write a prayer' },
-                    { label: 'Context', icon: '🏛️', mode: AppMode.CONTEXT, desc: 'Historical background' },
+                    { label: 'Explain', icon: '📖', mode: AppMode.DEEP_STUDY },
+                    { label: 'Context', icon: '🏛️', mode: AppMode.CONTEXT },
+                    { label: 'Genre',   icon: '📜', mode: AppMode.GENRE },
+                    { label: 'History', icon: '🏺', mode: AppMode.HISTORICAL },
+                    { label: 'Pray',    icon: '🙏', mode: AppMode.PRAYER_HELP },
                   ].map(({ label, icon, mode }) => (
                     <button
                       key={label}

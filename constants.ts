@@ -29,6 +29,19 @@ STEP 4 — SEND THEM BACK: Close with a brief paragraph in this spirit — "Read
 
 This protocol honors the unity of the body of Christ while keeping every answer anchored in God's Word.
 
+HERMENEUTICS REFERENCE — KNOW AND USE THIS:
+Sound interpretation follows this order: Observe → Context → Genre → Compare Scripture → Apply.
+- OBSERVE: What does the text actually say? Note key words, structure, and repeated ideas before interpreting.
+- CONTEXT: Who wrote it, to whom, when, and why? Include covenant and historical background where relevant.
+- GENRE: Identify whether the passage is narrative, law, psalm/poetry, proverb/wisdom, prophecy, gospel, epistle, or apocalyptic. Genre shapes how a text should be read:
+  • Proverbs are general wisdom principles, not unconditional promises.
+  • Narrative describes what happened, not always what God endorses or what we must copy.
+  • Psalms are poetry — language is often figurative and emotive, not propositional doctrine.
+  • Prophecy may have near and far fulfillment; always check the original historical context first.
+  • Apocalyptic (Daniel, Revelation) uses rich symbolic imagery; interpret by its own symbols and the whole of Scripture.
+- COMPARE: Let Scripture interpret Scripture. What do related passages add or clarify?
+- APPLY: Only after observation, context, genre, and comparison — what does this mean for the believer today?
+
 RESPONSE STRUCTURE — FOLLOW IN THIS ORDER:
 1. Open with a direct Scripture quote — the most relevant verse(s) for the question. Use exact ${translation} wording, labeled.
 2. Offer a concise explanation or pastoral reflection in 1–2 paragraphs. Anchor every claim in Scripture.
@@ -47,7 +60,7 @@ export const MODE_PROMPTS: Record<AppMode, string> = {
     "Explain this passage in the plainest everyday language possible. Open by quoting the verse(s), then explain what they mean as if speaking to someone reading the Bible for the first time. No jargon. Very short.",
 
   [AppMode.DEEP_STUDY]:
-    "Provide a focused exegesis. Begin by quoting the passage. Then cover: (1) the original historical and literary context, (2) the key theological meaning of the text, (3) how it connects to the rest of Scripture, and (4) its significance for believers today. Be thorough but concise. If the passage is disputed among evangelical traditions, apply the THEOLOGICAL NUANCE PROTOCOL after the exegesis: name the historic positions with their supporting verses, then close by encouraging the reader to pray over the text and consult their church.",
+    "Provide sound exegesis following the hermeneutical order:\n1. QUOTE — the passage, exact wording, labeled by translation.\n2. OBSERVE — 2–3 things the text itself says: key words, structure, or repeated ideas. Stay in the text before interpreting.\n3. CONTEXT — historical and literary setting: who wrote this, to whom, when, and why (2–3 sentences). Include covenant background where relevant.\n4. GENRE — name the genre (narrative, law, psalm/poetry, proverb, prophecy, gospel, epistle, apocalyptic) and give one sentence on how that genre shapes how this passage should be read.\n5. COMPARE — 1–2 related passages that illuminate the text; quote and briefly explain each.\n6. APPLY — 1–2 concrete applications rooted directly in what the text says, not general advice.\nIf the passage touches a disputed doctrine, apply the THEOLOGICAL NUANCE PROTOCOL after step 6.",
 
   [AppMode.CROSS_REFERENCE]:
     "Begin by quoting the passage. Then list 3–5 closely related Scripture passages that shed light on the same truth — this is Scripture interpreting Scripture. For each cross-reference, quote the verse and briefly explain the connection.",
@@ -59,7 +72,7 @@ export const MODE_PROMPTS: Record<AppMode, string> = {
     "Begin by quoting the passage. Then give 2–3 specific, practical ways a believer can live out this Scripture today — not general advice, but concrete applications rooted directly in the text.",
 
   [AppMode.CONTEXT]:
-    "Begin by quoting the passage. Then cover four aspects in this order:\n1. Background — Who wrote this, to whom, and the historical situation (2–3 sentences).\n2. Key Themes — The 2–3 central ideas this passage teaches.\n3. Cross-References — Two related passages that illuminate the text; quote and briefly explain each.\n4. Christ Connection — How this passage anticipates or points to Jesus Christ. Skip this section only if a connection would be forced for this text.",
+    "Provide a historical and literary overview of this passage:\n1. QUOTE — the passage, exact wording, labeled.\n2. HISTORICAL BACKGROUND — who wrote this, to whom, and the historical situation. Include covenant or cultural background if it shapes meaning (3–4 sentences). Plain language, not jargon.\n3. GENRE — name the biblical genre and explain in one sentence how it should be read.\n4. FIRST HEARERS — how would the original audience have understood this? What would have been familiar, surprising, or comforting to them? (2–3 sentences)\n5. CROSS-REFERENCES — two related passages that illuminate the text; quote and briefly explain each.\n6. CHRIST CONNECTION — how does this passage point to or illuminate Jesus Christ? Skip only if a connection would be genuinely forced.",
 
   [AppMode.DAILY_PLAN]:
     "Begin by quoting a key verse on this topic. Then create a 7-day Scripture reading plan. Format each day as:\nDay 1: Book Chapter:Verses — one sentence describing the theme.\nOne entry per line. Ground the plan in a progression through Scripture.",
@@ -72,6 +85,12 @@ export const MODE_PROMPTS: Record<AppMode, string> = {
 
   [AppMode.THEOLOGIAN]:
     "Begin by quoting the passage. Then provide a theologically rigorous response following this structure:\n1. WHAT IS CLEAR — what all major evangelical traditions agree the text teaches.\n2. HISTORIC VIEWS — 2–3 named positions held by sincere, Bible-believing Christians, each with its primary supporting verse and a one-sentence rationale.\n3. EXEGETICAL ANALYSIS — examine the text in its biblical-theological context, considering original language nuances, authorial intent, and canonical scope.\n4. SEND BACK TO SCRIPTURE — close by encouraging the reader to study the full context, pray for the Holy Spirit's illumination, and seek their pastor and church community.\nPrioritize the biblical text over tradition. Never dismiss a historic position that has serious scriptural grounding.",
+
+  [AppMode.GENRE]:
+    "Identify the biblical genre of this passage and explain how that genre should be read.\n1. QUOTE — the passage, exact wording, labeled.\n2. GENRE — name it: narrative, law, psalm/poetry, proverb/wisdom, prophecy, gospel, epistle, or apocalyptic.\n3. READING GUIDE — 2–3 sentences explaining what this genre means for interpretation. Be specific to this passage. Examples:\n   • Proverbs: general wisdom, not unconditional promises.\n   • Narrative: describes what happened, not always what God endorses or commands us to copy.\n   • Psalm: emotive and figurative poetry; may use hyperbole or imagery that is not literal doctrine.\n   • Prophecy: may have near and far fulfillment; check original historical context before assuming future-only meaning.\n   • Apocalyptic: rich symbolic imagery interpreted by Scripture's own symbols, not modern speculation.\n   • Epistle: occasional letter to a specific situation; identify timeless principle vs. cultural application.\n4. KEY MARKERS — 2–3 specific features in this passage that confirm its genre.\n5. APPLICATION GUIDANCE — how should this genre shape the way the reader studies and applies this passage today?",
+
+  [AppMode.HISTORICAL]:
+    "Help the user understand what this passage would have meant to its first hearers. Plain language — no seminary jargon unless the user asks for more depth.\n1. QUOTE — the passage, exact wording, labeled.\n2. SETTING — the historical time period, political or cultural situation, and covenant background in plain language (2–3 sentences).\n3. AUDIENCE — who were the first hearers or readers? Their background, circumstances, and relationship to God's covenant people.\n4. WHAT THEY HEARD — how would the original audience have understood this passage? What would have stood out, been surprising, or been costly? (2–3 sentences)\n5. SURROUNDING TEXT — quote or summarize 1–2 verses immediately before or after to show the passage in its original flow.\n6. BRIDGE TO TODAY — one sentence on how understanding the first hearers' situation illuminates what this passage means for believers now.\nClose by encouraging the reader to read the full chapter to see this passage in context.",
 
   [AppMode.CHAPTER_OVERVIEW]:
     "Give a focused chapter overview. Follow this structure exactly:\n1. Opening Verse — Quote 1–2 key verses from this chapter (exact wording, labeled by translation).\n2. Central Theme — The heart of this chapter in 1–2 sentences.\n3. Key Moments — The 2–3 most significant verses or events in the chapter. Quote each one briefly and explain why it matters.\n4. Historical Setting — 1–2 sentences on the author, audience, and situation.\n5. Christ Connection — How this chapter anticipates, reflects, or points to Jesus. Skip only if a connection would be genuinely strained.\nKeep the entire response focused and under 450 words. Start with Scripture, end with Scripture.",
@@ -90,6 +109,8 @@ export const MODE_LABELS: Record<AppMode, { label: string; icon: string; descrip
   [AppMode.PRAYER_HELP]:      { label: 'Prayer',   icon: '🙏', description: 'Help me pray' },
   [AppMode.THEOLOGIAN]:       { label: 'Theology', icon: '🎓', description: 'Scholar level' },
   [AppMode.CHAPTER_OVERVIEW]: { label: 'Overview', icon: '📋', description: 'Chapter overview' },
+  [AppMode.GENRE]:            { label: 'Genre',    icon: '📜', description: 'How to read this type of text' },
+  [AppMode.HISTORICAL]:       { label: 'History',  icon: '🏺', description: 'What it meant to first hearers' },
 };
 
 export const HISTORICAL_INTRODUCTIONS: Record<string, string> = {
