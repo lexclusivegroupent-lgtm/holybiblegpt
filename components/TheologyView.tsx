@@ -7,7 +7,8 @@ const TheologyView: React.FC = () => {
     { title: "Theology Proper", focus: "God", content: "God is the eternal, sovereign Creator who exists in three persons: Father, Son, and Holy Spirit.", verses: ["Genesis 1:1", "Matthew 28:19"] },
     { title: "Christology", focus: "Jesus", content: "Jesus Christ is fully God and fully man, the promised Messiah who died for our sins and rose for our justification.", verses: ["John 1:1", "Colossians 2:9"] },
     { title: "Soteriology", focus: "Salvation", content: "Salvation is a gift of God's grace, received through faith alone in Christ alone, apart from any works.", verses: ["Ephesians 2:8-9", "John 14:6"] },
-    { title: "Pneumatology", focus: "The Spirit", content: "The Holy Spirit indwells every believer, empowering them for service, comfort, and leading them into all truth.", verses: ["John 16:13", "Acts 1:8"] }
+    { title: "Pneumatology", focus: "The Spirit", content: "The Holy Spirit indwells every believer, empowering them for service, comfort, and leading them into all truth.", verses: ["John 16:13", "Acts 1:8"] },
+    { title: "Relationship vs. Religion", focus: "Knowing Him", content: "Jesus confronted empty religious performance throughout His ministry — people who honored God with their lips while their hearts stayed far from Him, trading His commands for human tradition. Scripture never asks for ritual without relationship. It calls believers to abide in Christ Himself, not a system about Him.", verses: ["Mark 7:6-8", "John 15:4-5"] }
   ];
 
   return (
