@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const FAQView: React.FC = () => {
   const faqs = [
@@ -9,6 +9,25 @@ const FAQView: React.FC = () => {
     { q: "Who built this?", a: "Built by a small team dedicated to sharing the Word through modern technology." },
     { q: "Is the AI always right?", a: "No. AI is a tool for study. Always check everything against Scripture." }
   ];
+
+  // Inject FAQPage structured data while this view is mounted so Google can
+  // surface these as an expandable rich result directly in search.
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'faq-schema';
+    script.text = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    });
+    document.head.appendChild(script);
+    return () => { document.getElementById('faq-schema')?.remove(); };
+  }, []);
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-12">

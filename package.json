@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/ensure-kjv.mjs",
     "build": "vite build",
+    "postbuild": "node scripts/prerender.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@vercel/kv": "^3.0.0",
     "micro": "^10.0.1",
     "react": "^19.2.3",

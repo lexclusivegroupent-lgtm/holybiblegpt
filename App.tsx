@@ -103,6 +103,8 @@ const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
   theology:     ['Theology Topics – Holy Bible GPT', 'Explore major theological themes and doctrines grounded in Scripture.'],
   instructions: ['How to Use – Holy Bible GPT', 'A quick guide to getting the most out of Holy Bible GPT for daily Bible study.'],
   disclaimer:   ['AI Disclaimer – Holy Bible GPT', 'Understanding the role and limits of AI in Holy Bible GPT.'],
+  translations: ['About Bible Translations – Holy Bible GPT', 'KJV, ESV, and WEB translations explained — why KJV is the default and how the others support understanding.'],
+  changelog:    ["What's New – Holy Bible GPT Changelog", 'Latest updates and new features added to Holy Bible GPT: search tools, offline KJV, prayer journal, and more.'],
 };
 
 function updateMeta(title: string, desc: string, path: string) {
