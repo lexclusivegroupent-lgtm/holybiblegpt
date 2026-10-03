@@ -18,7 +18,7 @@
   <meta property="og:url" content="https://holybiblegpt.com/">
   <meta property="og:title" content="Holy Bible GPT – Free Scripture-First Bible Study">
   <meta property="og:description" content="Free Scripture-first Bible study by The Christian's Deck. Read the Bible, ask questions, use cross-references, and pray from Scripture. The AI is a study aid — God's Word holds final authority.">
-  <meta property="og:image" content="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
+  <meta property="og:image" content="https://holybiblegpt.com/icons/og-image.png">
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
   <meta property="og:locale" content="en_US">
@@ -27,7 +27,7 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Holy Bible GPT – Free Scripture-First Bible Study">
   <meta name="twitter:description" content="Free Scripture-first Bible study by The Christian's Deck. Read, study, ask questions, and pray from Scripture. The AI is a study aid — God's Word holds final authority.">
-  <meta name="twitter:image" content="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
+  <meta name="twitter:image" content="https://holybiblegpt.com/icons/og-image.png">
 
   <!-- ── PWA & Icons ───────────────────────────────────────────────────────── -->
   <meta name="theme-color" content="#000000">
@@ -36,8 +36,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Holy Bible GPT">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" href="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
-  <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/d4af37/bible.png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
 
   <!-- ── Structured Data ───────────────────────────────────────────────────── -->
   <script type="application/ld+json">
@@ -45,11 +47,25 @@
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "Organization",
+        "@id": "https://holybiblegpt.com/#organization",
+        "name": "Holy Bible GPT",
+        "url": "https://holybiblegpt.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://holybiblegpt.com/icons/android-chrome-512x512.png",
+          "width": 512,
+          "height": 512
+        },
+        "sameAs": []
+      },
+      {
         "@type": "WebSite",
         "@id": "https://holybiblegpt.com/#website",
         "url": "https://holybiblegpt.com/",
         "name": "Holy Bible GPT",
         "description": "Free Scripture-first Bible study by The Christian's Deck. Scripture-first answers, Bible reader, devotionals, and prayer tools.",
+        "publisher": { "@id": "https://holybiblegpt.com/#organization" },
         "potentialAction": {
           "@type": "SearchAction",
           "target": "https://holybiblegpt.com/search?q={search_term_string}",

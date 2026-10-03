@@ -24,9 +24,13 @@ const Header: React.FC<HeaderProps> = ({
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-stone-900 rounded-xl flex items-center justify-center border border-white/10 shadow-lg relative overflow-hidden shrink-0">
-            <span className="text-lg sm:text-xl text-[#D4AF37] relative z-10" aria-hidden="true">♰</span>
-          </div>
+          <img
+            src="/icons/android-chrome-192x192.png"
+            alt="Holy Bible GPT logo — The Christian's Deck"
+            width={40}
+            height={40}
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg shrink-0"
+          />
           <h1 className="text-sm sm:text-lg font-bold accent-font tracking-[0.1em] gold-gradient-text leading-tight uppercase">Holy Bible GPT</h1>
         </div>
         

@@ -1,8 +1,14 @@
-const CACHE_NAME = 'hbgpt-v1';
+const CACHE_NAME = 'hbgpt-v2'; // bumped: v1 cached stale index.html pointing at the old icons8 favicon/logo
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.ico',
+  '/icons/favicon-16x16.png',
+  '/icons/favicon-32x32.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/android-chrome-192x192.png',
+  '/icons/android-chrome-512x512.png',
   '/bible/kjv.json',
   '/assets/index.css' // Assuming css location, but standard build usually handles this. Keeping safe list.
 ];
@@ -11,6 +17,16 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  // Evict old cache versions (e.g. hbgpt-v1) so stale pages/icons don't linger for return visitors
+  event.waitUntil(
+    caches.keys().then(names =>
+      Promise.all(names.filter(name => name !== CACHE_NAME).map(name => caches.delete(name)))
+    ).then(() => self.clients.claim())
   );
 });
 
