@@ -215,7 +215,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
       </div>
 
       {/* ── Scripture content ────────────────────────────────────────────────── */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 md:px-0 py-10 scroll-smooth">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto px-4 md:px-0 py-10 scroll-smooth">
         <div className="max-w-3xl mx-auto w-full">
 
           <header className="mb-12 text-center space-y-3">

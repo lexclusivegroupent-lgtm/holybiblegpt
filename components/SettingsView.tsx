@@ -123,7 +123,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-12 pb-24">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-12 pb-24">
       <header className="text-center">
         <h2 className="accent-font text-3xl font-bold gold-gradient-text uppercase tracking-widest">Settings</h2>
         <p className="text-[10px] text-stone-700 uppercase tracking-[0.4em] mt-2">Holy Bible GPT</p>

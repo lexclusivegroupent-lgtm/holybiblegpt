@@ -316,7 +316,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-black overflow-hidden selection:bg-[#D4AF37] selection:text-black">
+    <div className="flex flex-col h-dvh bg-black overflow-hidden selection:bg-[#D4AF37] selection:text-black">
       <Header onMenuToggle={() => setIsMenuOpen(!isMenuOpen)} onShowSearch={() => setActiveTab('search')} />
       <SideDrawer
         isOpen={isMenuOpen}
@@ -330,7 +330,7 @@ const App: React.FC = () => {
         currentTranslation={currentTranslation}
         onTranslationChange={setCurrentTranslation}
       />
-      <main className="flex-1 overflow-hidden flex flex-col" role="main">
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col" role="main">
         <Suspense fallback={
           <div className="flex-1 flex flex-col items-center justify-center space-y-4">
             <div className="w-12 h-12 border-t-2 border-[#D4AF37] rounded-full animate-spin"></div>

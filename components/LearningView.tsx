@@ -148,7 +148,7 @@ const LearningView: React.FC<LearningViewProps> = ({ onOpenPassage, onStudyEvent
 
   if (viewingFullDetails && selectedEvent) {
     return (
-      <div className="flex-1 overflow-y-auto px-6 py-12 max-w-3xl mx-auto w-full space-y-12 animate-in fade-in slide-in-from-right-8 duration-300">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-3xl mx-auto w-full space-y-12 animate-in fade-in slide-in-from-right-8 duration-300">
         <button onClick={() => setViewingFullDetails(false)} className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:translate-x-[-4px] transition-transform">
           ← Back to Timeline
         </button>
@@ -205,7 +205,7 @@ const LearningView: React.FC<LearningViewProps> = ({ onOpenPassage, onStudyEvent
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-5xl mx-auto w-full space-y-24 relative">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-5xl mx-auto w-full space-y-24 relative">
       {/* Topics */}
       <section className="space-y-12">
         <div className="text-center">

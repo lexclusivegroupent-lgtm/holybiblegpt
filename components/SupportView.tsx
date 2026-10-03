@@ -19,7 +19,7 @@ const SupportView: React.FC<SupportViewProps> = ({ onOpenTerms }) => {
   }, []);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 lg:py-20 max-w-6xl mx-auto w-full space-y-16 pb-32">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 lg:py-20 max-w-6xl mx-auto w-full space-y-16 pb-32">
       <header className="text-center space-y-6">
         <div className="inline-flex w-20 h-20 bg-[#D4AF37]/10 rounded-3xl items-center justify-center text-4xl mb-2 border border-[#D4AF37]/20 shadow-[0_0_30px_rgba(212,175,55,0.1)]">❤️</div>
         <div className="space-y-2">

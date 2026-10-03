@@ -35,7 +35,7 @@ const StudyGroupsView: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-4xl mx-auto w-full space-y-16 pb-32">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-4xl mx-auto w-full space-y-16 pb-32">
       <header className="text-center space-y-4">
         <h2 className="accent-font text-3xl font-bold gold-gradient-text uppercase tracking-widest">Church Study Groups</h2>
         <p className="text-[10px] text-stone-600 uppercase tracking-[0.4em]">Family & Small Group Unity</p>

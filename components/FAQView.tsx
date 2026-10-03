@@ -30,7 +30,7 @@ const FAQView: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-12">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-12">
       <header className="text-center space-y-4">
         <h2 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest">Common Questions</h2>
         <p className="text-[10px] text-stone-600 uppercase tracking-widest">FAQ</p>

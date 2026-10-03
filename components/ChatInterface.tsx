@@ -202,7 +202,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const inputDisabled = isLoading || needsSignIn || loadFailed;
 
   return (
-    <div className="flex flex-col h-full w-full bg-black">
+    <div className="flex flex-col h-full min-h-0 w-full bg-black">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-stone-900/50 shrink-0">
@@ -354,7 +354,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       {/* ── Messages ────────────────────────────────────────────────────── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-2">
         {messages.map(msg => (
           <MessageBubble
             key={msg.id}

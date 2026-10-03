@@ -92,7 +92,7 @@ Only output real, accurate Scripture. No commentary between entries.`;
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-8 pb-28">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-8 pb-28">
       <header className="text-center space-y-2">
         <h2 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest">Scripture Search</h2>
         <p className="text-[10px] text-stone-600 uppercase tracking-widest">Reference or topic — powered by AI</p>

@@ -46,7 +46,7 @@ const KidsModeView: React.FC<KidsModeViewProps> = ({ onOpenPassage }) => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-4xl mx-auto w-full space-y-16">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-4xl mx-auto w-full space-y-16">
       <header className="text-center space-y-4">
         <h2 className="accent-font text-4xl font-bold gold-gradient-text uppercase tracking-widest">Kids Mode</h2>
         <p className="text-[10px] text-stone-600 uppercase tracking-[0.4em]">Simple Stories • Big Truths</p>

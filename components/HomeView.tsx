@@ -74,7 +74,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
   const { book, chapter, verse } = parseVerseRef(dailyVerse.ref);
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-8 lg:py-12 max-w-4xl mx-auto w-full space-y-8 pb-28">
+    <div className="flex-1 min-h-0 overflow-y-auto px-5 py-8 lg:py-12 max-w-4xl mx-auto w-full space-y-8 pb-28">
 
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5">

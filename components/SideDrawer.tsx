@@ -66,7 +66,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
             <button onClick={onClose} className="min-h-[44px] min-w-[44px] flex items-center justify-center text-stone-500 hover:text-white transition-colors rounded-lg hover:bg-white/5" aria-label="Close Menu">✕</button>
           </header>
 
-          <nav className="flex-1 overflow-y-auto py-4 px-2 no-scrollbar">
+          <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-2 no-scrollbar">
             <div className="space-y-1 mb-6">
               {mainLinks.map(renderLink)}
             </div>

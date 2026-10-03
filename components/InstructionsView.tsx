@@ -8,7 +8,7 @@ interface InstructionsViewProps {
 
 const InstructionsView: React.FC<InstructionsViewProps> = ({ onTabChange }) => {
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-16 pb-32">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-16 pb-32">
       <header className="text-center space-y-4">
         <h2 className="accent-font text-3xl font-bold gold-gradient-text uppercase tracking-widest leading-tight">Add this app to your phone</h2>
         <div className="h-px w-24 bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent mx-auto" />

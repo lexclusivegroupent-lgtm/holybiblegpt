@@ -86,7 +86,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({ onOpenPassage, onTabChange })
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-10 max-w-3xl mx-auto w-full space-y-8 pb-32">
+    <div className="flex-1 min-h-0 overflow-y-auto px-5 py-10 max-w-3xl mx-auto w-full space-y-8 pb-32">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-6">
         <div>
           <h2 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest">My Library</h2>

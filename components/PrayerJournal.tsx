@@ -63,7 +63,7 @@ const PrayerJournal: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-12 max-w-4xl mx-auto w-full space-y-12 pb-32">
+    <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-4xl mx-auto w-full space-y-12 pb-32">
       <header className="flex justify-between items-center">
         <div>
           <h2 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest">Sanctuary</h2>
