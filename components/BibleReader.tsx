@@ -5,6 +5,7 @@ import { getVerseText, VerseData, BIBLE_BOOKS, HISTORICAL_BOOKS, prefetchAdjacen
 import { HISTORICAL_INTRODUCTIONS } from '../constants';
 import { storage } from '../services/storageService';
 import CrossReferencePanel from './CrossReferencePanel';
+import { generateShareCard, shareOrDownloadCard } from '../services/shareImageService';
 
 interface BibleReaderProps {
   state: ReaderState;
@@ -378,76 +379,14 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                       action: () => {
                         const verse = content.find(v => v.number === selectedVerse);
                         if (!verse) return;
-                        const scale = 2;
-                        const W = 800, H = 450;
-                        const canvas = document.createElement('canvas');
-                        canvas.width = W * scale;
-                        canvas.height = H * scale;
-                        const ctx = canvas.getContext('2d')!;
-                        ctx.scale(scale, scale);
-
-                        // Background
-                        const grad = ctx.createLinearGradient(0, 0, 0, H);
-                        grad.addColorStop(0, '#111111');
-                        grad.addColorStop(1, '#000000');
-                        ctx.fillStyle = grad;
-                        ctx.fillRect(0, 0, W, H);
-
-                        // Gold border
-                        ctx.strokeStyle = 'rgba(212,175,55,0.5)';
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeRect(20, 20, W - 40, H - 40);
-
-                        // Subtle cross watermark
-                        ctx.fillStyle = 'rgba(212,175,55,0.06)';
-                        ctx.font = '160px serif';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText('✝', W / 2, H / 2);
-
-                        // Verse text with word wrap
-                        ctx.fillStyle = '#e7e5e4';
-                        ctx.font = 'italic 22px Georgia, serif';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'alphabetic';
-                        const maxW = W - 120;
-                        const words = verse.text.trim().split(' ');
-                        const lines: string[] = [];
-                        let line = '';
-                        for (const word of words) {
-                          const test = line ? `${line} ${word}` : word;
-                          if (ctx.measureText(test).width > maxW) {
-                            lines.push(line);
-                            line = word;
-                          } else {
-                            line = test;
-                          }
-                        }
-                        if (line) lines.push(line);
-                        if (lines.length > 0) {
-                          lines[0] = `“${lines[0]}`;
-                          lines[lines.length - 1] = `${lines[lines.length - 1]}”`;
-                        }
-
-                        const lh = 36;
-                        const totalH = lines.length * lh;
-                        const startY = H / 2 - totalH / 2 + 10;
-                        lines.forEach((l, i) => ctx.fillText(l, W / 2, startY + i * lh));
-
-                        // Reference
-                        ctx.fillStyle = '#D4AF37';
-                        ctx.font = 'bold 15px Georgia, serif';
-                        ctx.fillText(`— ${state.book} ${state.chapter}:${selectedVerse} (${translation})`, W / 2, startY + totalH + 28);
-
-                        // Branding
-                        ctx.fillStyle = 'rgba(212,175,55,0.35)';
-                        ctx.font = '11px sans-serif';
-                        ctx.fillText('Holy Bible GPT · HolyBibleGPT.com', W / 2, H - 28);
-
-                        const link = document.createElement('a');
-                        link.download = `${state.book}-${state.chapter}-${selectedVerse}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
+                        const reference = `${state.book} ${state.chapter}:${selectedVerse} (${translation})`;
+                        const dataUrl = generateShareCard({ quote: verse.text, reference });
+                        shareOrDownloadCard(
+                          dataUrl,
+                          `${state.book}-${state.chapter}-${selectedVerse}.png`,
+                          'Holy Bible GPT',
+                          reference
+                        );
                         closeVerseMenu();
                       }
                     }

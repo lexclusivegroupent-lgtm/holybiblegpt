@@ -5,6 +5,7 @@ import { initializeOfflineKJV, getCachedChapterCount } from '../services/bibleSe
 import { getUserId, checkProStatus, startCheckout, openBillingPortal, pushSyncData, pullSyncData, ProStatus } from '../services/syncService';
 import { signIntoPuter } from '../services/aiService';
 import { AppSettings, AppTab } from '../types';
+import NotificationOptIn from './NotificationOptIn';
 
 interface SettingsViewProps {
   onTabChange: (tab: AppTab) => void;
@@ -271,6 +272,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
             </button>
           </div>
         </div>
+
+        <NotificationOptIn />
 
         {/* Your Data */}
         <div className="glass-dark border border-white/5 p-8 rounded-[2rem] space-y-8">

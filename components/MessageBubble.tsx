@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Message, Role, PassageLink, AppMode } from '../types';
+import { generateShareCard, shareOrDownloadCard } from '../services/shareImageService';
 
 interface MessageBubbleProps {
   message: Message;
@@ -176,6 +177,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
     setPrayerSaved(true);
   };
 
+  const [shareBusy, setShareBusy] = useState(false);
+  const handleShare = async () => {
+    setShareBusy(true);
+    try {
+      const dataUrl = generateShareCard({
+        quote: cleanText,
+        reference: isPrayer ? 'Scripture Prayer' : 'Study Companion',
+      });
+      await shareOrDownloadCard(dataUrl, 'holybiblegpt-answer.png', 'Holy Bible GPT', cleanText.slice(0, 120));
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
   const isWelcome = message.id === '0';
 
   return (
@@ -239,14 +254,23 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
               </div>
             )}
 
-            {/* Pray about this */}
-            {!isWelcome && !isPrayer && cleanText.trim().length > 30 && (
+            {/* Pray about this / Share */}
+            {!isWelcome && cleanText.trim().length > 30 && (
               <div className="flex flex-wrap gap-2">
+                {!isPrayer && (
+                  <button
+                    onClick={() => onPray?.(cleanText)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold text-stone-500 border border-white/5 hover:text-[#D4AF37] hover:border-[#D4AF37]/20 transition-all min-h-[34px]"
+                  >
+                    🙏 Pray about this
+                  </button>
+                )}
                 <button
-                  onClick={() => onPray?.(cleanText)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold text-stone-500 border border-white/5 hover:text-[#D4AF37] hover:border-[#D4AF37]/20 transition-all min-h-[34px]"
+                  onClick={handleShare}
+                  disabled={shareBusy}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold text-stone-500 border border-white/5 hover:text-[#D4AF37] hover:border-[#D4AF37]/20 transition-all min-h-[34px] disabled:opacity-40"
                 >
-                  🙏 Pray about this
+                  🖼️ {shareBusy ? 'Preparing…' : 'Share as Image'}
                 </button>
               </div>
             )}
