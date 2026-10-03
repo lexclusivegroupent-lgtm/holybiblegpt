@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hbgpt-v2'; // bumped: v1 cached stale index.html pointing at the old icons8 favicon/logo
+const CACHE_NAME = 'hbgpt-v3'; // bumped: v2 cached icons with a hidden-white-RGB fringe bug under transparency
 const urlsToCache = [
   '/',
   '/index.html',
