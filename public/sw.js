@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hbgpt-v3'; // bumped: v2 cached icons with a hidden-white-RGB fringe bug under transparency
+const CACHE_NAME = 'hbgpt-v4'; // bumped: v3 icons still had a faint transparency-edge fringe; v4 uses solid opaque black corners instead
 const urlsToCache = [
   '/',
   '/index.html',
