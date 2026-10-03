@@ -43,6 +43,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     await kv.set(`user:${userId}:status`, 'pro');
                     // Map customerId to user for portal access
                     await kv.set(`user:${userId}:customer`, customerId);
+                    // Reverse index so subscription.deleted (which only has customerId) can find the user
+                    await kv.set(`customer:${customerId}:user`, userId);
                     console.log(`Granted PRO to user ${userId}`);
                 }
                 break;
@@ -50,15 +52,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
-                // We need to find the user associated with this customer
-                // This is inefficient without a reverse index, but for now we look up by customer ID if possible
-                // Or we rely on the client to check status and fail? 
-                // Vercel KV doesn't support secondary indexes easily. 
-                // We might need to store `customer:${customerId}:user` = userId during checkout.
+                const customerId = subscription.customer as string;
+                const userId = await kv.get<string>(`customer:${customerId}:user`);
 
-                // Let's defer "REVOKE" logic complexity for MVP or just allow access until re-check.
-                // Actually, let's just log it for now.
-                console.log('Subscription deleted', subscription.id);
+                if (userId) {
+                    await kv.set(`user:${userId}:status`, 'free');
+                    console.log(`Revoked PRO from user ${userId}`);
+                } else {
+                    console.warn(`Subscription deleted for unknown customer ${customerId} — no reverse mapping found.`);
+                }
                 break;
             }
         }
