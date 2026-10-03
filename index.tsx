@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { inject } from '@vercel/analytics';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Zero-config visitor analytics — view counts, top pages, referrers in the
 // Vercel dashboard. No cookies, no PII, so it doesn't need a consent banner.
@@ -16,6 +17,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );
