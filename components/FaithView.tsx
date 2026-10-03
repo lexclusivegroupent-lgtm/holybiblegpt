@@ -18,7 +18,7 @@ const FaithView: React.FC = () => {
           <li>Jesus rose from the dead</li>
           <li>Salvation is by grace through faith in Christ</li>
           <li>The Holy Spirit leads believers into truth</li>
-          <li>The Bible has final authority for faith and life</li>
+          <li>The Bible is the sole and final authority over all doctrine</li>
         </ul>
       </section>
     </div>

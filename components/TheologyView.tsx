@@ -3,7 +3,7 @@ import React from 'react';
 
 const TheologyView: React.FC = () => {
   const topics = [
-    { title: "Bibliology", focus: "The Word", content: "The Bible is the inspired, inerrant Word of God, given to mankind for doctrine, reproof, and instruction in righteousness.", verses: ["2 Timothy 3:16", "Psalm 119:105"] },
+    { title: "Bibliology", focus: "The Word", content: "The Bible is the inspired, inerrant Word of God — the sole and final authority over all doctrine. It is sufficient on its own to make the believer complete, thoroughly equipped for every good work. Nothing stands above it, beside it, or gets added to it: not tradition, not human teaching, not personal revelation.", verses: ["2 Timothy 3:16-17", "Revelation 22:18-19"] },
     { title: "Theology Proper", focus: "God", content: "God is the eternal, sovereign Creator who exists in three persons: Father, Son, and Holy Spirit.", verses: ["Genesis 1:1", "Matthew 28:19"] },
     { title: "Christology", focus: "Jesus", content: "Jesus Christ is fully God and fully man, the promised Messiah who died for our sins and rose for our justification.", verses: ["John 1:1", "Colossians 2:9"] },
     { title: "Soteriology", focus: "Salvation", content: "Salvation is a gift of God's grace, received through faith alone in Christ alone, apart from any works.", verses: ["Ephesians 2:8-9", "John 14:6"] },
