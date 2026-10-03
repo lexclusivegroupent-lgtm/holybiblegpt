@@ -314,7 +314,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-black overflow-hidden selection:bg-[#D4AF37] selection:text-black">
+    <div className="flex flex-col h-[100dvh] bg-black overflow-hidden selection:bg-[#D4AF37] selection:text-black">
       <Header onMenuToggle={() => setIsMenuOpen(!isMenuOpen)} onShowSearch={() => setActiveTab('search')} />
       <SideDrawer
         isOpen={isMenuOpen}
