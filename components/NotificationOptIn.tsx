@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 // Public VAPID key — safe to ship client-side (it's the public half of the
 // keypair; only VAPID_PRIVATE_KEY on the server is secret). Must match the
 // VAPID_PUBLIC_KEY configured in the server's env vars or push sends will fail.
-const VAPID_PUBLIC_KEY = 'BM4Ea71nkBAtA0eCvgljQVLjTOGd5K4pb1YeNh66xVcUZ0b0IA_Wvf7exoJ2FjA4LLVi86dmgRShvnYNd6Wh0RY';
+const VAPID_PUBLIC_KEY = 'BExXQ5p2sahc35RIVvLBCI0j79gHbg1anEPfZLGHMBwygoPW_c0OPTLcy07gkl7u8x09cLkTATBOkOQS-TLxbEY';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
