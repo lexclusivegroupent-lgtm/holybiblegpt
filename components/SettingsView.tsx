@@ -162,7 +162,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
           {proStatus !== 'checking' && !userId && (
             <>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Sign in to sync your notes, bookmarks, prayers, and reading progress across every device — $6.99/month.
+                Unlimited AI study questions (free accounts get 5), plus cross-device sync for notes, bookmarks, prayers, and reading progress — $6.99/month.
               </p>
               <button
                 onClick={handleSignIn}
@@ -177,7 +177,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
           {proStatus === 'free' && userId && (
             <>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Sync your notes, bookmarks, prayers, and reading progress across every device. Everything else stays free, always.
+                Unlimited AI study questions (the free tier includes 5), plus sync for your notes, bookmarks, prayers, and reading progress across every device. Bible reading itself stays free, always.
               </p>
               <button
                 onClick={handleUpgrade}
@@ -192,7 +192,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
           {proStatus === 'pro' && (
             <div className="space-y-4">
               <p className="text-xs text-stone-400 leading-relaxed">
-                Cloud sync is active for this account.
+                Unlimited AI questions and cloud sync are active for this account.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <button
