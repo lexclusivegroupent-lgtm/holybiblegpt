@@ -376,12 +376,12 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                     },
                     {
                       icon: '🖼️', label: 'Card',
-                      action: () => {
+                      action: async () => {
                         const verse = content.find(v => v.number === selectedVerse);
                         if (!verse) return;
                         const reference = `${state.book} ${state.chapter}:${selectedVerse} (${translation})`;
-                        const dataUrl = generateShareCard({ quote: verse.text, reference });
-                        shareOrDownloadCard(
+                        const dataUrl = await generateShareCard({ quote: verse.text, reference });
+                        await shareOrDownloadCard(
                           dataUrl,
                           `${state.book}-${state.chapter}-${selectedVerse}.png`,
                           'Holy Bible GPT',

@@ -58,6 +58,7 @@ const collectLocalData = () => ({
   notes: storage.getNotes(),
   prayers: storage.getPrayers(),
   settings: storage.getSettings(),
+  chatHistory: storage.getChatHistory(),
 });
 
 // Overwrites local storage with a previously-synced bundle. Used on pull.
@@ -68,6 +69,7 @@ const applyRemoteData = (data: ReturnType<typeof collectLocalData>) => {
   localStorage.setItem('hbgpt_notes', JSON.stringify(data.notes ?? {}));
   localStorage.setItem('hbgpt_prayers', JSON.stringify(data.prayers ?? []));
   localStorage.setItem('hbgpt_settings', JSON.stringify(data.settings ?? {}));
+  localStorage.setItem('hbgpt_chat_history', JSON.stringify((data as any).chatHistory ?? []));
 };
 
 export const pushSyncData = async (userId: string): Promise<void> => {

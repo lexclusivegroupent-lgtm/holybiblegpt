@@ -89,7 +89,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
 
   const handleRestore = async () => {
     if (!userId) return;
-    if (!window.confirm('This will replace the notes, bookmarks, prayers, and progress on this device with your cloud backup. Continue?')) return;
+    if (!window.confirm('This will replace the notes, bookmarks, prayers, chat history, and progress on this device with your cloud backup. Continue?')) return;
     setProBusy(true);
     setProMessage(null);
     try {
@@ -162,7 +162,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
           {proStatus !== 'checking' && !userId && (
             <>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Unlimited AI study questions (free accounts get 5), plus cross-device sync for notes, bookmarks, prayers, and reading progress — $6.99/month.
+                Unlimited AI study questions (free accounts get 5), plus cross-device sync for your chat history, notes, bookmarks, prayers, and reading progress — $6.99/month.
               </p>
               <button
                 onClick={handleSignIn}
@@ -177,7 +177,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
           {proStatus === 'free' && userId && (
             <>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Unlimited AI study questions (the free tier includes 5), plus sync for your notes, bookmarks, prayers, and reading progress across every device. Bible reading itself stays free, always.
+                Unlimited AI study questions (the free tier includes 5), plus sync for your chat history, notes, bookmarks, prayers, and reading progress across every device. Bible reading itself stays free, always.
               </p>
               <button
                 onClick={handleUpgrade}

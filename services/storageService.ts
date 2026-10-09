@@ -1,5 +1,5 @@
 
-import { Bookmark, Highlight, HistoryItem, PrayerEntry, AppSettings } from '../types';
+import { Bookmark, Highlight, HistoryItem, PrayerEntry, AppSettings, Message } from '../types';
 
 const KEYS = {
   BOOKMARKS: 'hbgpt_bookmarks',
@@ -12,7 +12,13 @@ const KEYS = {
   PRAYERS: 'hbgpt_prayers',
   SETTINGS: 'hbgpt_settings',
   WARNING_ACCEPTED: 'hbgpt_warning_accepted',
+  CHAT_HISTORY: 'hbgpt_chat_history',
 };
+
+// Keep the stored conversation bounded — this is a convenience cache, not a
+// full transcript archive, and an unbounded array would eventually blow past
+// both localStorage's quota and the 500KB cloud-sync payload guard.
+const MAX_STORED_MESSAGES = 200;
 
 export const storage = {
   getBookmarks: (): Bookmark[] => JSON.parse(localStorage.getItem(KEYS.BOOKMARKS) || '[]'),
@@ -82,6 +88,30 @@ export const storage = {
     const list = storage.getPrayers().filter(x => x.id !== id);
     localStorage.setItem(KEYS.PRAYERS, JSON.stringify(list));
   },
+
+  // AI chat conversation. Kept locally for every user (so a refresh doesn't
+  // lose your chat), and included in the Pro cloud-sync bundle so it carries
+  // across devices for paying users. Trimmed to the most recent messages to
+  // stay well under localStorage and KV size limits.
+  getChatHistory: (): Message[] => {
+    try {
+      return JSON.parse(localStorage.getItem(KEYS.CHAT_HISTORY) || '[]');
+    } catch {
+      return [];
+    }
+  },
+  saveChatHistory: (messages: Message[]) => {
+    const trimmed = messages.length > MAX_STORED_MESSAGES
+      ? messages.slice(messages.length - MAX_STORED_MESSAGES)
+      : messages;
+    try {
+      localStorage.setItem(KEYS.CHAT_HISTORY, JSON.stringify(trimmed));
+    } catch {
+      // Quota exceeded or storage unavailable — chat still works in-memory
+      // for this session, it just won't persist across a refresh.
+    }
+  },
+  clearChatHistory: () => localStorage.removeItem(KEYS.CHAT_HISTORY),
 
   getProgress: (): string[] => JSON.parse(localStorage.getItem(KEYS.PROGRESS) || '[]'),
   getStreak: (): number => {

@@ -44,9 +44,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   readingContext,
 }) => {
   const [localMode, setLocalMode] = useState<AppMode>(currentMode);
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '0', role: Role.BOT, text: WELCOME, timestamp: Date.now() },
-  ]);
+  // Restore a previous conversation if one was saved (locally for everyone,
+  // and pulled from the cloud for Pro users via Settings > Restore). Falls
+  // back to the welcome message for a first-ever visit.
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = storage.getChatHistory();
+    return saved.length > 0
+      ? saved
+      : [{ id: '0', role: Role.BOT, text: WELCOME, timestamp: Date.now() }];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [puterStatus, setPuterStatus] = useState<PuterStatus>('checking');
@@ -103,6 +109,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  // Persist the conversation locally on every change, so a refresh or closed
+  // tab doesn't lose it. Cross-device sync for Pro users rides the existing
+  // backup/restore bundle in Settings (chatHistory is part of collectLocalData).
+  useEffect(() => {
+    storage.saveChatHistory(messages);
+  }, [messages]);
 
   useEffect(() => {
     if (pendingQuery && !isLoading && !pendingProcessed.current) {

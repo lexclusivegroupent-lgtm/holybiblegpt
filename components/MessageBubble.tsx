@@ -181,7 +181,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
   const handleShare = async () => {
     setShareBusy(true);
     try {
-      const dataUrl = generateShareCard({
+      const dataUrl = await generateShareCard({
         quote: cleanText,
         reference: isPrayer ? 'Scripture Prayer' : 'Study Companion',
       });

@@ -29,8 +29,23 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines;
 }
 
+let logoImagePromise: Promise<HTMLImageElement | null> | null = null;
+
+/** Loads the app logo once and caches it for every subsequent share card. */
+function loadLogo(): Promise<HTMLImageElement | null> {
+  if (!logoImagePromise) {
+    logoImagePromise = new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null); // never block the share card on a missing asset
+      img.src = '/icons/android-chrome-192x192.png';
+    });
+  }
+  return logoImagePromise;
+}
+
 /** Draws the branded card and returns a PNG data URL. */
-export function generateShareCard({ quote, reference, maxChars = 320 }: ShareCardOptions): string {
+export async function generateShareCard({ quote, reference, maxChars = 320 }: ShareCardOptions): Promise<string> {
   let text = quote.trim().replace(/\s+/g, ' ');
   if (text.length > maxChars) text = `${text.slice(0, maxChars).trim()}…`;
 
@@ -89,10 +104,24 @@ export function generateShareCard({ quote, reference, maxChars = 320 }: ShareCar
   ctx.font = 'bold 15px Georgia, serif';
   ctx.fillText(`— ${reference}`, W / 2, startY + totalH + 28);
 
-  // Branding
-  ctx.fillStyle = 'rgba(212,175,55,0.35)';
+  // Branding — real logo mark + site name, since this card is the thing
+  // that actually travels when someone shares it (the main growth surface).
+  const logo = await loadLogo();
+  const brandText = 'Holy Bible GPT · HolyBibleGPT.com';
   ctx.font = '11px sans-serif';
-  ctx.fillText('Holy Bible GPT · HolyBibleGPT.com', W / 2, H - 28);
+  const brandTextWidth = ctx.measureText(brandText).width;
+  const logoSize = logo ? 18 : 0;
+  const gap = logo ? 8 : 0;
+  const brandBlockWidth = logoSize + gap + brandTextWidth;
+  const brandStartX = W / 2 - brandBlockWidth / 2;
+  const brandY = H - 28;
+
+  if (logo) {
+    ctx.drawImage(logo, brandStartX, brandY - logoSize / 2 - 7, logoSize, logoSize);
+  }
+  ctx.fillStyle = 'rgba(212,175,55,0.6)';
+  ctx.textAlign = 'left';
+  ctx.fillText(brandText, brandStartX + logoSize + gap, brandY);
 
   return canvas.toDataURL('image/png');
 }
