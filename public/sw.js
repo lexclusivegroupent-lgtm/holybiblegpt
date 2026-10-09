@@ -1,4 +1,6 @@
-const CACHE_NAME = 'hbgpt-v5'; // bumped: v5 adds push notification support (push + notificationclick handlers)
+const CACHE_NAME = 'hbgpt-v6'; // bumped: v6 forces every returning browser to drop its stale cache and
+// re-fetch fresh code — today's paywall/logo/KV fixes were otherwise invisible to anyone
+// whose service worker had already cached an older build.
 const urlsToCache = [
   '/',
   '/index.html',
@@ -65,13 +67,38 @@ self.addEventListener('notificationclick', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Stale-While-Revalidate Strategy
+  const url = new URL(event.request.url);
+
+  // The page shell ('/' and '/index.html') references content-hashed JS/CSS
+  // filenames that change on every deploy. Serving it stale-first (as the
+  // old strategy below did for everything) meant a returning visitor could
+  // keep running yesterday's app indefinitely — every deploy silently
+  // invisible to them until a cache-version bump forced a reset. Network-
+  // first here means a new deploy shows up on the very next load, with the
+  // cached copy only as an offline fallback.
+  const isAppShell = event.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html';
+  if (isAppShell) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.status === 200) {
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+          }
+          return response;
+        })
+        .catch(() => caches.open(CACHE_NAME).then(cache => cache.match(event.request)))
+    );
+    return;
+  }
+
+  // Everything else (content-hashed JS/CSS, icons, Bible data) is safe to
+  // serve stale-while-revalidate: hashed assets never change under the same
+  // URL, and this keeps the app fast and offline-capable for those.
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cachedResponse = await cache.match(event.request);
       const networkFetch = fetch(event.request).then(response => {
-        // Cache valid responses only (and not AI calls which might be POST or dynamic)
-        if (response.status === 200 && event.request.method === 'GET' && !event.request.url.includes('/api/')) {
+        if (response.status === 200 && event.request.method === 'GET' && !url.pathname.startsWith('/api/')) {
           cache.put(event.request, response.clone());
         }
         return response;
