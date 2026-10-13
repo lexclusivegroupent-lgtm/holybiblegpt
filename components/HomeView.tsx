@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { storage } from '../services/storageService';
 import { Translation, AppTab } from '../types';
+import { generateStoryCard, shareOrDownloadCard } from '../services/shareImageService';
 
 interface HomeViewProps {
   onOpenPassage: (book: string, chapter: string, verse?: string) => void;
@@ -21,6 +22,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
   const today = new Date().toLocaleDateString();
   const [completed, setCompleted] = useState(storage.getProgress().includes(today));
   const streak = storage.getStreak();
+  const [sharing, setSharing] = useState(false);
 
   const encouragements = [
     { ref: "Philippians 4:13",  text: "I can do all things through Christ which strengtheneth me.",                                    focus: "Strength"   },
@@ -73,6 +75,28 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
 
   const { book, chapter, verse } = parseVerseRef(dailyVerse.ref);
 
+  const handleShareStory = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const dataUrl = await generateStoryCard({
+        quote: dailyVerse.text,
+        reference: dailyVerse.ref,
+        label: 'Verse of the Day',
+      });
+      await shareOrDownloadCard(
+        dataUrl,
+        'holy-bible-gpt-verse-of-the-day.png',
+        'Holy Bible GPT',
+        `"${dailyVerse.text}" — ${dailyVerse.ref}`
+      );
+    } catch (err) {
+      console.error('Share to Story failed:', err);
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-5 py-8 lg:py-12 max-w-4xl mx-auto w-full space-y-8 pb-28">
 
@@ -109,14 +133,24 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
           <p className="bible-font text-2xl md:text-4xl text-stone-100 leading-[1.2] italic font-light">
             "{dailyVerse.text}"
           </p>
-          <div className="flex items-center justify-between pt-5 border-t border-white/5">
+          <div className="flex items-center justify-between pt-5 border-t border-white/5 gap-3 flex-wrap">
             <span className="text-[10px] font-bold text-stone-600 tracking-[0.2em] uppercase">— {dailyVerse.ref}</span>
-            <button
-              onClick={() => onOpenPassage(book, chapter, verse)}
-              className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-widest hover:text-white transition-colors py-2 px-3 bg-white/5 rounded-lg border border-white/5 min-h-[36px]"
-            >
-              Read Chapter →
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleShareStory}
+                disabled={sharing}
+                aria-label="Share Verse of the Day to Instagram Story"
+                className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-widest hover:text-white transition-colors py-2 px-3 bg-white/5 rounded-lg border border-white/5 min-h-[36px] disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {sharing ? '…' : '📤'} Share to Story
+              </button>
+              <button
+                onClick={() => onOpenPassage(book, chapter, verse)}
+                className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-widest hover:text-white transition-colors py-2 px-3 bg-white/5 rounded-lg border border-white/5 min-h-[36px]"
+              >
+                Read Chapter →
+              </button>
+            </div>
           </div>
         </div>
       </section>

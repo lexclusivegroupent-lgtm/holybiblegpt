@@ -126,6 +126,118 @@ export async function generateShareCard({ quote, reference, maxChars = 320 }: Sh
   return canvas.toDataURL('image/png');
 }
 
+export interface StoryCardOptions {
+  quote: string;      // the verse text
+  reference: string;  // e.g. "Matthew 6:33"
+  label?: string;     // small eyebrow label, e.g. "Verse of the Day"
+}
+
+const SW = 1080;
+const SH = 1920;
+// Instagram overlays its own UI (profile chip, music/sticker tray) in a band
+// at the very top and the reply bar + tray at the very bottom of a Story.
+// Keeping content inside this safe zone means nothing we draw gets covered.
+const SAFE_TOP = 260;
+const SAFE_BOTTOM = 260;
+
+/**
+ * Draws a vertical 1080×1920 (9:16) card sized for Instagram/Facebook/Snap
+ * Stories — same gold-on-black branding as generateShareCard, laid out so
+ * the verse sits centered inside Instagram's safe zone.
+ */
+export async function generateStoryCard({ quote, reference, label = 'Verse of the Day' }: StoryCardOptions): Promise<string> {
+  const text = quote.trim().replace(/\s+/g, ' ');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = SW;
+  canvas.height = SH;
+  const ctx = canvas.getContext('2d')!;
+
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 0, SH);
+  grad.addColorStop(0, '#111111');
+  grad.addColorStop(0.5, '#0a0a0a');
+  grad.addColorStop(1, '#000000');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, SW, SH);
+
+  // Gold border, inset from the edges but outside the safe zone bands
+  ctx.strokeStyle = 'rgba(212,175,55,0.5)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(32, 32, SW - 64, SH - 64);
+
+  // Subtle cross watermark, centered in the safe zone
+  const safeCenterY = SAFE_TOP + (SH - SAFE_TOP - SAFE_BOTTOM) / 2;
+  ctx.fillStyle = 'rgba(212,175,55,0.07)';
+  ctx.font = '340px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✝', SW / 2, safeCenterY);
+
+  // Eyebrow label
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = 'bold 30px sans-serif';
+  ctx.textBaseline = 'alphabetic';
+  const labelY = SAFE_TOP + 70;
+  ctx.fillText(label.toUpperCase(), SW / 2, labelY);
+  // letter-spacing isn't native to canvas — approximate with a manual draw
+  ctx.font = 'bold 28px sans-serif';
+  const spaced = label.toUpperCase().split('').join('  ');
+  ctx.fillText(spaced, SW / 2, labelY);
+
+  // Verse text, word-wrapped, shrinking font to fit the safe zone
+  ctx.fillStyle = '#f5f5f4';
+  ctx.textAlign = 'center';
+  const maxW = SW - 160;
+  const zoneTop = labelY + 90;
+  const zoneBottom = SH - SAFE_BOTTOM - 140;
+  const zoneHeight = zoneBottom - zoneTop;
+
+  let fontSize = 64;
+  let lines: string[] = [];
+  let lh = 86;
+  do {
+    ctx.font = `italic ${fontSize}px Georgia, serif`;
+    lines = wrapLines(ctx, text, maxW);
+    lh = Math.round(fontSize * 1.42);
+    fontSize -= 2;
+  } while (lines.length * lh > zoneHeight && fontSize > 28);
+
+  if (lines.length > 0) {
+    lines[0] = `“${lines[0]}`;
+    lines[lines.length - 1] = `${lines[lines.length - 1]}”`;
+  }
+
+  const totalH = lines.length * lh;
+  const startY = zoneTop + (zoneHeight - totalH) / 2 + fontSize;
+  lines.forEach((l, i) => ctx.fillText(l, SW / 2, startY + i * lh));
+
+  // Reference
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = 'bold 32px Georgia, serif';
+  ctx.fillText(`— ${reference}`, SW / 2, startY + totalH + 50);
+
+  // Branding — logo + site name, centered just above the bottom safe zone
+  const logo = await loadLogo();
+  const brandText = 'Holy Bible GPT · HolyBibleGPT.com';
+  ctx.font = '26px sans-serif';
+  const brandTextWidth = ctx.measureText(brandText).width;
+  const logoSize = logo ? 38 : 0;
+  const gap = logo ? 14 : 0;
+  const brandBlockWidth = logoSize + gap + brandTextWidth;
+  const brandStartX = SW / 2 - brandBlockWidth / 2;
+  const brandY = SH - SAFE_BOTTOM - 40;
+
+  if (logo) {
+    ctx.drawImage(logo, brandStartX, brandY - logoSize / 2 - 20, logoSize, logoSize);
+  }
+  ctx.fillStyle = 'rgba(212,175,55,0.65)';
+  ctx.textAlign = 'left';
+  ctx.fillText(brandText, brandStartX + logoSize + gap, brandY);
+
+  return canvas.toDataURL('image/png');
+}
+
 async function dataUrlToFile(dataUrl: string, filename: string): Promise<File> {
   const res = await fetch(dataUrl);
   const blob = await res.blob();
