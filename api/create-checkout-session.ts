@@ -27,7 +27,21 @@ async function createSession(userId: string) {
   });
 }
 
-export default createCheckoutHandler({ verify: verifyPuterIdentity, createSession }) as (
-  req: VercelRequest,
-  res: VercelResponse,
-) => Promise<void>;
+const checkout = createCheckoutHandler({ verify: verifyPuterIdentity, createSession });
+
+// GET reports whether checkout can run. It is not a new function: Vercel Hobby
+// allows 12 serverless functions, and this deployment is already at that limit.
+// The response is only booleans. POST still requires a verified Puter session.
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'GET') {
+    const secretConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
+    const priceConfigured = Boolean(process.env.STRIPE_PRICE_ID);
+    const appUrlConfigured = Boolean(process.env.VITE_APP_URL);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({
+      checkout: secretConfigured && priceConfigured && appUrlConfigured,
+      portal: secretConfigured && appUrlConfigured,
+    });
+  }
+  return checkout(req, res);
+}

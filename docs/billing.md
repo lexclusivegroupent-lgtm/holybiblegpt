@@ -2,7 +2,7 @@
 
 Holy Bible GPT does not create Stripe products, prices, or live keys. The owner does that in the Stripe Dashboard. Until the steps below are done on the host that actually serves `/api`, the site hides the upgrade and billing-portal buttons.
 
-The canonical site is the Cloudflare Worker. That Worker does not run these Vercel functions. A request to `/api/billing-config` there returns the app shell, not JSON, so the buttons stay hidden. Do not point the public site at a second deployment just to reach an API that is still being locked down. Checkout appears on its own once `/api` is served by the deployment that has these variables.
+The canonical site is the Cloudflare Worker. That Worker does not run these Vercel functions. A GET to `/api/create-checkout-session` there returns the app shell, not JSON, so the buttons stay hidden. POST on that same route still requires a verified Puter session and starts checkout. There is no separate billing-config function, because the Vercel Hobby plan allows only 12 serverless functions. Do not point the public site at a second deployment just to reach an API that is still being locked down. Checkout appears on its own once `/api` is served by the deployment that has these variables.
 
 ## What to create in Stripe
 
