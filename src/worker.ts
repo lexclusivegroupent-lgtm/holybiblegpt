@@ -1,3 +1,6 @@
+import * as Sentry from "@sentry/cloudflare";
+import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
+
 /**
  * Cloudflare Worker — HolyBibleGPT
  *
@@ -13,6 +16,8 @@
 
 interface Env {
   ESV_API_KEY?: string;
+  // Set with `npx wrangler secret put SENTRY_DSN`. Empty disables Sentry.
+  SENTRY_DSN?: string;
   ASSETS: { fetch(input: Request | string, init?: RequestInit): Promise<Response> };
 }
 
@@ -42,7 +47,7 @@ function corsHeaders(): Record<string, string> {
   };
 }
 
-export default {
+const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
@@ -94,6 +99,8 @@ export default {
 
         return new Response(JSON.stringify({ verses }), { headers: corsHeaders() });
       } catch (err) {
+        console.error(JSON.stringify({ message: "esv proxy failed" }));
+        if (sentryDsnFrom(env.SENTRY_DSN)) Sentry.captureException(err);
         return new Response(
           JSON.stringify({ error: 'Failed to reach ESV API' }),
           { status: 502, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
@@ -105,3 +112,8 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+export default Sentry.withSentry(
+  (env: Env) => cloudflareSentryOptions(env.SENTRY_DSN),
+  worker,
+);
