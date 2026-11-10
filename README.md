@@ -34,7 +34,7 @@ npm run build
 
 Do not commit secrets.
 
-Billing variables, and the fact that this repo does not create Stripe products, are listed in `docs/billing.md` on the billing change. Until that file is on this branch, the names are `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `VITE_APP_URL`, and the Vercel KV tokens. The owner creates the Stripe price.
+Billing variables are listed in `docs/billing.md`. The Worker reads `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY`, `STRIPE_PRICE_ID` (monthly fallback), `STRIPE_WEBHOOK_SECRET`, optional `GIFT_URL`, and `APP_URL`. This repo does not create Stripe products. Reading, search, and AI study are free. Plus is optional sync and backup.
 
 `ESV_API_KEY` is a Cloudflare secret for the Worker proxy. Leave it unset until a Crossway license and the required copyright notice are in place.
 

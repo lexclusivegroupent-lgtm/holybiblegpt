@@ -1,14 +1,8 @@
-// Free-tier usage gate for the AI chat: 5 free questions, then Pro
-// ($6.99/mo) is required. Enforced server-side (api/get-usage.ts,
-// api/increment-usage.ts) against Vercel KV, keyed by the Puter account
-// verified from the caller's session token — never a client-supplied id
-// alone, and never a client-side count.
-//
-// The Worker implements these routes. Until D1 is bound and migrated, an
-// authenticated call gets 404, which this module treats as "no usage API":
-// the question is allowed. A real JSON body from D1 is enforced. Any 5xx,
-// JSON or not, and any network error fail closed. Bible reading does not
-// call this module.
+// Usage count for analytics. AI study is free and is not capped.
+// The Worker implements these routes. The count is keyed by the Puter
+// account verified from the caller's session token — never a client-supplied
+// id alone. Callers must not block a question on this result. Bible reading
+// and search do not call this module.
 
 import { getPuterAuthToken } from './aiService';
 import { CLOSED_CONSUME, CLOSED_USAGE, consumeFromHttp, usageFromHttp } from './usageGate';
@@ -16,8 +10,8 @@ import { CLOSED_CONSUME, CLOSED_USAGE, consumeFromHttp, usageFromHttp } from './
 export interface UsageInfo {
   isPro: boolean;
   count: number;
-  remaining: number | null; // null = unlimited (Pro) or unknown (unavailable)
-  limit: number;
+  remaining: number | null; // null = unlimited
+  limit: number | null;
   unavailable?: boolean;
 }
 
@@ -45,9 +39,8 @@ export const getUsage = async (userId: string): Promise<UsageInfo> => {
   }
 };
 
-// Call this right before sending a message to the AI. `allowed: true` may
-// continue. Any 5xx or a network error returns allowed: false. A 404, or a
-// 2xx non-JSON body, means this host has no usage API and returns allowed: true.
+// Records a question for analytics. The return value must not block study.
+// A 404, or a 2xx non-JSON body, means this host has no usage API.
 export const consumeUsage = async (userId: string): Promise<ConsumeResult> => {
   try {
     const headers = await authHeader();

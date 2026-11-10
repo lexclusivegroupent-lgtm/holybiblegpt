@@ -1,11 +1,80 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import MissionGift from './MissionGift';
+import PlusPlan from './PlusPlan';
+import { signIntoPuter } from '../services/aiService';
+import {
+  BillingAvailability,
+  BillingInterval,
+  checkProStatus,
+  getBillingAvailability,
+  getUserId,
+  startCheckout,
+} from '../services/syncService';
 
 interface SupportPanelProps {
   onClose: () => void;
 }
 
 const SupportPanel: React.FC<SupportPanelProps> = ({ onClose }) => {
+  const [billing, setBilling] = useState<BillingAvailability | 'checking'>('checking');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [active, setActive] = useState(false);
+  const [accountKnown, setAccountKnown] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getBillingAvailability().then((next) => {
+      if (!cancelled) setBilling(next);
+    });
+    getUserId().then(async (id) => {
+      if (cancelled) return;
+      setUserId(id);
+      if (!id) {
+        setActive(false);
+        setAccountKnown(true);
+        return;
+      }
+      const status = await checkProStatus(id);
+      if (cancelled) return;
+      setActive(status === 'pro');
+      setAccountKnown(true);
+    }).catch(() => {
+      if (!cancelled) setAccountKnown(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSignIn = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await signIntoPuter();
+      const id = await getUserId();
+      setUserId(id);
+      setActive(id ? (await checkProStatus(id)) === 'pro' : false);
+      setAccountKnown(true);
+    } catch (e: any) {
+      setMessage(e.message || 'Sign-in failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCheckout = async (interval: BillingInterval) => {
+    if (!userId) return handleSignIn();
+    setBusy(true);
+    setMessage(null);
+    try {
+      await startCheckout(userId, interval);
+    } catch (e: any) {
+      setMessage(e.message || 'Could not start checkout.');
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full w-full bg-black overflow-y-auto">
       <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-stone-900/40 sticky top-0 z-10">
@@ -26,9 +95,22 @@ const SupportPanel: React.FC<SupportPanelProps> = ({ onClose }) => {
         <header>
           <h2 className="accent-font text-3xl font-bold gold-gradient-text uppercase tracking-widest mb-6">Support Holy Bible GPT</h2>
           <p className="bible-font text-xl text-stone-300 leading-relaxed font-light">
-            This project helps people understand the Bible and the gospel. Your support keeps the study tools and chat running and covers the API costs.
+            Reading, search, and AI study are free forever. Plus and gifts are optional.
           </p>
         </header>
+
+        <PlusPlan
+          billing={billing}
+          signedIn={Boolean(userId)}
+          active={active}
+          accountKnown={accountKnown}
+          busy={busy}
+          message={message}
+          onSignIn={handleSignIn}
+          onCheckout={handleCheckout}
+        />
+
+        <MissionGift giftUrl={billing === 'checking' ? '' : billing.giftUrl} />
 
         <section className="space-y-4">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-600">Give a gift</h3>
@@ -73,8 +155,8 @@ const SupportPanel: React.FC<SupportPanelProps> = ({ onClose }) => {
         </section>
 
         <footer className="pt-8 border-t border-white/5">
-          <p className="text-[#D4AF37] text-sm italic font-medium">
-            Thank you for helping us share God’s Word with more people.
+          <p className="text-stone-400 text-sm">
+            Reading, search, and AI study stay free whether or not you subscribe or give.
           </p>
         </footer>
       </div>

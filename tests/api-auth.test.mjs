@@ -176,10 +176,11 @@ test('usage, checkout, and the billing portal fail closed', async () => {
     },
     verify: session('alice'),
   })({ method: 'POST', headers: { authorization: 'Bearer x' }, body: { userId: 'alice' } }, outage);
-  assert.equal(outage.statusCode, 503);
-  assert.equal(outage.body.allowed, false);
+  assert.equal(outage.statusCode, 200);
+  assert.equal(outage.body.allowed, true);
   assert.equal(outage.body.isPro, false);
   assert.equal(outage.body.unavailable, true);
+  assert.equal(outage.body.remaining, null);
   assert.equal(JSON.stringify(outage.body).includes('kv down'), false);
 
   const freeKv = memoryKv();

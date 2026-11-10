@@ -3,9 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Role, Message, AppMode, Translation, PassageLink, AppTab } from '../types';
 import { sendMessageStream, getPuterAuthState, signIntoPuter, isAuthError, PuterStatus } from '../services/aiService';
 import { storage } from '../services/storageService';
-import { getUserId, startCheckout, getBillingAvailability } from '../services/syncService';
-import { getUsage, consumeUsage, UsageInfo } from '../services/usageService';
-import { chatUsageView } from '../services/usageGate';
+import { getUserId } from '../services/syncService';
+import { consumeUsage } from '../services/usageService';
 import MessageBubble from './MessageBubble';
 import { MODE_LABELS } from '../constants';
 
@@ -59,11 +58,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [usage, setUsage] = useState<UsageInfo | null>(null);
-  const [usageNotice, setUsageNotice] = useState<string | null>(null);
-  const [upgradeBusy, setUpgradeBusy] = useState(false);
-  const [upgradeError, setUpgradeError] = useState<string | null>(null);
-  const [checkoutAvailable, setCheckoutAvailable] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingProcessed = useRef(false);
@@ -74,34 +68,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     getPuterAuthState().then(status => setPuterStatus(status));
   }, []);
 
-  // Once signed in, load the free-tier usage count so the paywall/counter
-  // reflects reality immediately (not just after a send attempt).
   useEffect(() => {
     if (puterStatus !== 'ready') return;
     let cancelled = false;
     getUserId().then(id => {
-      if (cancelled || !id) return;
-      setUserId(id);
-      getUsage(id).then(u => { if (!cancelled) setUsage(u); });
+      if (!cancelled) setUserId(id);
     });
     return () => { cancelled = true; };
   }, [puterStatus]);
-
-  useEffect(() => {
-    getBillingAvailability().then((billing) => setCheckoutAvailable(billing.checkout));
-  }, []);
-
-  const handleUpgrade = async () => {
-    if (!userId) return;
-    setUpgradeBusy(true);
-    setUpgradeError(null);
-    try {
-      await startCheckout(userId);
-    } catch (e: any) {
-      setUpgradeError(e.message || 'Could not start checkout.');
-      setUpgradeBusy(false);
-    }
-  };
 
   useEffect(() => {
     setLocalMode(currentMode);
@@ -117,7 +91,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [messages, isLoading]);
 
   // Persist the conversation locally on every change, so a refresh or closed
-  // tab doesn't lose it. Cross-device sync for Pro users rides the existing
+  // tab doesn't lose it. Cross-device sync for Plus subscribers rides the existing
   // backup/restore bundle in Settings (chatHistory is part of collectLocalData).
   useEffect(() => {
     storage.saveChatHistory(messages);
@@ -163,36 +137,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
-    // Free-tier gate. Pro skips it. Any 5xx and network errors do not call
-    // the AI. A 404, or a 2xx non-JSON body, means this host has no usage
-    // API, so the question is allowed. Bible reading does not use this gate.
-    if (userId && !usage?.isPro) {
-      const result = await consumeUsage(userId);
-      if (!result.allowed) {
-        if (result.unavailable) {
-          setUsageNotice('AI study is unavailable right now. Bible reading still works. Please try again in a moment.');
-          setUsage(prev => prev ? { ...prev, unavailable: true, isPro: false } : {
-            isPro: false, count: 0, remaining: null, limit: 5, unavailable: true,
-          });
-        } else {
-          setUsageNotice(null);
-          setUsage(prev => ({
-            isPro: false,
-            count: prev?.count ?? 0,
-            remaining: 0,
-            limit: prev?.limit ?? 5,
-          }));
-        }
-        return;
-      }
-      setUsageNotice(null);
-      setUsage(prev => ({
-        isPro: result.isPro,
-        count: prev ? prev.count + 1 : 1,
-        remaining: result.remaining,
-        limit: prev?.limit ?? 5,
-      }));
-    }
+    // Analytics only. A counter failure does not block the question.
+    if (userId) void consumeUsage(userId);
 
     const activeMode = modeOverride ?? activeModeRef.current;
     const kidsMode = activeMode === AppMode.KIDS;
@@ -245,7 +191,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setIsLoading(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [input, isLoading, currentTranslation, messages, userId, usage?.isPro, readingContext]);
+  }, [input, isLoading, currentTranslation, messages, userId, readingContext]);
 
   const handlePray = useCallback((messageText: string) => {
     const prompt = `Based on this Scripture teaching, write a short prayer:\n\n"${messageText.slice(0, 400)}"`;
@@ -254,7 +200,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleSavePrayer = useCallback((text: string) => {
     if (storage.getSettings().prayerConsent !== true) {
-      const agreed = window.confirm('Saving a prayer keeps it on this device. It can show your religious beliefs. It is uploaded only if you use Pro sync. Save it?');
+      const agreed = window.confirm('Saving a prayer keeps it on this device. It can show your religious beliefs. It is uploaded only if you use Plus sync. Save it?');
       if (!agreed) return;
       storage.givePrayerConsent();
     }
@@ -283,8 +229,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const needsSignIn = puterStatus === 'needs-signin';
   const loadFailed = puterStatus === 'load-failed';
   const isReady = puterStatus === 'ready';
-  const paywallReached = isReady && chatUsageView(usage) === 'paywall';
-  const inputDisabled = isLoading || needsSignIn || loadFailed || paywallReached;
+  const inputDisabled = isLoading || needsSignIn || loadFailed;
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-black">
@@ -372,16 +317,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <p className="text-[9px] text-stone-600 uppercase tracking-widest text-center">
           {MODE_LABELS[localMode]?.icon} {MODE_LABELS[localMode]?.description}
         </p>
-        {isReady && chatUsageView(usage) === 'remaining' && usage?.remaining != null && (
-          <p className="text-[9px] text-[#D4AF37]/70 uppercase tracking-widest text-center mt-0.5">
-            {usage.remaining} free {usage.remaining === 1 ? 'question' : 'questions'} left
-          </p>
-        )}
-        {isReady && chatUsageView(usage) === 'unavailable' && (
-          <p className="text-[9px] text-stone-500 uppercase tracking-widest text-center mt-0.5">
-            Couldn’t check free questions. Bible reading still works.
-          </p>
-        )}
       </div>
 
       {/* ── AI Sign-in Banner ────────────────────────────────────────────── */}
@@ -398,7 +333,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </p>
               </div>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Bible reading, notes, Gospel Harmony, and daily verse all work right now — no account needed. The AI study helper requires a free sign-in, and includes 5 free questions before Pro is needed.
+                Bible reading, search, and the AI study helper are free, with no question limit. The study helper needs a free sign-in because it runs on your own Puter account.
               </p>
               <p className="text-[10px] text-stone-600 leading-snug">
                 ⚠️ When prompted, <strong className="text-stone-500">allow pop-ups</strong> for this site so the sign-in window can open.
@@ -423,7 +358,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 )}
               </button>
               <p className="text-[9px] text-stone-700 text-center">
-                5 free questions · The AI is a study aid, not a pastor · Scripture is the final authority
+                The AI is a study aid, not a pastor · Scripture is the final authority
               </p>
             </>
           ) : (
@@ -444,51 +379,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 Retry
               </button>
             </>
-          )}
-        </div>
-      )}
-
-      {/* ── Free-tier Paywall ───────────────────────────────────────────── */}
-      {paywallReached && (
-        <div className="mx-4 mt-4 p-4 rounded-2xl border shrink-0 space-y-3 bg-[#D4AF37]/5 border-[#D4AF37]/20">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">✨</span>
-            <p className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-              You've used your 5 free questions
-            </p>
-          </div>
-          <p className="text-xs text-stone-400 leading-relaxed">
-            Bible reading, notes, bookmarks, and Gospel Harmony stay free. When billing is configured, Pro is the sync subscription. The study aid still runs through your own Puter account.
-          </p>
-          {checkoutAvailable ? (
-            <>
-              {upgradeError && (
-                <p className="text-[10px] text-red-400/80 leading-snug border border-red-900/30 bg-red-950/20 rounded-xl px-3 py-2">
-                  {upgradeError}
-                </p>
-              )}
-              <button
-                onClick={handleUpgrade}
-                disabled={upgradeBusy}
-                className="w-full min-h-[44px] bg-[#D4AF37] text-black text-[10px] font-bold uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {upgradeBusy ? (
-                  <>
-                    <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" />
-                    Opening checkout…
-                  </>
-                ) : (
-                  'Upgrade to Pro'
-                )}
-              </button>
-              <p className="text-[9px] text-stone-700 text-center">
-                The charge is the Stripe price. Card details go to Stripe.
-              </p>
-            </>
-          ) : (
-            <p className="text-[10px] text-stone-500 leading-snug">
-              Pro checkout is not available on this site yet, so the upgrade button is hidden.
-            </p>
           )}
         </div>
       )}
@@ -523,9 +413,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* ── Input ───────────────────────────────────────────────────────── */}
       <div className="px-4 py-3 border-t border-white/5 bg-stone-900/20 shrink-0">
-        {usageNotice && (
-          <p className="text-[11px] text-stone-400 leading-relaxed mb-2">{usageNotice}</p>
-        )}
         <form
           onSubmit={e => { e.preventDefault(); handleSend(); }}
           className="flex gap-2 items-end"
@@ -544,9 +431,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 ? 'Sign in above to ask questions…'
                 : loadFailed
                   ? 'AI service unavailable — please refresh'
-                  : paywallReached
-                    ? 'The free question limit for this session has been reached.'
-                    : puterStatus === 'checking'
+                  : puterStatus === 'checking'
                       ? 'Connecting to AI…'
                       : `${MODE_LABELS[localMode]?.label ?? 'Ask'} mode — type your question… (Enter to send)`
             }

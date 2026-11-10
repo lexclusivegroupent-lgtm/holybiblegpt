@@ -114,7 +114,11 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
 
   const billing = await get('/api/create-checkout-session');
   assert.equal(billing.status, 200);
-  assert.deepEqual(JSON.parse(billing.body), { checkout: false, portal: false });
+  assert.deepEqual(JSON.parse(billing.body), {
+    checkout: false,
+    portal: false,
+    intervals: { month: false, year: false },
+  });
 
   const push = await get('/api/push-send-daily');
   assert.equal(push.status, 503);

@@ -3,9 +3,9 @@ import React, { useEffect } from 'react';
 
 const FAQView: React.FC = () => {
   const faqs = [
-    { q: "Is this app free?", a: "Yes. The Bible reader and basic tools are free for everyone." },
+    { q: "Is this app free?", a: "Reading, search, and AI study are free forever, with no question limit. Plus is an optional subscription for cross-device sync and cloud backup. It does not change access to Scripture or the study aid." },
     { q: "Can I use it offline?", a: "Yes. Use the Scriptorium Settings to download the full KJV for offline use." },
-    { q: "Is my data private?", a: "Notes and prayers start on your device. A question sent to the study aid goes to Puter and its model provider. Pro sync, if you use it, stores a copy in Vercel KV. We do not sell your data. Read the privacy policy for the full list." },
+    { q: "Is my data private?", a: "Notes and prayers start on your device. A question sent to the study aid goes to Puter and its model provider. Plus sync, if you use it, stores a copy in Cloudflare D1. We do not sell your data. Read the privacy policy for the full list." },
     { q: "Who built this?", a: "Built by a small team dedicated to sharing the Word through modern technology." },
     { q: "Is the AI always right?", a: "No. AI is a tool for study. Always check everything against Scripture." }
   ];

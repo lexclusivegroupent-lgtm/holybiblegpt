@@ -36,10 +36,18 @@ interface Env {
   APP_URL?: string;
   // wrangler secret put STRIPE_SECRET_KEY
   STRIPE_SECRET_KEY?: string;
+  // Monthly Plus price. STRIPE_PRICE_ID is the fallback when this is unset.
+  // wrangler secret put STRIPE_PRICE_ID_MONTHLY
+  STRIPE_PRICE_ID_MONTHLY?: string;
+  // wrangler secret put STRIPE_PRICE_ID_YEARLY
+  STRIPE_PRICE_ID_YEARLY?: string;
   // wrangler secret put STRIPE_PRICE_ID
   STRIPE_PRICE_ID?: string;
   // wrangler secret put STRIPE_WEBHOOK_SECRET
   STRIPE_WEBHOOK_SECRET?: string;
+  // Optional public Stripe Payment Link. Leave unset to hide the gift link.
+  // wrangler secret put GIFT_URL
+  GIFT_URL?: string;
   // wrangler secret put VAPID_PUBLIC_KEY
   VAPID_PUBLIC_KEY?: string;
   // wrangler secret put VAPID_PRIVATE_KEY
