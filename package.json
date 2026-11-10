@@ -12,7 +12,7 @@
     "test:worker-assets": "node --test tests/worker-assets.test.mjs",
     "test:observability": "node --experimental-strip-types --test tests/observability.test.mjs",
     "test:api-auth": "node --experimental-strip-types --test tests/api-auth.test.mjs tests/usage-gate.test.mjs",
-    "test": "node --experimental-strip-types --test tests/observability.test.mjs tests/api-auth.test.mjs tests/usage-gate.test.mjs && node --test tests/worker-api.test.mjs tests/worker-push-billing.test.mjs tests/worker-assets.test.mjs services/scriptureGrounding.test.mjs scripts/verify-verses.mjs services/billingAvailability.test.mjs scripts/privacy-copy.test.mjs scripts/hardening.test.mjs && node scripts/verify-kjv.mjs && node scripts/verify-quotes.mjs"
+    "test": "node --experimental-strip-types --test tests/observability.test.mjs tests/api-auth.test.mjs tests/usage-gate.test.mjs && node --test tests/worker-api.test.mjs tests/worker-push-billing.test.mjs tests/worker-assets.test.mjs services/scriptureGrounding.test.mjs services/scriptureSearch.test.mjs scripts/verify-verses.mjs services/billingAvailability.test.mjs scripts/privacy-copy.test.mjs scripts/hardening.test.mjs && node scripts/verify-kjv.mjs && node scripts/verify-quotes.mjs"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",

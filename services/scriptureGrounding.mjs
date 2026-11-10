@@ -4,7 +4,7 @@
 
 export const CANNOT_ESTABLISH = "I cannot establish that from Scripture.";
 
-const BOOK_NAMES = [
+export const BOOK_NAMES = [
   "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
   "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
   "Nehemiah", "Esther", "Job", "Psalms", "Psalm", "Proverbs", "Ecclesiastes", "Song of Solomon",
