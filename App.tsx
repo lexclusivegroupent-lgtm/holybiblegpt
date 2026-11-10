@@ -86,7 +86,7 @@ const ROUTE_TO_TAB: Record<string, AppTab> = Object.fromEntries(
 // Per-page title + description used both for document.title and OG tags
 const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
   home:         ['Holy Bible GPT – Free Scripture-First Bible Study', "Free Scripture-first Bible study by The Christian's Deck. Read the Bible, ask questions, use cross-references, and pray from Scripture. The AI is a study aid — God's Word holds final authority."],
-  study:        ['Scripture Study Companion – Holy Bible GPT', 'Ask Bible questions and receive Scripture-first answers powered by free AI. KJV, ESV, and WEB translations.'],
+  study:        ['Scripture Study Companion – Holy Bible GPT', 'Ask Bible questions and receive Scripture-first answers. The study aid quotes retrieved KJV or WEB text and can say when a claim is not established.'],
   about:        ['About Holy Bible GPT – Scripture-First, Always Free', 'Learn how Holy Bible GPT works: a Scripture-first study tool that quotes the Word of God before everything else.'],
   faq:          ['FAQ – Holy Bible GPT', 'Frequently asked questions about Holy Bible GPT, free AI Bible study, and how to use the Scripture study tools.'],
   privacy:      ['Privacy Policy – Holy Bible GPT', 'No accounts, no data collection. Holy Bible GPT stores everything on your device only. Your data stays with you.'],
@@ -103,7 +103,7 @@ const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
   theology:     ['Theology Topics – Holy Bible GPT', 'Explore major theological themes and doctrines grounded in Scripture.'],
   instructions: ['How to Use – Holy Bible GPT', 'A quick guide to getting the most out of Holy Bible GPT for daily Bible study.'],
   disclaimer:   ['AI Disclaimer – Holy Bible GPT', 'Understanding the role and limits of AI in Holy Bible GPT.'],
-  translations: ['About Bible Translations – Holy Bible GPT', 'KJV, ESV, and WEB translations explained — why KJV is the default and how the others support understanding.'],
+  translations: ['About Bible Translations – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered, so the label always matches the text.'],
   changelog:    ["What's New – Holy Bible GPT Changelog", 'Latest updates and new features added to Holy Bible GPT: search tools, offline KJV, prayer journal, and more.'],
 };
 
@@ -150,7 +150,7 @@ const App: React.FC = () => {
       const slug = bookToSlug(readerState.book);
       path = `/bible/${slug}/${readerState.chapter}`;
       title = `${readerState.book} ${readerState.chapter} – Bible Reading – Holy Bible GPT`;
-      desc = `Read ${readerState.book} chapter ${readerState.chapter} (KJV, ESV, WEB). Study, highlight, bookmark, and explore Scripture.`;
+      desc = `Read ${readerState.book} chapter ${readerState.chapter} in the ${currentTranslation === Translation.ESV ? 'King James Version. ESV is not offered here' : currentTranslation}. Study, highlight, bookmark, and explore Scripture.`;
     } else {
       path = TAB_ROUTES[activeTab] ?? '/';
       const [t, d] = PAGE_META[activeTab] ?? PAGE_META.home!;
@@ -162,7 +162,7 @@ const App: React.FC = () => {
       window.history.pushState(null, '', path);
     }
     updateMeta(title, desc, path);
-  }, [activeTab, readerState.book, readerState.chapter]);
+  }, [activeTab, readerState.book, readerState.chapter, currentTranslation]);
 
   useEffect(() => {
     // ── Parse initial URL so deep-links and shared links work ──

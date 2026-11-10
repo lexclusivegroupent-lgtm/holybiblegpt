@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test:worker-assets": "node --test tests/worker-assets.test.mjs",
     "test:observability": "node --experimental-strip-types --test tests/observability.test.mjs",
-    "test:api-auth": "node --experimental-strip-types --test tests/api-auth.test.mjs tests/usage-gate.test.mjs"
+    "test:api-auth": "node --experimental-strip-types --test tests/api-auth.test.mjs tests/usage-gate.test.mjs",
+    "test": "node --experimental-strip-types --test tests/observability.test.mjs tests/api-auth.test.mjs tests/usage-gate.test.mjs && node --test tests/worker-assets.test.mjs services/scriptureGrounding.test.mjs scripts/verify-verses.mjs"
   },
   "dependencies": {
     "@sentry/cloudflare": "^11.12.0",

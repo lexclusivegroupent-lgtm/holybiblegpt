@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Role, Message, AppMode, Translation, PassageLink, AppTab } from '../types';
 import { sendMessageStream, getPuterAuthState, signIntoPuter, isAuthError, PuterStatus } from '../services/aiService';
-import { enrichWithVerseContext } from '../services/bibleService';
 import { storage } from '../services/storageService';
 import { getUserId, startCheckout } from '../services/syncService';
 import { getUsage, consumeUsage, UsageInfo } from '../services/usageService';
@@ -211,21 +210,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     ]);
 
     try {
-      const enriched = await enrichWithVerseContext(trimmed, currentTranslation);
-
       const history = messages
         .filter(m => m.id !== '0' && m.text.trim())
         .map(m => ({
           role: (m.role === Role.BOT ? 'assistant' : 'user') as 'assistant' | 'user',
           content: m.text,
         }));
-      history.push({ role: 'user', content: enriched });
+      history.push({ role: 'user', content: trimmed });
 
       await sendMessageStream(activeMode, currentTranslation, kidsMode, history, chunk => {
         setMessages(prev =>
           prev.map(m => (m.id === botId ? { ...m, text: chunk } : m))
         );
-      });
+      }, readingContext);
     } catch (err: any) {
       const errText = err?.message ?? 'AI is temporarily unavailable. Please try again in a moment.';
       // If the error signals an auth problem, surface the sign-in banner again
@@ -243,7 +240,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setIsLoading(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [input, isLoading, currentTranslation, messages, userId, usage?.isPro]);
+  }, [input, isLoading, currentTranslation, messages, userId, usage?.isPro, readingContext]);
 
   const handlePray = useCallback((messageText: string) => {
     const prompt = `Based on this Scripture teaching, write a short prayer:\n\n"${messageText.slice(0, 400)}"`;
@@ -302,7 +299,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="flex items-center gap-2">
           {onTranslationChange && (
             <div className="flex rounded-lg border border-stone-800 overflow-hidden text-[10px] font-bold uppercase tracking-wider">
-              {(['KJV', 'ESV', 'WEB'] as const).map((t, i) => (
+              {(['KJV', 'WEB'] as const).map((t, i) => (
                 <button
                   key={t}
                   onClick={() => onTranslationChange(t as Translation)}

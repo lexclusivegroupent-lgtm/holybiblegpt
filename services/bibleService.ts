@@ -1,5 +1,6 @@
 
 import { Translation } from "../types";
+import { formatRetrievedBlock, planRetrieval } from "./scriptureGrounding.mjs";
 
 export interface VerseData {
   number: number;
@@ -172,15 +173,18 @@ export const getVerseText = async (
     let verses: VerseData[];
 
     if (translation === Translation.ESV) {
+      // Never cache or display KJV text under the ESV label. ESV is served only
+      // when the licensed proxy returns it. The Worker must include Crossway's
+      // notice before that path is offered in the reader.
       try {
         verses = await fetchESV(book, chapter);
       } catch (esvErr: any) {
-        if (esvErr.message === 'ESV_NOT_CONFIGURED') {
-          console.info('ESV API not configured; falling back to KJV.');
-        } else {
-          console.warn('ESV fetch failed; falling back to KJV:', esvErr.message);
-        }
-        verses = await fetchKJV(book, chapter);
+        console.info('ESV text was not served:', esvErr?.message || esvErr);
+        return [{
+          number: 0,
+          text: 'The English Standard Version is not available. This site will not show another translation under the ESV label. ESV text requires a Crossway license and API key, and the required copyright notice. Read the King James Version or the World English Bible. This notice is not Bible text.',
+          isNotice: true,
+        }];
       }
     } else if (translation === Translation.WEB) {
       verses = await fetchWEB(book, chapter);
@@ -335,4 +339,34 @@ export const enrichWithVerseContext = async (
 
   if (lines.length === 0) return message;
   return `${message}\n\n[${translation} verse text for reference:]\n${lines.join('\n')}`;
+};
+
+// Retrieves passage text before the model answers. The quotation and the
+// explanation are separated in the instruction block. ESV is never filled
+// with KJV text.
+export const groundUserMessage = async (
+  message: string,
+  translation: Translation = Translation.KJV,
+  readingContext?: string
+): Promise<string> => {
+  if (!message || message.includes('RETRIEVED SCRIPTURE')) return message;
+  const usable = translation === Translation.ESV ? Translation.KJV : translation;
+  const plan = planRetrieval(message, readingContext);
+  const lines: string[] = [];
+  let count = 0;
+  for (const item of plan.items) {
+    if (count >= 8) break;
+    const verses = await getVerseText(usable, item.book, item.chapter);
+    if (!verses.length || verses.some(verse => verse.isNotice)) continue;
+    for (const verse of verses) {
+      if (verse.isNotice || verse.number < item.start || verse.number > item.end) continue;
+      lines.push(`"${verse.text}"\n— ${item.book} ${item.chapter}:${verse.number} (${usable})`);
+      count += 1;
+      if (count >= 8) break;
+    }
+  }
+  const esvNote = translation === Translation.ESV
+    ? 'The reader selected ESV. ESV text was not retrieved. Any lines below are KJV and must not be labeled ESV.\n'
+    : '';
+  return `${message}\n\n${esvNote}${formatRetrievedBlock(usable, lines, plan.reason)}`;
 };

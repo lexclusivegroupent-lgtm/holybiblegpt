@@ -1,6 +1,7 @@
 
 import { GLOBAL_BEHAVIOR, MODE_PROMPTS, MODE_LABELS } from "../constants";
 import { AppMode, Translation } from "../types";
+import { groundUserMessage } from "./bibleService";
 
 declare global {
   interface Window {
@@ -158,8 +159,18 @@ export const sendMessageStream = async (
   translation: Translation,
   kidsMode: boolean,
   history: { role: 'user' | 'assistant'; content: string }[],
-  onChunk: (text: string) => void
+  onChunk: (text: string) => void,
+  readingContext?: string
 ): Promise<string> => {
+  const groundedHistory = [...history];
+  const last = groundedHistory[groundedHistory.length - 1];
+  if (last?.role === 'user') {
+    groundedHistory[groundedHistory.length - 1] = {
+      ...last,
+      content: await groundUserMessage(last.content, translation, readingContext),
+    };
+  }
+
   const modeLabel = MODE_LABELS[mode]?.label ?? 'General';
   const systemContent = [
     GLOBAL_BEHAVIOR(translation),
@@ -174,7 +185,7 @@ export const sendMessageStream = async (
 
   const messages: Array<{ role: string; content: string }> = [
     { role: "system", content: systemContent },
-    ...history.map(h => ({ role: h.role, content: h.content })),
+    ...groundedHistory.map(h => ({ role: h.role, content: h.content })),
   ];
 
   const puter = await waitForPuter();

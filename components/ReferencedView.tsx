@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { CITED_VERSES } from '../data/citedVerses.mjs';
 
 interface ReferencedBook {
   title: string;
@@ -22,7 +23,7 @@ const ReferencedView: React.FC<ReferencedViewProps> = ({ onOpenPassage }) => {
     {
       title: "Book of Jasher",
       shortDesc: "A non-canonical book mentioned as a source for heroic poetry and historical accounts.",
-      mentionVerse: "And the sun stood still, and the moon stayed, until the people had avenged themselves upon their enemies. Is not this written in the book of Jasher?",
+      mentionVerse: CITED_VERSES["Joshua 10:13"],
       mentionRef: { book: "Joshua", chapter: "10", verse: "13" },
       scholarlyExplanation: "Scholars believe this was a collection of poems or songs celebrating Israel's military victories. It is also mentioned in 2 Samuel 1:18 regarding the 'Song of the Bow.'",
       status: "Later Tradition",
@@ -31,7 +32,7 @@ const ReferencedView: React.FC<ReferencedViewProps> = ({ onOpenPassage }) => {
     {
       title: "Book of the Wars of the Lord",
       shortDesc: "An ancient collection of poems or records documenting the early battles of the Israelites.",
-      mentionVerse: "Wherefore it is said in the book of the wars of the LORD, What he did in the Red sea, and in the brooks of Arnon...",
+      mentionVerse: CITED_VERSES["Numbers 21:14"],
       mentionRef: { book: "Numbers", chapter: "21", verse: "14" },
       scholarlyExplanation: "A lost source that likely contained poetic accounts of Israel's journey through the wilderness and their conquest of Canaan.",
       status: "Lost"
@@ -39,7 +40,7 @@ const ReferencedView: React.FC<ReferencedViewProps> = ({ onOpenPassage }) => {
     {
       title: "Book of Samuel the Seer",
       shortDesc: "A historical record attributed to the prophet Samuel.",
-      mentionVerse: "Now the acts of David the king, first and last, behold, they are written in the book of Samuel the seer...",
+      mentionVerse: CITED_VERSES["1 Chronicles 29:29"],
       mentionRef: { book: "1 Chronicles", chapter: "29", verse: "29" },
       scholarlyExplanation: "It is widely believed that much of the content of this 'book' was incorporated into the biblical books of 1 and 2 Samuel.",
       status: "Partially Preserved"
@@ -47,7 +48,7 @@ const ReferencedView: React.FC<ReferencedViewProps> = ({ onOpenPassage }) => {
     {
       title: "Book of Nathan the Prophet",
       shortDesc: "A prophetic and historical account covering the reigns of David and Solomon.",
-      mentionVerse: "...and in the book of Nathan the prophet, and in the book of Gad the seer.",
+      mentionVerse: CITED_VERSES["1 Chronicles 29:29"],
       mentionRef: { book: "1 Chronicles", chapter: "29", verse: "29" },
       scholarlyExplanation: "Nathan was a close advisor to David and Solomon. His writings likely provided detailed court records and prophetic insights now lost or merged into 1 & 2 Samuel and 1 & 2 Kings.",
       status: "Lost"
@@ -55,7 +56,7 @@ const ReferencedView: React.FC<ReferencedViewProps> = ({ onOpenPassage }) => {
     {
       title: "Book of Gad the Seer",
       shortDesc: "A history of King David's reign written by the prophet Gad.",
-      mentionVerse: "...behold, they are written in the book of Samuel the seer, and in the book of Nathan the prophet, and in the book of Gad the seer.",
+      mentionVerse: CITED_VERSES["1 Chronicles 29:29"],
       mentionRef: { book: "1 Chronicles", chapter: "29", verse: "29" },
       scholarlyExplanation: "Gad accompanied David during his time as a fugitive. His book would have provided a first-hand account of David's early struggles and his later establishment of the kingdom.",
       status: "Lost"
@@ -63,7 +64,7 @@ const ReferencedView: React.FC<ReferencedViewProps> = ({ onOpenPassage }) => {
     {
       title: "Acts of Solomon",
       shortDesc: "A detailed record of Solomon's wisdom and deeds.",
-      mentionVerse: "And the rest of the acts of Solomon, and all that he did, and his wisdom, are they not written in the book of the acts of Solomon?",
+      mentionVerse: CITED_VERSES["1 Kings 11:41"],
       mentionRef: { book: "1 Kings", chapter: "11", verse: "41" },
       scholarlyExplanation: "Likely a court record or an early biography of Solomon used by the author of 1 Kings as a primary source.",
       status: "Lost"
@@ -136,7 +137,7 @@ const ReferencedView: React.FC<ReferencedViewProps> = ({ onOpenPassage }) => {
                   onClick={() => onOpenPassage(selectedBook.mentionRef.book, selectedBook.mentionRef.chapter, selectedBook.mentionRef.verse)}
                   className="block mt-4 text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest hover:underline"
                 >
-                  — {selectedBook.mentionRef.book} {selectedBook.mentionRef.chapter}:{selectedBook.mentionRef.verse}
+                  — {selectedBook.mentionRef.book} {selectedBook.mentionRef.chapter}:{selectedBook.mentionRef.verse} (KJV)
                 </button>
               </div>
 

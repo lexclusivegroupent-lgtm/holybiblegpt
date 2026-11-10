@@ -42,7 +42,7 @@ const STATIC_PAGES = {
   '/contact':       ['Contact – Holy Bible GPT', 'Get in touch with the Holy Bible GPT team. Send feedback, report an issue, or ask a question.'],
   '/instructions':  ['How to Use – Holy Bible GPT', 'A quick guide to getting the most out of Holy Bible GPT for daily Bible study.'],
   '/disclaimer':    ['AI Disclaimer – Holy Bible GPT', 'Understanding the role and limits of AI in Holy Bible GPT.'],
-  '/translations':  ['About Bible Translations – Holy Bible GPT', 'KJV, ESV, and WEB translations explained — why KJV is the default and how the others support understanding.'],
+  '/translations':  ['About Bible Translations – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered, so the label always matches the text.'],
   '/faith':         ['What We Believe – Holy Bible GPT', 'The faith foundation behind Holy Bible GPT and our commitment to Scripture as the final authority.'],
   '/harmony':       ['Gospel Harmony – Holy Bible GPT', 'See parallel accounts of the life of Christ across Matthew, Mark, Luke, and John — side by side.'],
   '/changelog':     ["What's New – Holy Bible GPT Changelog", 'Latest updates and new features added to Holy Bible GPT: search tools, offline KJV, prayer journal, and more.'],
@@ -95,7 +95,7 @@ async function run() {
     const slug = bookToSlug(book);
     const urlPath = `/bible/${slug}/${chapter}`;
     const title = `${book} ${chapter} – Bible Reading – Holy Bible GPT`;
-    const desc = `Read ${book} chapter ${chapter} (KJV, ESV, WEB). Study, highlight, bookmark, and explore Scripture.`;
+    const desc = `Read ${book} chapter ${chapter} in the King James Version (public domain). The English Standard Version is not offered on this page.`;
 
     const verseHtml = verses
       .map(v => `<p><strong>${v.number}</strong> ${escapeHtml(v.text)}</p>`)
