@@ -47,9 +47,11 @@
   // Public Stripe return origin. Not a secret. Checkout stays off until
   // STRIPE_SECRET_KEY and a Plus price are set with `wrangler secret put`.
   // Prices: STRIPE_PRICE_ID_MONTHLY, STRIPE_PRICE_ID_YEARLY, and
-  // STRIPE_PRICE_ID (monthly fallback). GIFT_URL is optional.
+  // STRIPE_PRICE_ID (monthly fallback). GIFT_URL is a public Payment Link,
+  // not a secret. donate.stripe.com is the host for donate links.
   "vars": {
-    "APP_URL": "https://holybiblegpt.com"
+    "APP_URL": "https://holybiblegpt.com",
+    "GIFT_URL": "https://donate.stripe.com/3cIcN57qad0l3bA6gAcEw00"
   },
   // Same hour as the old Vercel cron (13:00 UTC). The scheduled handler
   // skips the send when the VAPID secrets are missing, and it does not throw.

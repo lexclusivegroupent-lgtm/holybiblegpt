@@ -118,6 +118,7 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
     checkout: false,
     portal: false,
     intervals: { month: false, year: false },
+    giftUrl: 'https://donate.stripe.com/3cIcN57qad0l3bA6gAcEw00',
   });
 
   const push = await get('/api/push-send-daily');

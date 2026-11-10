@@ -27,8 +27,10 @@ export function publicOrigin(value) {
   }
 }
 
-// Stripe Payment Links live on buy.stripe.com. Anything else stays hidden
-// so a bad config value cannot become an open redirect.
+// Payment Links are hosted on buy.stripe.com. Donate links (submit_type=donate)
+// use donate.stripe.com. Anything else stays hidden.
+const GIFT_HOSTS = new Set(['buy.stripe.com', 'donate.stripe.com']);
+
 export function safeGiftUrl(value) {
   if (typeof value !== 'string') return '';
   const trimmed = value.trim();
@@ -37,7 +39,7 @@ export function safeGiftUrl(value) {
     const url = new URL(trimmed);
     if (url.protocol !== 'https:') return '';
     if (url.username || url.password) return '';
-    if (url.hostname !== 'buy.stripe.com') return '';
+    if (!GIFT_HOSTS.has(url.hostname)) return '';
     return url.toString();
   } catch {
     return '';

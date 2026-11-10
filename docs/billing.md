@@ -6,7 +6,9 @@ Reading, search, and AI study stay free forever. Plus does not gate them. Plus i
 
 The canonical site is the Cloudflare Worker. GET `/api/create-checkout-session` returns JSON. `checkout` and `portal` stay false until the Worker has `STRIPE_SECRET_KEY`, a price (`STRIPE_PRICE_ID_MONTHLY` or the monthly fallback `STRIPE_PRICE_ID`, and/or `STRIPE_PRICE_ID_YEARLY`), `APP_URL`, and the D1 binding from `docs/cloudflare-api.md`. POST accepts `interval` of `month` or `year` and still requires a verified Puter session. An omitted interval means `month`. The files under `api/` are the previous Vercel copy. They are not what holybiblegpt.com runs. Do not delete that project from here.
 
-A restricted Stripe key (`rk_...`) is a better fit than a secret key (`sk_...`) if its permissions cover Checkout, Customers, Billing Portal, and Subscriptions. Store whichever key you use in `STRIPE_SECRET_KEY`. If you charge US or EU customers, consider Stripe Tax and an active registration before turning on `automatic_tax`. This repo does not enable `automatic_tax`. See [Collect taxes for recurring payments](https://docs.stripe.com/billing/taxes/collect-taxes.md).
+A restricted Stripe key (`rk_...`) is a better fit than a secret key (`sk_...`) if its permissions cover Checkout, Customers, Billing Portal, and Subscriptions. Store whichever key you use in `STRIPE_SECRET_KEY`.
+
+Plus Checkout sends `automatic_tax[enabled]=true` and `billing_address_collection=required`. The session does not send a customer id, so it does not send `customer_update` (Stripe rejects that unless a customer is present). The Plus prices stay tax-exclusive: tax is added on top of $4.99 and $39.99, and this repo does not change `tax_behavior` on the Price. Stripe Tax collects no tax in a state or country until a registration is recorded there. Head office and the account default tax behavior are already set. Adding a registration in Stripe does not register the business with a tax authority. See [Collect taxes for recurring payments](https://docs.stripe.com/billing/taxes/collect-taxes.md) and the [tax code guide](https://docs.stripe.com/tax/tax-codes.md).
 
 ## What to create in Stripe
 
@@ -14,7 +16,7 @@ A restricted Stripe key (`rk_...`) is a better fit than a secret key (`sk_...`) 
 2. A webhook endpoint at `https://holybiblegpt.com/api/stripe-webhook`.
 3. Subscribe the endpoint to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`.
 4. Turn on the Stripe Customer Portal, with subscription cancel and payment-method update.
-5. Optional: a Payment Link for gifts ($5, $10, and $25 are the suggested amounts). Copy its `https://buy.stripe.com/...` URL. Leave this unset to hide the gift link.
+5. Optional: a Payment Link for gifts ($5, $10, and $25 are the suggested amounts). A donate link uses `https://donate.stripe.com/...`. A regular Payment Link uses `https://buy.stripe.com/...`. The live gift link is already in `wrangler.jsonc`.
 
 ## Environment variables
 
@@ -26,7 +28,6 @@ npx wrangler secret put STRIPE_PRICE_ID_MONTHLY
 npx wrangler secret put STRIPE_PRICE_ID_YEARLY
 npx wrangler secret put STRIPE_PRICE_ID
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
-npx wrangler secret put GIFT_URL
 ```
 
 | Name | Purpose |
@@ -37,11 +38,13 @@ npx wrangler secret put GIFT_URL
 | `STRIPE_PRICE_ID` | Backward-compatible monthly price id, used only when `STRIPE_PRICE_ID_MONTHLY` is unset. |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret for `https://holybiblegpt.com/api/stripe-webhook`. |
 | `APP_URL` | Public origin with no trailing slash. Success, cancel, and portal return use it. |
-| `GIFT_URL` | Optional. Public Stripe Payment Link on `buy.stripe.com`. Empty hides the gift link. It does not enable checkout. |
+| `GIFT_URL` | Public Payment Link. A wrangler var, not a secret. `https://buy.stripe.com/` or `https://donate.stripe.com/`. Empty hides the gift link. It does not enable checkout. |
 
 The webhook and the portal also need the D1 database from `docs/cloudflare-api.md`. Plus status is stored there as `pro` so existing rows keep working. The screen says Plus. `plus` is also accepted on read. No migration is required.
 
-Checkout stays `{ "checkout": false }` until a secret key, `APP_URL`, D1, and at least one price are set. The GET body includes `intervals.month` and `intervals.year`. `giftUrl` is included only when `GIFT_URL` is a `https://buy.stripe.com/` link.
+Checkout stays `{ "checkout": false }` until a secret key, `APP_URL`, D1, and at least one price are set. The GET body includes `intervals.month` and `intervals.year`. `giftUrl` is included only when `GIFT_URL` is an `https://buy.stripe.com/` or `https://donate.stripe.com/` link.
+
+`GIFT_URL` in `wrangler.jsonc` is `https://donate.stripe.com/3cIcN57qad0l3bA6gAcEw00`. That Payment Link redirects to `https://holybiblegpt.com/?gift=thanks`, and the page shows a short thank-you note.
 
 ## How access changes
 

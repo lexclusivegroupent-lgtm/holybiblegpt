@@ -31,6 +31,8 @@ async function createSession(userId: string, interval?: string) {
     cancel_url: `${origin}/?billing_status=cancel`,
     metadata: { userId, interval: selected.interval },
     allow_promotion_codes: true,
+    automatic_tax: { enabled: true },
+    billing_address_collection: 'required',
   });
 }
 

@@ -8,6 +8,7 @@ import {
   isProSubscriptionStatus,
   priceForInterval,
   publicBillingStatus,
+  safeGiftUrl,
   sessionGrantsPlus,
   subscriptionIdFromInvoice,
 } from './billingAvailability.mjs';
@@ -95,6 +96,8 @@ test('the gift link stays hidden when GIFT_URL is unset or not a Stripe Payment 
   assert.equal(giftLinkVisible(undefined), false);
   assert.equal(giftLinkVisible('https://buymeacoffee.com/holybiblegpt'), false);
   assert.equal(giftLinkVisible('http://buy.stripe.com/test'), false);
+  assert.equal(giftLinkVisible('http://donate.stripe.com/test'), false);
+  assert.equal(giftLinkVisible('https://donate.stripe.com.evil.example/test'), false);
   const unset = describeBilling({ APP_URL: 'https://holybiblegpt.com' }, true);
   assert.equal(unset.giftUrl, '');
   assert.equal(giftLinkVisible(unset.giftUrl), false);
@@ -107,6 +110,12 @@ test('the gift link stays hidden when GIFT_URL is unset or not a Stripe Payment 
   assert.equal(giftLinkVisible(set.giftUrl), true);
   assert.equal(set.checkout, false);
   assert.equal(publicBillingStatus(set).giftUrl, 'https://buy.stripe.com/test_gift');
+
+  const donate = 'https://donate.stripe.com/3cIcN57qad0l3bA6gAcEw00';
+  assert.equal(safeGiftUrl(donate), donate);
+  assert.equal(giftLinkVisible(donate), true);
+  const wrangler = readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8');
+  assert.match(wrangler, new RegExp(donate.replace(/[.]/g, '\\.')));
 
   const support = readFileSync(new URL('../components/MissionGift.tsx', import.meta.url), 'utf8');
   assert.match(support, /Giving is optional and unlocks nothing/);
@@ -140,6 +149,9 @@ test('Plus pricing copy names both prices and keeps study free', () => {
   assert.doesNotMatch(plan, /limited time|only today|hurry|don't miss/i);
   const chat = readFileSync(new URL('../components/ChatInterface.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(chat, /paywall|free questions|Upgrade to Pro|FREE_LIMIT|You've used your/);
+  const app = readFileSync(new URL('../App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /gift'\) === 'thanks'/);
+  assert.match(app, /Thank you for the gift/);
 });
 
 test('only an active or trialing subscription remains Pro', () => {

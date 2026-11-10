@@ -45,8 +45,7 @@ interface Env {
   STRIPE_PRICE_ID?: string;
   // wrangler secret put STRIPE_WEBHOOK_SECRET
   STRIPE_WEBHOOK_SECRET?: string;
-  // Optional public Stripe Payment Link. Leave unset to hide the gift link.
-  // wrangler secret put GIFT_URL
+  // Public Payment Link. Set in wrangler.jsonc vars, not a secret.
   GIFT_URL?: string;
   // wrangler secret put VAPID_PUBLIC_KEY
   VAPID_PUBLIC_KEY?: string;

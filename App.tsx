@@ -172,6 +172,7 @@ const App: React.FC = () => {
 
   const [isPreparing, setIsPreparing] = useState(false);
   const [prepMessage, setPrepMessage] = useState("");
+  const [giftThanks, setGiftThanks] = useState(false);
 
   // ── URL-sync effect: runs whenever the active tab or reader position changes ──
   useEffect(() => {
@@ -224,6 +225,9 @@ const App: React.FC = () => {
       window.history.replaceState({}, '', '/');
     } else if (billingStatus === 'cancel') {
       setActiveTab('settings');
+      window.history.replaceState({}, '', '/');
+    } else if (params.get('gift') === 'thanks') {
+      setGiftThanks(true);
       window.history.replaceState({}, '', '/');
     }
 
@@ -360,6 +364,18 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-dvh bg-black overflow-hidden selection:bg-[#D4AF37] selection:text-black">
       <Header onMenuToggle={() => setIsMenuOpen(!isMenuOpen)} onShowSearch={() => setActiveTab('search')} />
+      {giftThanks && (
+        <div role="status" className="shrink-0 px-4 py-3 bg-stone-950 border-b border-[#D4AF37]/30 text-center">
+          <p className="text-sm text-stone-200">Thank you for the gift.</p>
+          <button
+            type="button"
+            onClick={() => setGiftThanks(false)}
+            className="mt-1 text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-300"
+          >
+            Close
+          </button>
+        </div>
+      )}
       <SideDrawer
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}

@@ -36,10 +36,9 @@ npx wrangler secret put STRIPE_PRICE_ID_MONTHLY
 npx wrangler secret put STRIPE_PRICE_ID_YEARLY
 npx wrangler secret put STRIPE_PRICE_ID
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
-npx wrangler secret put GIFT_URL
 ```
 
-`STRIPE_PRICE_ID` is the monthly fallback when `STRIPE_PRICE_ID_MONTHLY` is unset. `GIFT_URL` is optional. Leave it unset to hide the gift link. Details are in `docs/billing.md`.
+`STRIPE_PRICE_ID` is the monthly fallback when `STRIPE_PRICE_ID_MONTHLY` is unset. `GIFT_URL` is a public var in `wrangler.jsonc`, not a secret. Details are in `docs/billing.md`.
 
 Point the Stripe webhook at `https://holybiblegpt.com/api/stripe-webhook`. Subscribe it to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`. Details are in `docs/billing.md`.
 
