@@ -11,7 +11,7 @@ const LimitationsView: React.FC = () => {
         <p>It is instructed to quote only text that was retrieved for that question, and to say "I cannot establish that from Scripture" when the retrieved text does not support the claim. It is also instructed not to invent a Hebrew or Greek word or a historical source. Those are instructions, not a guarantee. Nothing in the browser checks the finished paragraph against the text.</p>
         <p>The model runs through your Puter account as gpt-4o-mini. Puter and its model provider see the question.</p>
         <p>If an answer and the passage disagree, trust the passage. Read the chapter, and talk with your pastor or church when the question is one Christians have long disputed.</p>
-        <p className="text-stone-500 text-xs">[Owner: add any pastoral or legal limit you want stated in your own words.]</p>
+        <p>By The Christian's Deck</p>
       </section>
     </div>
   );

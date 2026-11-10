@@ -26,21 +26,14 @@ const PrivacyView: React.FC = () => {
     <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-8">
       <header className="text-center space-y-4">
         <h1 className="accent-font text-3xl font-bold gold-gradient-text uppercase tracking-widest">Privacy Policy</h1>
-        <p className="text-[10px] text-stone-500 uppercase tracking-widest">Draft for the owner to approve · 10 Nov 2026</p>
+        <p className="text-[10px] text-stone-500 uppercase tracking-widest">By The Christian's Deck · 10 Nov 2026</p>
       </header>
-
-      <section className="glass-dark border border-[#D4AF37]/30 p-6 rounded-2xl text-sm text-stone-300 leading-relaxed space-y-3">
-        <p className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest">Owner review</p>
-        <p>
-          This page describes the data flows in the code. It is not a finished legal opinion. Before relying on it, fill in the bracketed items: the controller's legal name, postal address, and company number; Puter's contracting entity; the Stripe account name; and how long server copies are kept.
-        </p>
-      </section>
 
       <article className="space-y-8 text-sm text-stone-300 leading-relaxed">
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Who is responsible</h2>
           <p>
-            The site is published as Holy Bible GPT by The Christian's Deck. The public contact is thechristiansdeck@gmail.com. [Owner: legal name, postal address in Sweden, and organisation number.]
+            Holy Bible GPT is operated by The Christian's Deck. Privacy requests go to <a className="text-[#D4AF37] underline" href="mailto:thechristiansdeck@gmail.com">thechristiansdeck@gmail.com</a>.
           </p>
           <p>
             An earlier version of this page said that questions went out with no account attached, and the page description said the site collected nothing. That was not accurate. The description below replaces it.
@@ -53,27 +46,27 @@ const PrivacyView: React.FC = () => {
             Reading progress, bookmarks, highlights, notes, prayers, settings, and the chat transcript are stored in this browser (local storage). Chapters you cache are stored in this browser's IndexedDB. They stay here unless you use Pro sync or ask the study aid for help.
           </p>
           <p>
-            A prayer can reveal religious belief. That is special-category data. The prayer journal asks before the first prayer is saved.
+            A prayer can reveal religious belief. That is special-category data. The prayer journal asks before the first prayer is saved. Prayers and notes are kept on the basis of consent. Notes are the words you write. They are part of the browser copy you can download or delete below. There is no separate notes checkbox.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Puter and the model</h2>
           <p>
-            Sign-in and the study aid use Puter.js, loaded from js.puter.com. The app asks Puter for the gpt-4o-mini model. Puter receives the sign-in and the text of the question, including a prayer topic if you use "Help me write." Puter already holds the account identity, including the username this app uses as an id. [Owner: name Puter's legal entity and where it processes data, from Puter's own terms.]
+            Sign-in and the study aid use Puter.js, loaded from js.puter.com. The app asks Puter for the gpt-4o-mini model. Puter receives the sign-in and the text of the question, including a prayer topic if you use "Help me write." Puter already holds the account identity, including the username this app uses as an id. Puter's terms of service name the company as Puter Technologies Inc. Those terms, as relied on here, do not state a processing country, so this page does not add one.
           </p>
           <p>
-            The model call happens in your browser. This site does not run a private model server.
+            The Puter account is kept on the basis of the contract for that account. The model call happens in your browser. This site does not run a private model server.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Vercel KV, Stripe, and analytics</h2>
           <p>
-            If Pro sync is used, the browser bundle (notes, prayers, highlights, bookmarks, settings, and chat) is stored in Vercel KV under the Puter username. Daily verse push, if you subscribe, stores the browser's push subscription there too. [Owner: set the retention period. Suggested starting point: keep the sync bundle until the person asks for deletion.]
+            If Pro sync is used, the browser bundle (notes, prayers, highlights, bookmarks, settings, and chat) is stored in Vercel KV under the Puter username. That write sets no expiry. The server copy stays until a deletion request for that account is carried out. Pro sync is kept on the basis of the contract for that service. Daily verse push, if you subscribe, stores the browser's push subscription in Vercel KV, also with no expiry in the code.
           </p>
           <p>
-            If you subscribe, card details are entered on Stripe's page. This app stores the Stripe customer id, not the card number. [Owner: Stripe account name.]
+            If you subscribe, card details are entered on Stripe's page. This app stores the Stripe customer id, not the card number. The Stripe account name is not set in this site's code, so it is not stated here.
           </p>
           <p>
             The build loads Vercel Analytics. When that script runs, Vercel receives a page view. It does not receive the text of a prayer.
@@ -96,7 +89,10 @@ const PrivacyView: React.FC = () => {
             You can download the browser copy below, and you can delete that copy. Deleting it does not close the Puter account and does not cancel Stripe. For a server copy, email thechristiansdeck@gmail.com. A signed-in delete button for the server copy is waiting on the authenticated API. This page does not offer deletion by typing a username, because that API is not a proof of identity.
           </p>
           <p>
-            [Owner: lawful basis for each flow, whether you rely on consent, contract, or legitimate interests, and the international-transfer tool for Puter, Vercel, and Stripe. Also the supervisory authority you name for complaints. For Sweden that is commonly the IMY, which you should confirm with counsel.]
+            Prayers and notes are processed on the basis of consent. The Puter account and Pro sync are processed on the basis of contract. This page does not name a transfer tool for Puter, Vercel, or Stripe. Each of those services applies its own terms.
+          </p>
+          <p>
+            People in the EU and the EEA can complain to their local data protection authority. One example is Integritetsskyddsmyndigheten (IMY), <a className="text-[#D4AF37] underline" href="https://www.imy.se">imy.se</a>.
           </p>
         </section>
       </article>
