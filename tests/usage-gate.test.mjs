@@ -1,6 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chatUsageView, consumeFromPayload, usageFromPayload } from '../services/usageGate.ts';
+import { chatUsageView, consumeFromHttp, consumeFromPayload, usageFromHttp, usageFromPayload } from '../services/usageGate.ts';
+
+const SPA_HTML = '<!doctype html><html><title>Holy Bible GPT</title><div id="root"></div></html>';
+
+test('a missing usage API lets the question through, and a real API error does not', () => {
+  // holybiblegpt.com is the Worker. It has no /api/increment-usage, so the
+  // asset fallback returns the SPA document. That must not block the chat.
+  const shell = consumeFromHttp(200, SPA_HTML);
+  assert.equal(shell.allowed, true);
+  assert.equal(shell.unavailable, undefined);
+  assert.equal(usageFromHttp(200, SPA_HTML).unavailable, undefined);
+  assert.equal(chatUsageView(usageFromHttp(200, SPA_HTML)), 'hidden');
+
+  const notFound = consumeFromHttp(404, 'Not found');
+  assert.equal(notFound.allowed, true);
+  assert.equal(notFound.unavailable, undefined);
+  assert.equal(consumeFromHttp(404, SPA_HTML).allowed, true);
+  assert.equal(usageFromHttp(404, SPA_HTML).unavailable, undefined);
+
+  // Vercel serves the real handlers. A JSON 5xx stays closed, as does the
+  // network-error result the client returns when fetch throws.
+  const unavailable = consumeFromHttp(503, JSON.stringify({
+    allowed: false,
+    isPro: false,
+    remaining: null,
+    unavailable: true,
+    error: 'Usage service unavailable.',
+  }));
+  assert.equal(unavailable.allowed, false);
+  assert.equal(unavailable.unavailable, true);
+  assert.equal(chatUsageView(usageFromHttp(503, JSON.stringify({
+    error: 'Usage service unavailable.',
+    unavailable: true,
+  }))), 'unavailable');
+
+  const crashed = consumeFromHttp(500, JSON.stringify({ error: 'Usage service unavailable.' }));
+  assert.equal(crashed.allowed, false);
+  assert.equal(crashed.unavailable, true);
+
+  const network = consumeFromPayload(false, null);
+  assert.equal(network.allowed, false);
+  assert.equal(network.unavailable, true);
+
+  // The real API's own allow and deny bodies are unchanged.
+  const denied = consumeFromHttp(200, JSON.stringify({ allowed: false, isPro: false, remaining: 0 }));
+  assert.equal(denied.allowed, false);
+  assert.equal(denied.remaining, 0);
+  const granted = consumeFromHttp(200, JSON.stringify({ allowed: true, isPro: false, remaining: 4 }));
+  assert.equal(granted.allowed, true);
+  assert.equal(granted.remaining, 4);
+  const unauthorized = consumeFromHttp(401, JSON.stringify({ error: 'Authentication required.' }));
+  assert.equal(unauthorized.allowed, false);
+  assert.equal(unauthorized.unavailable, true);
+});
 
 test('client usage gate fails closed unless the server explicitly allows', () => {
   const outage = consumeFromPayload(false, null);
