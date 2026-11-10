@@ -15,7 +15,9 @@ interface KidsModeViewProps {
 }
 
 const KidsModeView: React.FC<KidsModeViewProps> = ({ onOpenPassage }) => {
-  const [acceptedNotice, setAcceptedNotice] = useState(false);
+  const [acceptedNotice, setAcceptedNotice] = useState(() => sessionStorage.getItem('hbgpt_parent_gate') === 'yes');
+  const [gateAnswer, setGateAnswer] = useState('');
+  const [gateError, setGateError] = useState(false);
 
   const stories: Story[] = [
     { title: "Creation", book: "Genesis", chapter: "1", icon: "🌎", summary: "God made the whole beautiful world and everything in it in six days!", question: "What is your favorite thing God made?" },
@@ -31,11 +33,29 @@ const KidsModeView: React.FC<KidsModeViewProps> = ({ onOpenPassage }) => {
         <div className="glass-dark border border-[#D4AF37]/30 p-10 rounded-[3rem] max-w-md text-center space-y-8 animate-in zoom-in-95 duration-500 shadow-2xl">
           <div className="w-20 h-20 bg-[#D4AF37]/10 rounded-full flex items-center justify-center mx-auto text-4xl mb-4 border border-[#D4AF37]/20">👨‍👩‍👧‍👦</div>
           <h2 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest">Parent Notice</h2>
-          <p className="text-stone-300 text-sm leading-relaxed italic">
-            “Parents guide children. Scripture leads the home. The app supports learning.”
+          <p className="text-stone-300 text-sm leading-relaxed">
+            A parent or guardian should open this page. Kids Mode does not ask a child to type a story. The separate study aid, if a child uses it, sends that question to Puter.
           </p>
-          <button 
-            onClick={() => setAcceptedNotice(true)}
+          <label className="block text-left text-xs text-stone-400 space-y-2">
+            <span className="block font-bold uppercase tracking-widest text-[10px]">What is 6 + 7?</span>
+            <input
+              inputMode="numeric"
+              value={gateAnswer}
+              onChange={(event) => { setGateAnswer(event.target.value); setGateError(false); }}
+              className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-stone-100"
+              aria-label="Parent check"
+            />
+          </label>
+          {gateError && <p className="text-xs text-red-400">That answer does not open Kids Mode.</p>}
+          <button
+            onClick={() => {
+              if (gateAnswer.trim() === '13') {
+                sessionStorage.setItem('hbgpt_parent_gate', 'yes');
+                setAcceptedNotice(true);
+              } else {
+                setGateError(true);
+              }
+            }}
             className="w-full bg-[#D4AF37] text-black font-bold py-5 rounded-2xl uppercase tracking-widest text-xs hover:scale-[1.02] transition-all shadow-xl active:scale-95"
           >
             Enter Kids Mode

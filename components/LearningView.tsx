@@ -225,7 +225,7 @@ const LearningView: React.FC<LearningViewProps> = ({ onOpenPassage, onStudyEvent
                   const chapter = parts[parts.length - 1];
                   onOpenPassage(book, chapter);
                 }}
-                className="text-[10px] font-bold text-[#996515] uppercase tracking-widest hover:text-[#D4AF37] transition-all pt-2"
+                className="text-[10px] font-bold text-[#E6C56E] uppercase tracking-widest hover:text-[#D4AF37] transition-all pt-2"
               >
                 Study {t.ref} →
               </button>

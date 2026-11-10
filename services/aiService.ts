@@ -26,10 +26,20 @@ declare global {
   }
 }
 
-// Wait up to 8 seconds for Puter.js to finish loading from CDN.
-// index.html sets window.__puterLoadFailed on script onerror for fast-fail.
+// Puter.js is injected when a study feature needs it, not on first paint.
+const loadPuterScript = () => {
+  if (window.puter || document.querySelector('script[data-puter]')) return;
+  const script = document.createElement('script');
+  script.src = 'https://js.puter.com/v2/';
+  script.async = true;
+  script.dataset.puter = 'true';
+  script.onerror = () => { window.__puterLoadFailed = true; };
+  document.head.appendChild(script);
+};
+
 export const waitForPuter = (): Promise<NonNullable<typeof window.puter>> =>
   new Promise((resolve, reject) => {
+    loadPuterScript();
     if (window.puter) { resolve(window.puter); return; }
     if (window.__puterLoadFailed) {
       reject(new Error(

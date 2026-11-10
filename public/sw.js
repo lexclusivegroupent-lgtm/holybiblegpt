@@ -1,6 +1,5 @@
-const CACHE_NAME = 'hbgpt-v6'; // bumped: v6 forces every returning browser to drop its stale cache and
-// re-fetch fresh code — today's paywall/logo/KV fixes were otherwise invisible to anyone
-// whose service worker had already cached an older build.
+const CACHE_NAME = 'hbgpt-v7';
+// Only URLs that exist in the build. A missing file must not reject the whole install.
 const urlsToCache = [
   '/',
   '/index.html',
@@ -12,13 +11,13 @@ const urlsToCache = [
   '/icons/android-chrome-192x192.png',
   '/icons/android-chrome-512x512.png',
   '/bible/kjv.json',
-  '/assets/index.css' // Assuming css location, but standard build usually handles this. Keeping safe list.
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then(cache => Promise.all(
+      urlsToCache.map(url => cache.add(url).catch(() => undefined))
+    ))
   );
   self.skipWaiting();
 });

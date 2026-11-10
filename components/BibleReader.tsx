@@ -148,7 +148,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
         <button
           onClick={onClose}
           className="flex items-center gap-1 min-h-[44px] px-2 text-stone-400 hover:text-white transition-colors shrink-0"
-          aria-label="Back to home"
+          aria-label="Back"
         >
           <span className="text-lg leading-none">‹</span>
           <span className="text-[10px] font-bold uppercase tracking-widest">Back</span>
