@@ -22,34 +22,7 @@ A missing or wrong token is `401` JSON. A token for a different username is `403
 
 ## D1
 
-Storage is a D1 database. It is not bound in `wrangler.jsonc` yet. A placeholder `database_id` would make `wrangler deploy` fail, so the binding stays in a comment until the database exists. With no binding, `/api/get-status` still returns JSON (`401` without a token). Usage returns `404` so the study aid keeps working. Sync returns `503`.
-
-Create the database (do not invent an id in this repo):
-
-```bash
-npx wrangler d1 create holybiblegpt
-```
-
-Then put this in `wrangler.jsonc`, with the printed `database_id`:
-
-```jsonc
-"d1_databases": [
-  {
-    "binding": "DB",
-    "database_name": "holybiblegpt",
-    "database_id": "<database_id>",
-    "migrations_dir": "migrations"
-  }
-]
-```
-
-Deploy does not apply migrations. After the binding is deployed:
-
-```bash
-npx wrangler d1 migrations apply holybiblegpt --remote
-```
-
-`migrations/0001_app_storage.sql` only creates tables if they are missing. It does not drop or delete anything.
+Storage is D1 database `holybiblegpt`, binding `DB`, id `57f368b2-1ece-47f3-9838-896ddbd5eabe`. `migrations/0001_app_storage.sql` is already applied. It only creates `app_kv` and `kv_set_members` if they are missing. Deploy does not run it again.
 
 The old Vercel functions under `api/` are unused by this host. Leave them in place. Do not delete the Vercel project or its KV data from here.
 
@@ -78,10 +51,10 @@ npx wrangler secret put CRON_SECRET
 `VAPID_PUBLIC_KEY` must be:
 
 ```text
-BExXQ5p2sahc35RIVvLBCI0j79gHbg1anEPfZLGHMBwygoPW_c0OPTLcy07gkl7u8x09cLkTATBOkOQS-TLxbEY
+BHs3h3Uf6SZS0-lWBqR8N4exZYiTg9wO_omqKyVt7zApL9uW0qJy4K6itjh2O0b7-HlO2TJwuk6ealDFKJkq9rU
 ```
 
-`CRON_SECRET` guards `GET` or `POST /api/push-send-daily` only. Generate a long random value. The Worker cron (`0 13 * * *`, 13:00 UTC) calls the scheduled handler directly and does not send that header. If VAPID keys or D1 are missing, the scheduled run logs and returns. It does not throw, so Cloudflare does not retry it into a second send.
+`CRON_SECRET` guards `GET` or `POST /api/push-send-daily` only. Generate a long random value. The Worker cron (`0 13 * * *`, 13:00 UTC) calls the scheduled handler directly and does not send that header. If the VAPID secrets are missing, the scheduled run logs and returns. It does not throw, so Cloudflare does not retry it into a second send.
 
 A Workers Free plan allows 50 external subrequests and very little CPU per cron run. A large subscriber list needs a Workers Paid plan. The send stops counting a subscription as live when the push service responds `404` or `410`.
 

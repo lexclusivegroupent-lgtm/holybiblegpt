@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { subscriptionNeedsRotation } from '../services/pushKey.mjs';
 
 // Public VAPID key — safe to ship client-side (it's the public half of the
 // keypair; only VAPID_PRIVATE_KEY on the server is secret). Must match the
 // VAPID_PUBLIC_KEY configured in the server's env vars or push sends will fail.
-const VAPID_PUBLIC_KEY = 'BExXQ5p2sahc35RIVvLBCI0j79gHbg1anEPfZLGHMBwygoPW_c0OPTLcy07gkl7u8x09cLkTATBOkOQS-TLxbEY';
+const VAPID_PUBLIC_KEY = 'BHs3h3Uf6SZS0-lWBqR8N4exZYiTg9wO_omqKyVt7zApL9uW0qJy4K6itjh2O0b7-HlO2TJwuk6ealDFKJkq9rU';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -16,6 +17,50 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 type Status = 'unsupported' | 'checking' | 'off' | 'on' | 'busy' | 'denied';
 
+function applicationServerKey(): Uint8Array {
+  return urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+}
+
+async function forgetSubscription(sub: PushSubscription): Promise<void> {
+  const endpoint = sub.endpoint;
+  await sub.unsubscribe();
+  await fetch('/api/push-unsubscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint }),
+  }).catch(() => undefined);
+}
+
+// subscribe() throws InvalidStateError when this browser already has a
+// subscription for a different VAPID key. Drop that one and subscribe again.
+async function subscribeCurrentKey(reg: ServiceWorkerRegistration): Promise<PushSubscription> {
+  const key = applicationServerKey();
+  const existing = await reg.pushManager.getSubscription();
+  if (existing && subscriptionNeedsRotation(existing.options?.applicationServerKey, key)) {
+    await forgetSubscription(existing);
+  }
+  try {
+    return await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+  } catch (err) {
+    if ((err as { name?: string })?.name !== 'InvalidStateError') throw err;
+    const stuck = await reg.pushManager.getSubscription();
+    if (!stuck) throw err;
+    await forgetSubscription(stuck);
+    return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+  }
+}
+
+async function saveSubscription(sub: PushSubscription): Promise<boolean> {
+  const res = await fetch('/api/push-subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(sub.toJSON()),
+  });
+  if (res.ok) return true;
+  await sub.unsubscribe().catch(() => undefined);
+  return false;
+}
+
 const NotificationOptIn: React.FC = () => {
   const [status, setStatus] = useState<Status>('checking');
 
@@ -23,11 +68,20 @@ const NotificationOptIn: React.FC = () => {
     const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     if (!supported) { setStatus('unsupported'); return; }
     if (Notification.permission === 'denied') { setStatus('denied'); return; }
+    let cancelled = false;
 
     navigator.serviceWorker.ready
-      .then(reg => reg.pushManager.getSubscription())
-      .then(sub => setStatus(sub ? 'on' : 'off'))
-      .catch(() => setStatus('off'));
+      .then(async (reg) => {
+        const sub = await reg.pushManager.getSubscription();
+        if (!sub) return 'off' as const;
+        if (!subscriptionNeedsRotation(sub.options?.applicationServerKey, applicationServerKey())) return 'on' as const;
+        const next = await subscribeCurrentKey(reg);
+        return (await saveSubscription(next)) ? 'on' as const : 'off' as const;
+      })
+      .then((next) => { if (!cancelled) setStatus(next); })
+      .catch(() => { if (!cancelled) setStatus('off'); });
+
+    return () => { cancelled = true; };
   }, []);
 
   const enable = async () => {
@@ -39,16 +93,8 @@ const NotificationOptIn: React.FC = () => {
         return;
       }
       const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-      await fetch('/api/push-subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sub.toJSON()),
-      });
-      setStatus('on');
+      const sub = await subscribeCurrentKey(reg);
+      setStatus((await saveSubscription(sub)) ? 'on' : 'off');
     } catch (err) {
       console.error('Notification opt-in failed:', err);
       setStatus('off');
