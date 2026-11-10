@@ -1,27 +1,54 @@
-
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Translation } from '../types';
+import { getVerseText } from '../services/bibleService';
+import {
+  MAX_SEARCH_VERSES,
+  chapterVerses,
+  chooseVerseText,
+  loadBundledIndex,
+  resolveTopicSearch,
+} from '../services/scriptureSearch.mjs';
 
 interface SearchViewProps {
   onOpenPassage: (book: string, chapter: string, verse?: string) => void;
   translation: Translation;
 }
 
-interface SearchResult {
+interface StoredVerse {
   book: string;
   chapter: string;
-  verse?: string;
+  verse: string;
   text: string;
-  isAI?: boolean;
+}
+
+interface SearchNotice {
+  title: string;
+  text: string;
 }
 
 const REF_REGEX = /^((?:\d\s+)?[A-Za-z]+(?:\s+[A-Za-z]+)*)\s+(\d+)(?::(\d+))?$/;
 
+const bibleCache = new Map<string, Promise<Map<string, { number: number; text: string }[]>>>();
+
+function storedBible(translation: Translation) {
+  const key = translation === Translation.WEB ? 'WEB' : translation === Translation.KJV ? 'KJV' : 'NONE';
+  let pending = bibleCache.get(key);
+  if (!pending) {
+    pending = loadBundledIndex(translation);
+    bibleCache.set(key, pending);
+  }
+  return pending;
+}
+
 const SearchView: React.FC<SearchViewProps> = ({ onOpenPassage, translation }) => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [verses, setVerses] = useState<StoredVerse[]>([]);
+  const [commentary, setCommentary] = useState<string | null>(null);
+  const [notice, setNotice] = useState<SearchNotice | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [mode, setMode] = useState<'reference' | 'topic'>('topic');
+  const requestRef = useRef(0);
 
   const handleReferenceSearch = (q: string) => {
     const match = q.trim().match(REF_REGEX);
@@ -33,54 +60,61 @@ const SearchView: React.FC<SearchViewProps> = ({ onOpenPassage, translation }) =
   };
 
   const handleTopicSearch = async (q: string) => {
+    const id = ++requestRef.current;
     setIsSearching(true);
-    setResults([]);
+    setVerses([]);
+    setCommentary(null);
+    setNotice(null);
+    setHasSearched(true);
     try {
       const puter = (window as any).puter;
       if (!puter?.ai?.chat) throw new Error('puter_unavailable');
 
-      const prompt = `You are a Bible concordance. Find 5 relevant ${translation} verses about: "${q}".
+      const topic = q.replace(/\s+/g, ' ').trim().slice(0, 240);
+      const prompt = `You are a Bible concordance. Suggest up to ${MAX_SEARCH_VERSES} real verse references about the topic. Do not write, quote, or paraphrase any verse.
 
-For each verse, output exactly:
-REF: [Book Chapter:Verse]
-TEXT: [verse text]
+Use this shape only:
+REF: Book Chapter:Verse
+COMMENTARY: one or two sentences in your own words. This is not Scripture.
 
-Only output real, accurate Scripture. No commentary between entries.`;
+Topic: ${topic}
+The reader is using ${translation}. Name references only.`;
 
       const response = await puter.ai.chat(prompt, false, { model: 'gpt-4o-mini' });
       const raw: string = response?.message?.content?.[0]?.text
         || (typeof response?.message?.content === 'string' ? response.message.content : '')
         || '';
 
-      const parsed: SearchResult[] = [];
-      let pendingRef = '';
-      for (const line of raw.split('\n')) {
-        const t = line.trim();
-        if (t.startsWith('REF:')) {
-          pendingRef = t.slice(4).trim();
-        } else if (t.startsWith('TEXT:') && pendingRef) {
-          const verseText = t.slice(5).trim();
-          const m = pendingRef.match(/^((?:\d\s+)?[A-Za-z]+(?:\s+[A-Za-z]+)*)\s+(\d+):(\d+)/);
-          if (m) {
-            parsed.push({ book: m[1].trim(), chapter: m[2], verse: m[3], text: verseText, isAI: true });
-          }
-          pendingRef = '';
+      const index = await storedBible(translation);
+      const resolved = await resolveTopicSearch(raw, async (book: string, chapter: string, verse: number) => {
+        const stored = chapterVerses(index, book, chapter);
+        if (stored) return chooseVerseText(stored, null, verse);
+        if (translation !== Translation.KJV && translation !== Translation.WEB) return null;
+        try {
+          const fetched = await getVerseText(translation, book, chapter);
+          return chooseVerseText(null, fetched, verse);
+        } catch {
+          return null;
         }
-      }
-
-      if (parsed.length === 0) {
-        setResults([{ book: 'Tip', chapter: '', text: `Try the Study tab to ask about "${q}" for a deeper exploration.` }]);
-      } else {
-        setResults(parsed);
-      }
+      });
+      if (id !== requestRef.current) return;
+      setVerses(resolved.verses);
+      setCommentary(resolved.commentary);
     } catch (err: any) {
+      if (id !== requestRef.current) return;
       if (err.message === 'puter_unavailable') {
-        setResults([{ book: 'Sign In Required', chapter: '', text: 'A free sign-in is needed so Holy Bible GPT can offer this AI feature at no cost. Use the Study tab to sign in, then come back to search by topic.' }]);
+        setNotice({
+          title: 'Sign In Required',
+          text: 'A free sign-in is needed so Holy Bible GPT can offer this AI feature at no cost. Use the Study tab to sign in, then come back to search by topic.',
+        });
       } else {
-        setResults([{ book: 'Notice', chapter: '', text: 'Topic search requires an internet connection. Try again shortly.' }]);
+        setNotice({
+          title: 'Notice',
+          text: 'Topic search requires an internet connection. Try again shortly.',
+        });
       }
     } finally {
-      setIsSearching(false);
+      if (id === requestRef.current) setIsSearching(false);
     }
   };
 
@@ -95,7 +129,7 @@ Only output real, accurate Scripture. No commentary between entries.`;
     <div className="flex-1 min-h-0 overflow-y-auto px-6 py-12 max-w-2xl mx-auto w-full space-y-8 pb-28">
       <header className="text-center space-y-2">
         <h2 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest">Scripture Search</h2>
-        <p className="text-[10px] text-stone-600 uppercase tracking-widest">Reference or topic — powered by AI</p>
+        <p className="text-[10px] text-stone-600 uppercase tracking-widest">References from the study helper. Verse text from the stored Bible.</p>
       </header>
 
       {/* Mode toggle */}
@@ -103,6 +137,7 @@ Only output real, accurate Scripture. No commentary between entries.`;
         {(['topic', 'reference'] as const).map(m => (
           <button
             key={m}
+            type="button"
             onClick={() => setMode(m)}
             className={`flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
               mode === m ? 'bg-[#D4AF37] text-black shadow' : 'text-stone-500 hover:text-stone-300'
@@ -139,26 +174,53 @@ Only output real, accurate Scripture. No commentary between entries.`;
         </div>
       )}
 
+      {notice && (
+        <div className="glass-dark border border-white/5 p-6 rounded-2xl space-y-2" role="status">
+          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">{notice.title}</p>
+          <p className="text-stone-400 text-sm leading-relaxed">{notice.text}</p>
+        </div>
+      )}
+
       <div className="space-y-4">
-        {results.map((res, i) => (
-          <div key={i} className={`glass-dark border p-6 rounded-2xl space-y-3 ${res.isAI ? 'border-[#D4AF37]/15 hover:border-[#D4AF37]/30 cursor-pointer transition-all' : 'border-white/5'}`}
-            onClick={() => res.isAI && res.verse && onOpenPassage(res.book, res.chapter, res.verse)}
+        {verses.map((verse) => (
+          <button
+            key={`${verse.book}-${verse.chapter}-${verse.verse}`}
+            type="button"
+            onClick={() => onOpenPassage(verse.book, verse.chapter, verse.verse)}
+            className="w-full text-left glass-dark border border-[#D4AF37]/15 hover:border-[#D4AF37]/30 p-6 rounded-2xl space-y-3 transition-all"
           >
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-3">
               <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">
-                {res.book}{res.chapter ? ` ${res.chapter}` : ''}{res.verse ? `:${res.verse}` : ''}
+                {verse.book} {verse.chapter}:{verse.verse}
               </span>
-              {res.isAI && <span className="text-[8px] text-stone-700 uppercase tracking-widest">Tap to read →</span>}
+              <span className="text-[8px] text-stone-500 uppercase tracking-widest">{translation} · Tap to read</span>
             </div>
-            <p className="text-stone-400 text-sm italic leading-relaxed bible-font">{res.text}</p>
-          </div>
+            <p className="text-stone-300 text-sm italic leading-relaxed bible-font">{verse.text}</p>
+          </button>
         ))}
       </div>
 
-      {results.length === 0 && !isSearching && (
+      {commentary && (
+        <aside className="border border-white/10 bg-stone-950/40 p-6 rounded-2xl space-y-2" aria-label="AI commentary">
+          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-widest">AI commentary</p>
+          <p className="text-[10px] text-stone-600 uppercase tracking-widest">The study helper wrote this. It is not Scripture.</p>
+          <p className="text-stone-400 text-sm leading-relaxed">{commentary}</p>
+        </aside>
+      )}
+
+      {hasSearched && !isSearching && !notice && verses.length === 0 && (
+        <div className="text-center pt-4 space-y-3" role="status">
+          <p className="text-sm text-stone-400">No stored verse matched this search.</p>
+          <p className="text-[10px] text-stone-600 uppercase tracking-widest leading-relaxed">
+            References that are not in the stored Bible are left out. No verse text is guessed.
+          </p>
+        </div>
+      )}
+
+      {!hasSearched && !isSearching && (
         <div className="text-center pt-8 space-y-3">
           <p className="text-[9px] text-stone-700 uppercase tracking-widest leading-relaxed">
-            Topic search uses the AI study helper · a free sign-in is needed to enable it
+            Topic search asks the study helper for references. The wording on the page comes from the stored Bible. A free sign-in is needed to enable it.
           </p>
           <p className="text-[9px] text-stone-800 uppercase tracking-widest">
             Direct references (e.g. Romans 8:28) always work without sign-in
