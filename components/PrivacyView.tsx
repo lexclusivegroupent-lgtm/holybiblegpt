@@ -33,7 +33,7 @@ const PrivacyView: React.FC = () => {
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Who is responsible</h2>
           <p>
-            Holy Bible GPT is operated by The Christian's Deck. Privacy requests go to <a className="text-[#D4AF37] underline" href="mailto:thechristiansdeck@gmail.com">thechristiansdeck@gmail.com</a>.
+            This policy is written for people in the United States. Holy Bible GPT is operated by The Christian's Deck. Privacy requests go to <a className="text-[#D4AF37] underline" href="mailto:thechristiansdeck@gmail.com">thechristiansdeck@gmail.com</a>.
           </p>
           <p>
             An earlier version of this page said that questions went out with no account attached, and the page description said the site collected nothing. That was not accurate. The description below replaces it.
@@ -46,7 +46,7 @@ const PrivacyView: React.FC = () => {
             Reading progress, bookmarks, highlights, notes, prayers, settings, and the chat transcript are stored in this browser (local storage). Chapters you cache are stored in this browser's IndexedDB. They stay here unless you use Pro sync or ask the study aid for help.
           </p>
           <p>
-            A prayer can reveal religious belief. That is special-category data. The prayer journal asks before the first prayer is saved. Prayers and notes are kept on the basis of consent. Notes are the words you write. They are part of the browser copy you can download or delete below. There is no separate notes checkbox.
+            A prayer can show religious belief. The prayer journal asks before the first prayer is saved. Prayers and notes are kept on the basis of consent. Notes are the words you write. They are part of the browser copy you can download or delete below. There is no separate notes checkbox.
           </p>
         </section>
 
@@ -84,15 +84,38 @@ const PrivacyView: React.FC = () => {
         </section>
 
         <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">California</h2>
+          <p>
+            If you live in California, the CCPA/CPRA gives you the rights below.
+          </p>
+          <p>
+            Categories collected: identifiers (a Puter username, a Stripe customer id, and a push subscription if you turn daily verses on); commercial information (whether a Pro subscription is active; card numbers stay on Stripe's page); internet activity (a page view through Vercel Analytics, and the book and chapter sent to bible-api.com); and content you write (notes, prayers, highlights, bookmarks, settings, and chat). A prayer can show religious belief.
+          </p>
+          <p>
+            We do not sell personal information. We do not share it for cross-context behavioral advertising.
+          </p>
+          <p>
+            You can ask to know, delete, or correct the personal information we keep. Email <a className="text-[#D4AF37] underline" href="mailto:thechristiansdeck@gmail.com">thechristiansdeck@gmail.com</a>.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Children</h2>
+          <p>
+            This site is not directed to children under 13. Kids Mode is opened by a parent and used with that parent. We do not knowingly collect personal information from a child under 13. A parent who thinks we have can email thechristiansdeck@gmail.com.
+          </p>
+        </section>
+
+        <section className="space-y-3">
           <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Your choices</h2>
           <p>
             You can download the browser copy below, and you can delete that copy. Deleting it does not close the Puter account and does not cancel Stripe. For a server copy, email thechristiansdeck@gmail.com. A signed-in delete button for the server copy is waiting on the authenticated API. This page does not offer deletion by typing a username, because that API is not a proof of identity.
           </p>
           <p>
-            Prayers and notes are processed on the basis of consent. The Puter account and Pro sync are processed on the basis of contract. This page does not name a transfer tool for Puter, Vercel, or Stripe. Each of those services applies its own terms.
+            Prayers and notes are processed on the basis of consent. The Puter account and Pro sync are processed on the basis of contract.
           </p>
           <p>
-            People in the EU and the EEA can complain to their local data protection authority. One example is Integritetsskyddsmyndigheten (IMY), <a className="text-[#D4AF37] underline" href="https://www.imy.se">imy.se</a>.
+            People outside the United States, including in the EU and the EEA, can use the same email. They may also complain to their local data protection authority. One example is Integritetsskyddsmyndigheten (IMY), <a className="text-[#D4AF37] underline" href="https://www.imy.se">imy.se</a>.
           </p>
         </section>
       </article>

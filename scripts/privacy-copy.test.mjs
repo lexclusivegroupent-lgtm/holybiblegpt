@@ -32,6 +32,13 @@ test('the privacy policy names the real processors and drops the old claim', () 
   assert.match(privacy, /Puter Technologies Inc\./);
   assert.match(privacy, /basis of consent/);
   assert.match(privacy, /basis of contract/);
+  assert.match(privacy, /United States/);
+  assert.match(privacy, /CCPA\/CPRA/);
+  assert.match(privacy, /do not sell personal information/);
+  assert.match(privacy, /do not share it for cross-context behavioral advertising/);
+  assert.match(privacy, /know, delete, or correct/);
+  assert.match(privacy, /not directed to children under 13/);
+  assert.match(privacy, /Kids Mode is opened by a parent/);
   assert.match(privacy, /Integritetsskyddsmyndigheten \(IMY\)/);
   assert.match(privacy, /imy\.se/);
   assert.doesNotMatch(privacy, /\[Owner/);
