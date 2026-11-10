@@ -84,18 +84,14 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
     assert.match(response.body, /APP_SHELL/);
   }
 
-  const prerendered = await get('/bible/genesis/1/');
+  const prerendered = await get('/bible/genesis/1');
   assert.equal(prerendered.status, 200);
   assert.match(prerendered.body, /GENESIS_1/);
   assert.doesNotMatch(prerendered.body, /APP_SHELL/);
 
-  const slashless = await get('/bible/genesis/1');
-  if (slashless.status === 200) {
-    assert.match(slashless.body, /GENESIS_1/);
-  } else {
-    assert.ok(slashless.status === 307 || slashless.status === 308);
-    assert.equal(slashless.location, '/bible/genesis/1/');
-  }
+  const trailing = await get('/bible/genesis/1/');
+  assert.ok(trailing.status === 307 || trailing.status === 308);
+  assert.equal(trailing.location, '/bible/genesis/1');
 
   const navigate = await get('/bible/john/3', {
     'Sec-Fetch-Mode': 'navigate',

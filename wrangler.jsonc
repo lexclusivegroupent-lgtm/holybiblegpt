@@ -39,7 +39,9 @@
     "not_found_handling": "single-page-application",
     // /api/* must hit the Worker even for browser navigations. Otherwise the
     // SPA fallback above would return index.html for /api/esv.
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*"],
+    // Serve /about as 200. /about/ redirects to /about, matching canonical URLs.
+    "html_handling": "drop-trailing-slash"
   }
   // To enable ESV, add the API key as a Cloudflare secret:
   //   wrangler secret put ESV_API_KEY
