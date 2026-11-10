@@ -9,9 +9,12 @@
     "build": "vite build",
     "postbuild": "node scripts/prerender.mjs",
     "preview": "vite preview",
-    "test:worker-assets": "node --test tests/worker-assets.test.mjs"
+    "test:worker-assets": "node --test tests/worker-assets.test.mjs",
+    "test:observability": "node --experimental-strip-types --test tests/observability.test.mjs"
   },
   "dependencies": {
+    "@sentry/cloudflare": "^11.12.0",
+    "@sentry/react": "^11.12.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/kv": "^3.0.0",
     "micro": "^10.0.1",

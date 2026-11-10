@@ -1,6 +1,23 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "holybiblegpt",
+  // Workers Logs and traces. Applied on the next deploy of this config.
+  // Logs are kept at 100% while traffic is modest. Traces are sampled at 1%
+  // so a deploy does not store a span for every request. Lower
+  // logs.head_sampling_rate here if the log volume gets expensive.
+  // This does not enable Sentry. SENTRY_DSN is a secret, not a var:
+  //   npx wrangler secret put SENTRY_DSN
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.01
+    }
+  },
   "compatibility_date": "2026-08-18",
   "compatibility_flags": ["nodejs_compat"],
   // Worker script handles /api/esv. Every other request is served from static

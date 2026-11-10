@@ -1,4 +1,5 @@
 import React from 'react';
+import { captureClientException } from '../services/sentryClient';
 
 interface Props {
   children: React.ReactNode;
@@ -24,9 +25,8 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
-    // Keep this console.error even in production — it's the only diagnostic
-    // trail available right now (no error-reporting service wired up yet).
     console.error('Holy Bible GPT crashed:', error, info.componentStack);
+    captureClientException(error);
   }
 
   handleReload = () => {
