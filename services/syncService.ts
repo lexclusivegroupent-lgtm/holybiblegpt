@@ -1,6 +1,20 @@
 
 import { getPuterAuthToken, waitForPuter } from './aiService';
+import { interpretBillingResponse } from './billingAvailability.mjs';
 import { storage } from './storageService';
+
+export type BillingAvailability = { checkout: boolean; portal: boolean };
+
+export const getBillingAvailability = async (): Promise<BillingAvailability> => {
+  try {
+    const res = await fetch('/api/create-checkout-session', { headers: { Accept: 'application/json' } });
+    const contentType = res.headers.get('content-type');
+    const body = contentType?.includes('application/json') ? await res.json() : null;
+    return interpretBillingResponse(res.status, contentType, body);
+  } catch {
+    return { checkout: false, portal: false };
+  }
+};
 
 export type ProStatus = 'free' | 'pro';
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Role, Message, AppMode, Translation, PassageLink, AppTab } from '../types';
 import { sendMessageStream, getPuterAuthState, signIntoPuter, isAuthError, PuterStatus } from '../services/aiService';
 import { storage } from '../services/storageService';
-import { getUserId, startCheckout } from '../services/syncService';
+import { getUserId, startCheckout, getBillingAvailability } from '../services/syncService';
 import { getUsage, consumeUsage, UsageInfo } from '../services/usageService';
 import { chatUsageView } from '../services/usageGate';
 import MessageBubble from './MessageBubble';
@@ -63,6 +63,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [usageNotice, setUsageNotice] = useState<string | null>(null);
   const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [checkoutAvailable, setCheckoutAvailable] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingProcessed = useRef(false);
@@ -85,6 +86,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
     return () => { cancelled = true; };
   }, [puterStatus]);
+
+  useEffect(() => {
+    getBillingAvailability().then((billing) => setCheckoutAvailable(billing.checkout));
+  }, []);
 
   const handleUpgrade = async () => {
     if (!userId) return;
@@ -448,30 +453,38 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </p>
           </div>
           <p className="text-xs text-stone-400 leading-relaxed">
-            Bible reading, notes, bookmarks, and Gospel Harmony stay free forever. Upgrading to Pro unlocks unlimited AI study questions, plus cross-device cloud sync for your notes, bookmarks, and prayers.
+            Bible reading, notes, bookmarks, and Gospel Harmony stay free. When billing is configured, Pro is the sync subscription. The study aid still runs through your own Puter account.
           </p>
-          {upgradeError && (
-            <p className="text-[10px] text-red-400/80 leading-snug border border-red-900/30 bg-red-950/20 rounded-xl px-3 py-2">
-              {upgradeError}
+          {checkoutAvailable ? (
+            <>
+              {upgradeError && (
+                <p className="text-[10px] text-red-400/80 leading-snug border border-red-900/30 bg-red-950/20 rounded-xl px-3 py-2">
+                  {upgradeError}
+                </p>
+              )}
+              <button
+                onClick={handleUpgrade}
+                disabled={upgradeBusy}
+                className="w-full min-h-[44px] bg-[#D4AF37] text-black text-[10px] font-bold uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {upgradeBusy ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                    Opening checkout…
+                  </>
+                ) : (
+                  'Upgrade to Pro'
+                )}
+              </button>
+              <p className="text-[9px] text-stone-700 text-center">
+                The charge is the Stripe price. Card details go to Stripe.
+              </p>
+            </>
+          ) : (
+            <p className="text-[10px] text-stone-500 leading-snug">
+              Pro checkout is not available on this site yet, so the upgrade button is hidden.
             </p>
           )}
-          <button
-            onClick={handleUpgrade}
-            disabled={upgradeBusy}
-            className="w-full min-h-[44px] bg-[#D4AF37] text-black text-[10px] font-bold uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {upgradeBusy ? (
-              <>
-                <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" />
-                Opening checkout…
-              </>
-            ) : (
-              '✨ Upgrade to Pro — $6.99/mo'
-            )}
-          </button>
-          <p className="text-[9px] text-stone-700 text-center">
-            Cancel anytime · Billing handled securely by Stripe
-          </p>
         </div>
       )}
 
@@ -527,7 +540,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 : loadFailed
                   ? 'AI service unavailable — please refresh'
                   : paywallReached
-                    ? 'Upgrade to Pro above to keep asking…'
+                    ? 'The free question limit for this session has been reached.'
                     : puterStatus === 'checking'
                       ? 'Connecting to AI…'
                       : `${MODE_LABELS[localMode]?.label ?? 'Ask'} mode — type your question… (Enter to send)`
