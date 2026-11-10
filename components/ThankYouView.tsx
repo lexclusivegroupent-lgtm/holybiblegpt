@@ -17,8 +17,8 @@ const ThankYouView: React.FC = () => {
         </ul>
 
         <div className="pt-8 border-t border-white/5">
-          <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">
-            POWERED BY THE CHRISTIAN’S DECK
+          <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold tracking-[0.12em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">
+            By The Christian's Deck
           </a>
         </div>
       </section>

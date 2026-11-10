@@ -395,7 +395,7 @@ const App: React.FC = () => {
             <a href="/copyrights" onClick={(event) => { event.preventDefault(); setActiveTab('copyrights'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Copyright</a>
             <a href="/corrections" onClick={(event) => { event.preventDefault(); setActiveTab('corrections'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Corrections</a>
           </div>
-          <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">POWERED BY THE CHRISTIAN'S DECK</a>
+          <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold tracking-[0.12em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">By The Christian's Deck</a>
         </footer>
       )}
       {showOnboarding && <Onboarding onAccept={() => setShowOnboarding(false)} />}

@@ -8,9 +8,9 @@ const CopyrightView: React.FC = () => {
       </header>
       <section className="glass-dark border border-white/5 p-8 rounded-[2rem] space-y-4">
         <p>The King James Version text on this site is in the public domain. The label on those pages is KJV.</p>
-        <p>The World English Bible is in the public domain. When that translation is selected, the reader requests WEB text and the label is WEB. [Owner: if you want the World English Bible's customary acknowledgement printed in full, paste the notice you approve.]</p>
-        <p>The English Standard Version is not shown. Crossway's license and the notice they require are not in place. This site does not present King James text as the ESV.</p>
-        <p className="text-stone-500 text-xs">[Owner: if you license the ESV later, paste Crossway's required notice here and show it wherever ESV text appears. Do not enable the translation until that notice is on the page.]</p>
+        <p>The World English Bible is in the public domain. When that translation is selected, the reader requests WEB text and the label is WEB. This page does not add a separate acknowledgement.</p>
+        <p>The English Standard Version is not shown. Crossway's license and the notice they require are not in place. This site does not present King James text as the ESV. If that translation is offered later, its required notice will be added on this page and wherever that text appears.</p>
+        <p>By The Christian's Deck</p>
       </section>
     </div>
   );

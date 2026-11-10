@@ -10,7 +10,7 @@ const CorrectionsView: React.FC = () => {
         <p>If a verse on the site does not match the translation it names, or an answer adds words the passage does not say, write to thechristiansdeck@gmail.com. Include the reference, the translation label, and the words you saw.</p>
         <p>A quotation should be the full verse from a public-domain text, or it should not be shown as that verse. A partial line needs a partial reference, such as a verse range, and it still must not change the words.</p>
         <p>Reports about the study aid are also welcome from the report button in the reader. A correction to the wording of Scripture is not the same thing as a disagreement about an interpretation. Say which one you are sending.</p>
-        <p className="text-stone-500 text-xs">[Owner: name who reviews corrections, and how a confirmed text error is published.]</p>
+        <p>By The Christian's Deck. The Christian's Deck reads reports sent to thechristiansdeck@gmail.com. A confirmed difference between the stored text and the translation it names is corrected in that stored text and published with a later update of the site.</p>
       </section>
     </div>
   );

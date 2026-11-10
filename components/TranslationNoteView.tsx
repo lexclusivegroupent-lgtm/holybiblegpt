@@ -25,9 +25,7 @@ const TranslationNoteView: React.FC = () => {
           <p>
             The English Standard Version is not offered. Showing it would require a license from Crossway and their copyright notice. Until that is in place, ESV is not a choice in the reader, and King James text is not labeled ESV.
           </p>
-          <p className="text-xs text-stone-500">
-            [Owner: if you later add a Crossway API key, turn the notice back on in the ESV proxy and only then return ESV to the translation list.]
-          </p>
+          <p>By The Christian's Deck</p>
         </div>
         <p className="text-xs text-stone-500">
           Readers in other traditions may use other translations. This page does not treat one tradition's preferred edition as the only Bible.

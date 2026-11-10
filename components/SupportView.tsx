@@ -112,7 +112,7 @@ const SupportView: React.FC<SupportViewProps> = ({ onOpenTerms }) => {
             <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-600">
               <button onClick={onOpenTerms} className="hover:text-[#D4AF37] transition-colors">Terms & Disclaimers</button>
               <span className="hidden md:inline text-stone-800">•</span>
-              <span className="text-stone-700">thechristiansdeck@gmail.com</span>
+              <a href="mailto:thechristiansdeck@gmail.com" className="text-stone-700 hover:text-[#D4AF37] transition-colors">thechristiansdeck@gmail.com</a>
             </div>
           </div>
         </footer>
