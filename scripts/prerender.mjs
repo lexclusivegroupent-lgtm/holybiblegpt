@@ -37,7 +37,11 @@ const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;
 const STATIC_PAGES = {
   '/about':         ['About Holy Bible GPT – Scripture-First, Always Free', 'Learn how Holy Bible GPT works: a Scripture-first study tool that quotes the Word of God before everything else.'],
   '/faq':           ['FAQ – Holy Bible GPT', 'Frequently asked questions about Holy Bible GPT, free AI Bible study, and how to use the Scripture study tools.'],
-  '/privacy':       ['Privacy Policy – Holy Bible GPT', 'No accounts, no data collection. Holy Bible GPT stores everything on your device only. Your data stays with you.'],
+  '/privacy':       ['Privacy Policy – Holy Bible GPT', 'How Holy Bible GPT uses Puter, the model provider, this browser, Vercel KV, Stripe, bible-api.com, and Vercel Analytics.'],
+  '/methodology':   ['How answers are made – Holy Bible GPT', 'Scripture is retrieved before an explanation. A quotation and an explanation are kept apart.'],
+  '/limitations':   ['Limits of the study aid – Holy Bible GPT', 'The study aid can be wrong. It is instructed to say when a claim is not established from Scripture.'],
+  '/copyrights':    ['Translation copyright – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered.'],
+  '/corrections':   ['Corrections – Holy Bible GPT', 'How to report a verse that does not match its label, or an answer that adds to the text.'],
   '/terms':         ['Terms of Service – Holy Bible GPT', 'Terms of service for the Holy Bible GPT free Scripture study app.'],
   '/contact':       ['Contact – Holy Bible GPT', 'Get in touch with the Holy Bible GPT team. Send feedback, report an issue, or ask a question.'],
   '/instructions':  ['How to Use – Holy Bible GPT', 'A quick guide to getting the most out of Holy Bible GPT for daily Bible study.'],

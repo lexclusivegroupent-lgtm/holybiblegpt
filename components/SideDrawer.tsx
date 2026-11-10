@@ -37,6 +37,11 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     { id: 'faith', label: 'Statement', icon: '✝️' },
     { id: 'roadmap', label: 'Roadmap', icon: '🗺️' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'privacy', label: 'Privacy', icon: '🔒' },
+    { id: 'methodology', label: 'Method', icon: '🧭' },
+    { id: 'limitations', label: 'Limits', icon: '⚠️' },
+    { id: 'copyrights', label: 'Copyright', icon: '©' },
+    { id: 'corrections', label: 'Corrections', icon: '✉️' },
   ];
 
   const renderLink = (link: { id: AppTab; label: string; icon: string }) => (

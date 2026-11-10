@@ -40,6 +40,10 @@ const TheologyView = lazy(() => import('./components/TheologyView'));
 const GospelHarmonyView = lazy(() => import('./components/GospelHarmonyView'));
 const NotFoundView = lazy(() => import('./components/NotFoundView'));
 const NotesView = lazy(() => import('./components/NotesView'));
+const MethodologyView = lazy(() => import('./components/MethodologyView'));
+const LimitationsView = lazy(() => import('./components/LimitationsView'));
+const CopyrightView = lazy(() => import('./components/CopyrightView'));
+const CorrectionsView = lazy(() => import('./components/CorrectionsView'));
 
 import { Translation, ReaderState, PassageLink, AppMode, AppTab } from './types';
 import { storage } from './services/storageService';
@@ -78,6 +82,10 @@ const TAB_ROUTES: Partial<Record<AppTab, string>> = {
   theology: '/theology',
   notes: '/notes',
   support: '/support',
+  methodology: '/methodology',
+  limitations: '/limitations',
+  copyrights: '/copyrights',
+  corrections: '/corrections',
 };
 const ROUTE_TO_TAB: Record<string, AppTab> = Object.fromEntries(
   Object.entries(TAB_ROUTES).map(([k, v]) => [v, k as AppTab])
@@ -89,7 +97,7 @@ const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
   study:        ['Scripture Study Companion – Holy Bible GPT', 'Ask Bible questions and receive Scripture-first answers. The study aid quotes retrieved KJV or WEB text and can say when a claim is not established.'],
   about:        ['About Holy Bible GPT – Scripture-First, Always Free', 'Learn how Holy Bible GPT works: a Scripture-first study tool that quotes the Word of God before everything else.'],
   faq:          ['FAQ – Holy Bible GPT', 'Frequently asked questions about Holy Bible GPT, free AI Bible study, and how to use the Scripture study tools.'],
-  privacy:      ['Privacy Policy – Holy Bible GPT', 'No accounts, no data collection. Holy Bible GPT stores everything on your device only. Your data stays with you.'],
+  privacy:      ['Privacy Policy – Holy Bible GPT', 'How Holy Bible GPT uses Puter, the model provider, this browser, Vercel KV, Stripe, bible-api.com, and Vercel Analytics.'],
   terms:        ['Terms of Service – Holy Bible GPT', 'Terms of service for the Holy Bible GPT free Scripture study app.'],
   contact:      ['Contact – Holy Bible GPT', 'Get in touch with the Holy Bible GPT team. Send feedback, report an issue, or ask a question.'],
   search:       ['Search the Bible – Holy Bible GPT', 'Search Scripture by topic or verse reference. AI-powered verse discovery finds what you are looking for.'],
@@ -105,6 +113,10 @@ const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
   disclaimer:   ['AI Disclaimer – Holy Bible GPT', 'Understanding the role and limits of AI in Holy Bible GPT.'],
   translations: ['About Bible Translations – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered, so the label always matches the text.'],
   changelog:    ["What's New – Holy Bible GPT Changelog", 'Latest updates and new features added to Holy Bible GPT: search tools, offline KJV, prayer journal, and more.'],
+  methodology:  ['How answers are made – Holy Bible GPT', 'Scripture is retrieved before an explanation. A quotation and an explanation are kept apart.'],
+  limitations:  ['Limits of the study aid – Holy Bible GPT', 'The study aid can be wrong. It is instructed to say when a claim is not established from Scripture.'],
+  copyrights:   ['Translation copyright – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered.'],
+  corrections:  ['Corrections – Holy Bible GPT', 'How to report a verse that does not match its label, or an answer that adds to the text.'],
 };
 
 function updateMeta(title: string, desc: string, path: string) {
@@ -311,6 +323,10 @@ const App: React.FC = () => {
       case 'theology': return <TheologyView />;
       case 'harmony': return <GospelHarmonyView onOpenPassage={handleOpenPassage} />;
       case 'notes': return <NotesView onOpenPassage={handleOpenPassage} onTabChange={setActiveTab} />;
+      case 'methodology': return <MethodologyView />;
+      case 'limitations': return <LimitationsView />;
+      case 'copyrights': return <CopyrightView />;
+      case 'corrections': return <CorrectionsView />;
       default: return <NotFoundView onGoHome={() => setActiveTab('home')} />;
     }
   };
@@ -348,6 +364,10 @@ const App: React.FC = () => {
             <button onClick={() => setActiveTab('about')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">About</button>
             <button onClick={() => setActiveTab('faq')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">FAQ</button>
             <button onClick={() => setActiveTab('contact')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Contact</button>
+            <button onClick={() => setActiveTab('methodology')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Method</button>
+            <button onClick={() => setActiveTab('limitations')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Limits</button>
+            <button onClick={() => setActiveTab('copyrights')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Copyright</button>
+            <button onClick={() => setActiveTab('corrections')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Corrections</button>
           </div>
           <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">POWERED BY THE CHRISTIAN'S DECK</a>
         </footer>

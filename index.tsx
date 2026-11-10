@@ -2,6 +2,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { inject } from '@vercel/analytics';
+import '@fontsource/inter/300.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/crimson-pro/400.css';
+import '@fontsource/crimson-pro/400-italic.css';
+import '@fontsource/crimson-pro/700.css';
+import '@fontsource/cinzel/400.css';
+import '@fontsource/cinzel/700.css';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import { initClientSentry } from './services/sentryClient';
@@ -10,8 +18,7 @@ import { initClientSentry } from './services/sentryClient';
 // and does not download the SDK.
 void initClientSentry(import.meta.env.VITE_SENTRY_DSN);
 
-// Zero-config visitor analytics — view counts, top pages, referrers in the
-// Vercel dashboard. No cookies, no PII, so it doesn't need a consent banner.
+// Page-view counts for the Vercel dashboard. Disclosed in the privacy policy.
 inject();
 
 const rootElement = document.getElementById('root');

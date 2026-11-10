@@ -5,7 +5,7 @@ const FAQView: React.FC = () => {
   const faqs = [
     { q: "Is this app free?", a: "Yes. The Bible reader and basic tools are free for everyone." },
     { q: "Can I use it offline?", a: "Yes. Use the Scriptorium Settings to download the full KJV for offline use." },
-    { q: "Is my data private?", a: "Yes. Your notes and prayers stay on your device. We do not sell your data." },
+    { q: "Is my data private?", a: "Notes and prayers start on your device. A question sent to the study aid goes to Puter and its model provider. Pro sync, if you use it, stores a copy in Vercel KV. We do not sell your data. Read the privacy policy for the full list." },
     { q: "Who built this?", a: "Built by a small team dedicated to sharing the Word through modern technology." },
     { q: "Is the AI always right?", a: "No. AI is a tool for study. Always check everything against Scripture." }
   ];

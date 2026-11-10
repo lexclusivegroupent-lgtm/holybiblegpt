@@ -253,6 +253,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [handleSend]);
 
   const handleSavePrayer = useCallback((text: string) => {
+    if (storage.getSettings().prayerConsent !== true) {
+      const agreed = window.confirm('Saving a prayer keeps it on this device. It can show your religious beliefs. It is uploaded only if you use Pro sync. Save it?');
+      if (!agreed) return;
+      storage.givePrayerConsent();
+    }
     storage.savePrayer({
       id: crypto.randomUUID(),
       title: `Prayer — ${new Date().toLocaleDateString()}`,

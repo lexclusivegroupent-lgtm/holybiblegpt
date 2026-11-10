@@ -141,4 +141,38 @@ export const storage = {
     if (!p.includes(dateStr)) localStorage.setItem(KEYS.PROGRESS, JSON.stringify([...p, dateStr]));
   },
 
+  givePrayerConsent: () => {
+    const settings = storage.getSettings();
+    settings.prayerConsent = true;
+    storage.saveSettings(settings);
+  },
+
+  exportLocalData: () => {
+    const local: Record<string, string | null> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('hbgpt_')) local[key] = localStorage.getItem(key);
+    }
+    return {
+      exportedAt: new Date().toISOString(),
+      note: 'Copy stored in this browser. It does not include the Puter account or a Stripe customer record.',
+      localStorage: local,
+    };
+  },
+
+  deleteLocalData: async () => {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('hbgpt_')) keys.push(key);
+    }
+    keys.forEach(key => localStorage.removeItem(key));
+    await new Promise<void>((resolve) => {
+      const request = indexedDB.deleteDatabase('HolyBibleDB_v2');
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+      request.onblocked = () => resolve();
+    });
+  },
+
 };
