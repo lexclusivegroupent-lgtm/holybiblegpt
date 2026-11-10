@@ -384,7 +384,7 @@ const App: React.FC = () => {
       </main>
       {activeTab !== 'read' && activeTab !== 'study' && (
         <footer className="glass-dark border-t border-white/5 py-5 px-6 flex flex-col items-center gap-3">
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[9px] font-bold uppercase tracking-widest text-stone-600">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[9px] font-bold uppercase tracking-widest text-stone-300">
             <a href="/privacy" onClick={(event) => { event.preventDefault(); setActiveTab('privacy'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Privacy</a>
             <a href="/terms" onClick={(event) => { event.preventDefault(); setActiveTab('terms'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Terms</a>
             <a href="/about" onClick={(event) => { event.preventDefault(); setActiveTab('about'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">About</a>

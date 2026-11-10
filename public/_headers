@@ -1,0 +1,14 @@
+# Applied by Cloudflare Workers static assets. vercel.json headers do not run there.
+# The content-security policy is report-only. Puter's sign-in popup and
+# iframes use several hosts (js.puter.com, puter.com, api.puter.com,
+# *.puter.com, *.puter.site, and puter-net.b-cdn.net). Enforcing a policy
+# before a live sign-in check would risk blocking login.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://js.puter.com https://cdn.tailwindcss.com https://puter.com https://*.puter.com https://*.puter.site; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://puter.com https://*.puter.com; font-src 'self' data: https://puter.com https://*.puter.com; img-src 'self' data: blob: https://puter.com https://*.puter.com https://api.puter.com https://puter.site https://*.puter.site https://puter-net.b-cdn.net; connect-src 'self' https://bible-api.com https://js.puter.com https://api.puter.com https://puter.com https://*.puter.com https://puter.site https://*.puter.site wss://api.puter.com wss://puter.com wss://*.puter.com wss://*.puter.site; frame-src https://js.puter.com https://puter.com https://*.puter.com https://api.puter.com https://puter.site https://*.puter.site; worker-src 'self' blob: https://*.puter.com; object-src 'none'; base-uri 'self'; form-action 'self' https://puter.com https://*.puter.com https://api.puter.com; upgrade-insecure-requests
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
