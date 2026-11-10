@@ -8,7 +8,8 @@
     "prebuild": "node scripts/ensure-kjv.mjs",
     "build": "vite build",
     "postbuild": "node scripts/prerender.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:worker-assets": "node --test tests/worker-assets.test.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -27,6 +28,7 @@
     "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "wrangler": "^4.160.0"
   }
 }

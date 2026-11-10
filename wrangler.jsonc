@@ -3,11 +3,26 @@
   "name": "holybiblegpt",
   "compatibility_date": "2026-08-18",
   "compatibility_flags": ["nodejs_compat"],
-  // Worker script handles /api/esv proxy; all other requests fall through to the SPA.
+  // Worker script handles /api/esv. Every other request is served from static
+  // assets. The binding name must be ASSETS: src/worker.ts calls env.ASSETS.fetch,
+  // and that call is what applies not_found_handling for routes with no file
+  // (client pages and Bible chapters that were not prerendered).
+  //
+  // 73cd302 (2026-08-18) set "main" without "binding". env.ASSETS was then
+  // undefined, so any request that reached the Worker threw
+  // `Cannot read properties of undefined (reading 'fetch')` and Cloudflare
+  // returned error 1101. Browser navigations still returned HTML because
+  // compatibility_date >= 2025-04-01 serves assets for Sec-Fetch-Mode: navigate
+  // without invoking the Worker. Crawlers, previews, and other non-navigation
+  // fetches did not, which is why most chapter URLs 500'd.
   "main": "src/worker.ts",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // /api/* must hit the Worker even for browser navigations. Otherwise the
+    // SPA fallback above would return index.html for /api/esv.
+    "run_worker_first": ["/api/*"]
   }
   // To enable ESV, add the API key as a Cloudflare secret:
   //   wrangler secret put ESV_API_KEY
