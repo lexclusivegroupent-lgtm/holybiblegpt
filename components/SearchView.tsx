@@ -104,8 +104,8 @@ The reader is using ${translation}. Name references only.`;
       if (id !== requestRef.current) return;
       if (err.message === 'puter_unavailable') {
         setNotice({
-          title: 'Sign In Required',
-          text: 'A free sign-in is needed so Holy Bible GPT can offer this AI feature at no cost. Use the Study tab to sign in, then come back to search by topic.',
+          title: 'Topic search',
+          text: 'Topic search asks the study helper. Sign in from the header if you want that help. A reference such as John 3:16 opens with no account.',
         });
       } else {
         setNotice({
@@ -220,7 +220,7 @@ The reader is using ${translation}. Name references only.`;
       {!hasSearched && !isSearching && (
         <div className="text-center pt-8 space-y-3">
           <p className="text-[9px] text-stone-700 uppercase tracking-widest leading-relaxed">
-            Topic search asks the study helper for references. The wording on the page comes from the stored Bible. A free sign-in is needed to enable it.
+            Topic search asks the study helper for references. The wording on the page comes from the stored Bible.
           </p>
           <p className="text-[9px] text-stone-800 uppercase tracking-widest">
             Direct references (e.g. Romans 8:28) always work without sign-in

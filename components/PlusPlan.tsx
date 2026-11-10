@@ -1,6 +1,7 @@
 import React from 'react';
 import { PLUS_MONTHLY_LABEL, PLUS_YEARLY_LABEL } from '../services/billingAvailability.mjs';
 import { BillingAvailability, BillingInterval } from '../services/syncService';
+import SaveAcrossDevicesNote from './SaveAcrossDevicesNote';
 
 interface PlusPlanProps {
   billing: BillingAvailability | 'checking';
@@ -62,18 +63,17 @@ const PlusPlan: React.FC<PlusPlanProps> = ({
 
       {configured && accountKnown && !configured.checkout && !active && (
         <p className="text-xs text-stone-400 leading-relaxed">
-          Checkout is not available on this deployment yet, so the buttons stay hidden. Reading, search, and AI study stay free.
+          Checkout is not available on this deployment yet. Reading, search, and AI study stay free.
         </p>
       )}
 
-      {configured && accountKnown && configured.checkout && !signedIn && !active && (
-        <button
-          onClick={onSignIn}
-          disabled={busy}
-          className="w-full py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] bg-[#D4AF37] text-black shadow-xl hover:scale-[1.01] active:scale-95 disabled:opacity-50"
-        >
-          {busy ? 'Opening…' : 'Sign in to subscribe'}
-        </button>
+      {configured && accountKnown && !signedIn && !active && (
+        <SaveAcrossDevicesNote
+          onSignIn={onSignIn}
+          busy={busy}
+          error={message}
+          detail="Accounts are free. Plus is optional and adds sync and backup. Reading, search, and AI stay open either way."
+        />
       )}
 
       {configured && accountKnown && signedIn && !active && (month || year) && (
@@ -140,7 +140,7 @@ const PlusPlan: React.FC<PlusPlanProps> = ({
         </div>
       )}
 
-      {message && (
+      {message && (signedIn || active || !configured || !accountKnown) && (
         <p className="text-[10px] text-stone-500 text-center">{message}</p>
       )}
     </div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Role, Message, AppMode, Translation, PassageLink, AppTab } from '../types';
 import { sendMessageStream, getPuterAuthState, signIntoPuter, isAuthError, PuterStatus } from '../services/aiService';
+import { AUTH_CHANGED_EVENT } from '../services/authSession';
 import { storage } from '../services/storageService';
 import { getUserId } from '../services/syncService';
 import { consumeUsage } from '../services/usageService';
@@ -63,9 +64,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const pendingProcessed = useRef(false);
   const activeModeRef = useRef<AppMode>(currentMode);
 
-  // Check Puter auth state on mount
+  // Check Puter auth state on mount, and when sign-in happens from the header.
   useEffect(() => {
-    getPuterAuthState().then(status => setPuterStatus(status));
+    const sync = () => { getPuterAuthState().then(status => setPuterStatus(status)); };
+    sync();
+    window.addEventListener(AUTH_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, sync);
   }, []);
 
   useEffect(() => {
@@ -120,14 +124,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setSignInError('Sign-in was not completed. Please try again.');
       }
     } catch (e: any) {
-      const msg = e?.message ?? '';
-      if (msg.toLowerCase().includes('popup') || msg.toLowerCase().includes('blocked')) {
-        setSignInError(
-          'Pop-up was blocked by your browser. Allow pop-ups for this site in browser settings, then try again.'
-        );
-      } else {
-        setSignInError(msg || 'Sign-in failed. Please try again.');
-      }
+      setSignInError(e?.message || 'Sign-in did not finish. You can try again whenever you like.');
     } finally {
       setIsSigningIn(false);
     }
@@ -228,8 +225,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const needsSignIn = puterStatus === 'needs-signin';
   const loadFailed = puterStatus === 'load-failed';
-  const isReady = puterStatus === 'ready';
-  const inputDisabled = isLoading || needsSignIn || loadFailed;
+  // A missing account does not lock the composer. Reading and questions stay open.
+  const inputDisabled = isLoading || loadFailed;
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-black">
@@ -246,7 +243,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </p>
           ) : (
             <p className="text-[9px] text-stone-600 uppercase tracking-widest mt-0.5">
-              {isReady ? 'Study aid · Not a pastor or authority' : puterStatus === 'checking' ? 'Connecting…' : 'Bible reading works now · Sign in to use the AI'}
+              {puterStatus === 'checking' ? 'Connecting…' : 'Study aid · Not a pastor or authority'}
             </p>
           )}
         </div>
@@ -329,11 +326,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-lg">🔑</span>
                 <p className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-                  Free account needed for the AI
+                  Accounts are free
                 </p>
               </div>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Bible reading, search, and the AI study helper are free, with no question limit. The study helper needs a free sign-in because it runs on your own Puter account.
+                Reading, search, and the study helper are free, with no question limit. The helper runs on a free Puter account. Ask a question here anytime. Sign in if it asks you to.
               </p>
               <p className="text-[10px] text-stone-600 leading-snug">
                 ⚠️ When prompted, <strong className="text-stone-500">allow pop-ups</strong> for this site so the sign-in window can open.
@@ -354,7 +351,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     Opening sign-in…
                   </>
                 ) : (
-                  '🔑 Sign in — free, no credit card'
+                  'Sign in'
                 )}
               </button>
               <p className="text-[9px] text-stone-700 text-center">
@@ -427,13 +424,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             }}
             onKeyDown={handleKeyDown}
             placeholder={
-              needsSignIn
-                ? 'Sign in above to ask questions…'
-                : loadFailed
-                  ? 'AI service unavailable — please refresh'
-                  : puterStatus === 'checking'
-                      ? 'Connecting to AI…'
-                      : `${MODE_LABELS[localMode]?.label ?? 'Ask'} mode — type your question… (Enter to send)`
+              loadFailed
+                ? 'The study helper is unavailable. Refresh, then try again.'
+                : puterStatus === 'checking'
+                  ? 'Connecting…'
+                  : `${MODE_LABELS[localMode]?.label ?? 'Ask'} mode — type your question… (Enter to send)`
             }
             disabled={inputDisabled}
             rows={1}
