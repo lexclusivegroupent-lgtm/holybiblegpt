@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
+import { runScheduledPush } from "./api/push.mjs";
 import { handleApi } from "./api/router.mjs";
 import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
 
@@ -15,6 +16,12 @@ import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
  *   /api/get-usage, /api/increment-usage
  *     → Puter-verified account routes. Storage is D1 (binding DB).
  *       Until that binding exists, these routes still return JSON.
+ *   /api/create-checkout-session, /api/create-portal-session, /api/stripe-webhook
+ *     → Billing. Disabled until the Stripe secrets below are set.
+ *   /api/push-subscribe, /api/push-unsubscribe, /api/push-send-daily
+ *     → Daily verse push. Disabled until VAPID keys are set.
+ *       A cron trigger also calls the daily send. It does not use CRON_SECRET.
+ *       The HTTP route does.
  *
  * All other requests fall through to the static React SPA via env.ASSETS.
  */
@@ -25,6 +32,20 @@ interface Env {
   SENTRY_DSN?: string;
   // Present only after wrangler.jsonc binds D1. Missing is safe.
   DB?: D1Like;
+  // Public origin. Set in wrangler.jsonc vars, not a secret.
+  APP_URL?: string;
+  // wrangler secret put STRIPE_SECRET_KEY
+  STRIPE_SECRET_KEY?: string;
+  // wrangler secret put STRIPE_PRICE_ID
+  STRIPE_PRICE_ID?: string;
+  // wrangler secret put STRIPE_WEBHOOK_SECRET
+  STRIPE_WEBHOOK_SECRET?: string;
+  // wrangler secret put VAPID_PUBLIC_KEY
+  VAPID_PUBLIC_KEY?: string;
+  // wrangler secret put VAPID_PRIVATE_KEY
+  VAPID_PRIVATE_KEY?: string;
+  // wrangler secret put CRON_SECRET
+  CRON_SECRET?: string;
   ASSETS: { fetch(input: Request | string, init?: RequestInit): Promise<Response> };
 }
 
@@ -141,6 +162,18 @@ const worker = {
 
     // ── Static SPA (React build in dist/) ───────────────────────────────────
     return env.ASSETS.fetch(request);
+  },
+
+  // Cloudflare invokes this. It is not the public /api/push-send-daily route.
+  // Missing VAPID keys or D1 skip the send. Errors are logged and not rethrown,
+  // so a failed run is not retried into a second push.
+  async scheduled(_controller: { cron: string }, env: Env): Promise<void> {
+    try {
+      await runScheduledPush(env);
+    } catch (err) {
+      console.error(JSON.stringify({ message: "daily push failed" }));
+      if (sentryDsnFrom(env.SENTRY_DSN)) Sentry.captureException(err);
+    }
   },
 };
 

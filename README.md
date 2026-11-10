@@ -9,7 +9,7 @@ The public site is [https://holybiblegpt.com](https://holybiblegpt.com).
 - A React and Vite reader for the King James Version and the World English Bible. The King James Version is committed in `public/bible/kjv.json` (public domain, 1,189 chapters). The build fails if that file is incomplete or a stored quotation does not match it.
 - Sign-in and the study aid use [Puter.js](https://js.puter.com/v2/) in the browser. There is no separate account system.
 - Chapter pages, book indexes, and the homepage are prerendered with the King James text, a title, a description, a canonical URL, and breadcrumb markup.
-- The Cloudflare Worker serves the site, the ESV proxy, and the account routes for sync and the free-question counter. Those routes use D1 once it is bound. See `docs/cloudflare-api.md`. The `api/` folder is the previous Vercel copy and is not what holybiblegpt.com runs.
+- The Cloudflare Worker serves the site, the ESV proxy, sync, the free-question counter, billing, and daily verse push. Account data uses D1 once it is bound. Billing and push stay off until their secrets are set. See `docs/cloudflare-api.md`. The `api/` folder is the previous Vercel copy and is not what holybiblegpt.com runs.
 - The English Standard Version is not offered. Do not label King James text as ESV.
 
 ## Local setup

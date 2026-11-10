@@ -43,6 +43,16 @@
     "run_worker_first": ["/api/*"],
     // Serve /about as 200. /about/ redirects to /about, matching canonical URLs.
     "html_handling": "drop-trailing-slash"
+  },
+  // Public Stripe return origin. Not a secret. Checkout stays off until
+  // STRIPE_SECRET_KEY and STRIPE_PRICE_ID are set with `wrangler secret put`.
+  "vars": {
+    "APP_URL": "https://holybiblegpt.com"
+  },
+  // Same hour as the old Vercel cron (13:00 UTC). The scheduled handler
+  // skips the send when VAPID keys or D1 are missing, and it does not throw.
+  "triggers": {
+    "crons": ["0 13 * * *"]
   }
   // D1 is intentionally not bound. An unknown database_id makes
   // `wrangler deploy` fail, and Workers Builds would leave this version
