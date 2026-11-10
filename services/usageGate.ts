@@ -19,10 +19,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-// The Cloudflare Worker has no usage routes. After the asset binding fix
-// those URLs are the SPA shell (200 HTML) or, if unmatched, 404. That is not
-// an outage: let the question through, which is how the main domain behaves
-// today. A JSON body means the usage API exists (the Vercel host).
+// The Cloudflare Worker has no usage routes. A 404, or a 2xx whose body is
+// not JSON (the SPA shell), means this host has no usage API: let the
+// question through. Any 5xx, JSON or not, is an outage and fails closed.
 export const ABSENT_USAGE: UsageInfo = {
   isPro: false,
   count: 0,
@@ -36,30 +35,42 @@ export const ABSENT_CONSUME: ConsumeResult = {
   remaining: null,
 };
 
-export function parseUsageHttp(status: number, rawBody: string):
-  | { kind: 'absent' }
-  | { kind: 'json'; ok: boolean; body: unknown } {
-  if (status === 404) return { kind: 'absent' };
+function jsonObject(rawBody: string): Record<string, unknown> | undefined {
   const trimmed = rawBody.trim();
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return { kind: 'absent' };
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return undefined;
   try {
     const body = JSON.parse(trimmed);
-    if (!isRecord(body)) return { kind: 'absent' };
-    return { kind: 'json', ok: status >= 200 && status < 300, body };
+    return isRecord(body) ? body : undefined;
   } catch {
-    return { kind: 'absent' };
+    return undefined;
   }
+}
+
+export function parseUsageHttp(status: number, rawBody: string):
+  | { kind: 'absent' }
+  | { kind: 'closed' }
+  | { kind: 'json'; ok: boolean; body: unknown } {
+  if (status === 404) return { kind: 'absent' };
+  const body = jsonObject(rawBody);
+  if (status >= 500) {
+    return body ? { kind: 'json', ok: false, body } : { kind: 'closed' };
+  }
+  if (status >= 200 && status < 300 && !body) return { kind: 'absent' };
+  if (!body) return { kind: 'closed' };
+  return { kind: 'json', ok: status >= 200 && status < 300, body };
 }
 
 export function usageFromHttp(status: number, rawBody: string): UsageInfo {
   const parsed = parseUsageHttp(status, rawBody);
   if (parsed.kind === 'absent') return { ...ABSENT_USAGE };
+  if (parsed.kind === 'closed') return { ...CLOSED_USAGE };
   return usageFromPayload(parsed.ok, parsed.body);
 }
 
 export function consumeFromHttp(status: number, rawBody: string): ConsumeResult {
   const parsed = parseUsageHttp(status, rawBody);
   if (parsed.kind === 'absent') return { ...ABSENT_CONSUME };
+  if (parsed.kind === 'closed') return { ...CLOSED_CONSUME };
   return consumeFromPayload(parsed.ok, parsed.body);
 }
 

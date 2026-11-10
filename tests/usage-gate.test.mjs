@@ -19,8 +19,14 @@ test('a missing usage API lets the question through, and a real API error does n
   assert.equal(consumeFromHttp(404, SPA_HTML).allowed, true);
   assert.equal(usageFromHttp(404, SPA_HTML).unavailable, undefined);
 
-  // Vercel serves the real handlers. A JSON 5xx stays closed, as does the
-  // network-error result the client returns when fetch throws.
+  // Any 5xx fails closed, including an HTML error page. A 2xx non-JSON body
+  // is the only success-shaped miss. The network-error result stays closed.
+  const htmlOutage = consumeFromHttp(502, '<html><body>Bad Gateway</body></html>');
+  assert.equal(htmlOutage.allowed, false);
+  assert.equal(htmlOutage.unavailable, true);
+  assert.equal(usageFromHttp(500, 'error code: 1101').unavailable, true);
+  assert.equal(consumeFromHttp(500, 'error code: 1101').allowed, false);
+
   const unavailable = consumeFromHttp(503, JSON.stringify({
     allowed: false,
     isPro: false,

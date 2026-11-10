@@ -4,10 +4,10 @@
 // verified from the caller's session token — never a client-supplied id
 // alone, and never a client-side count.
 //
-// The Worker on holybiblegpt.com does not implement these routes. HTML or a
-// 404 means there is no usage API, and the question is allowed. On the Vercel
-// host the API returns JSON: a 5xx JSON body or a network error fails closed
-// and the question is not sent. Bible reading does not call this module.
+// The Worker on holybiblegpt.com does not implement these routes. A 404, or a
+// 2xx body that is not JSON, means there is no usage API and the question is
+// allowed. Any 5xx, JSON or not, and any network error fail closed. Bible
+// reading does not call this module.
 
 import { getPuterAuthToken } from './aiService';
 import { CLOSED_CONSUME, CLOSED_USAGE, consumeFromHttp, usageFromHttp } from './usageGate';
@@ -45,8 +45,8 @@ export const getUsage = async (userId: string): Promise<UsageInfo> => {
 };
 
 // Call this right before sending a message to the AI. `allowed: true` may
-// continue. A JSON 5xx or a network error returns allowed: false. HTML or
-// 404 (no usage API on this host) returns allowed: true.
+// continue. Any 5xx or a network error returns allowed: false. A 404, or a
+// 2xx non-JSON body, means this host has no usage API and returns allowed: true.
 export const consumeUsage = async (userId: string): Promise<ConsumeResult> => {
   try {
     const headers = await authHeader();

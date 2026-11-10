@@ -159,9 +159,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
-    // Free-tier gate. Pro skips it. JSON 5xx and network errors do not call
-    // the AI. HTML or 404 means this host has no usage API, so the question
-    // is allowed. Bible reading does not use this gate.
+    // Free-tier gate. Pro skips it. Any 5xx and network errors do not call
+    // the AI. A 404, or a 2xx non-JSON body, means this host has no usage
+    // API, so the question is allowed. Bible reading does not use this gate.
     if (userId && !usage?.isPro) {
       const result = await consumeUsage(userId);
       if (!result.allowed) {
