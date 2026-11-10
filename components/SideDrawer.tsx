@@ -80,9 +80,11 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
           <footer className="p-6 border-t border-white/5 bg-stone-900/40 space-y-6">
             <div className="space-y-2">
               <label htmlFor="drawer-translation" className="text-[10px] font-bold text-stone-600 uppercase tracking-widest block">Translation</label>
-              <select id="drawer-translation" value={currentTranslation} onChange={(e) => onTranslationChange(e.target.value as Translation)} className="w-full bg-stone-950 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-[#D4AF37] appearance-none focus:outline-none">
-                {Object.values(Translation).map(t => <option key={t} value={t}>{t}</option>)}
+              <select id="drawer-translation" value={currentTranslation === Translation.ESV ? Translation.KJV : currentTranslation} onChange={(e) => onTranslationChange(e.target.value as Translation)} className="w-full bg-stone-950 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-[#D4AF37] appearance-none focus:outline-none">
+                <option value={Translation.KJV}>KJV</option>
+                <option value={Translation.WEB}>WEB</option>
               </select>
+              <p className="text-[9px] text-stone-500 leading-snug">ESV is not offered. The label always matches the text.</p>
             </div>
             <div className="text-[9px] text-stone-700 font-bold uppercase tracking-[0.2em] text-center">Scripture First</div>
           </footer>

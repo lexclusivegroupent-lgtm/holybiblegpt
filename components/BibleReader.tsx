@@ -246,6 +246,13 @@ const BibleReader: React.FC<BibleReaderProps> = ({
 
           <div className="space-y-0 relative">
             {content.map((v, idx) => {
+              if (v.isNotice) {
+                return (
+                  <p key="notice" className="text-stone-300 text-sm leading-relaxed px-3 py-6">
+                    {v.text}
+                  </p>
+                );
+              }
               const hColor = getVerseHighlight(v.number);
               return (
                 <div

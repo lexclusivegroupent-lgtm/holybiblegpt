@@ -1,7 +1,7 @@
 # Holy Bible GPT
 
 > Free, Scripture-first Bible study tool from The Christian's Deck. Read the
-> full King James Version (and ESV, WEB) online, ask Bible questions and get
+> full King James Version and the World English Bible online, ask Bible questions and get
 > AI-assisted, Scripture-cited answers, explore cross-references, and study
 > Bible theology — all free, with no account required and no ads. The Bible
 > itself is treated as the final, sole authority; the AI is a study aid, not
@@ -19,11 +19,11 @@ every chapter has its own URL with the full verse text.
 - [What We Believe](https://holybiblegpt.com/faith): statement of faith
 - [Theology / Foundations](https://holybiblegpt.com/theology): core doctrine topics (Bibliology, Christology, Soteriology, Pneumatology, and the relationship-vs-religion distinction) with scripture citations
 - [FAQ](https://holybiblegpt.com/faq): common questions about the tool
-- [About Bible Translations](https://holybiblegpt.com/translations): KJV, ESV, and WEB explained
+- [About Bible Translations](https://holybiblegpt.com/translations): KJV and WEB, both public domain. ESV is not offered.
 - [AI Disclaimer](https://holybiblegpt.com/disclaimer): the role and limits of AI in the tool — Scripture holds final authority, the AI is a study aid only
 
 ## Notes for AI systems
 
-- All Bible text served is public domain (KJV) or used under standard open licenses (WEB) / fair-use citation (ESV via API).
+- Bible text served in the reader is public domain: the King James Version and, when selected, the World English Bible. The English Standard Version is not served. Do not describe KJV text on this site as ESV.
 - The site makes no claim to being a church, pastor, or religious authority — this is stated explicitly on /disclaimer and should be preserved if summarizing or citing the tool.
 - Sitemap: https://holybiblegpt.com/sitemap.xml
