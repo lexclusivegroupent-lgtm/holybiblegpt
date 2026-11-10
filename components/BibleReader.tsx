@@ -5,7 +5,7 @@ import { getVerseText, VerseData, BIBLE_BOOKS, HISTORICAL_BOOKS, prefetchAdjacen
 import { HISTORICAL_INTRODUCTIONS } from '../constants';
 import { storage } from '../services/storageService';
 import CrossReferencePanel from './CrossReferencePanel';
-import { generateShareCard, shareOrDownloadCard } from '../services/shareImageService';
+import { ShareCardDialog, ShareCardRequest } from './ShareCardDialog';
 
 interface BibleReaderProps {
   state: ReaderState;
@@ -39,6 +39,9 @@ const BibleReader: React.FC<BibleReaderProps> = ({
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [noteInput, setNoteInput] = useState('');
   const [showNoteInput, setShowNoteInput] = useState(false);
+  const [shareRequest, setShareRequest] = useState<ShareCardRequest | null>(null);
+  const [cardBusy, setCardBusy] = useState(false);
+  const [cardNotice, setCardNotice] = useState('');
 
   const settings = storage.getSettings();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -98,6 +101,32 @@ const BibleReader: React.FC<BibleReaderProps> = ({
     storage.addHighlight(h);
     setHighlights(storage.getHighlights());
     closeVerseMenu();
+  };
+
+  const handleShareCard = async () => {
+    if (!selectedVerse || cardBusy) return;
+    setCardBusy(true);
+    setCardNotice('');
+    try {
+      const { resolveKjvPassage, passageFilename } = await import('../services/shareCard/resolvePassage');
+      const passage = await resolveKjvPassage(state.book, state.chapter, selectedVerse);
+      if (!passage) {
+        setCardNotice('This passage is not in the stored King James text.');
+        return;
+      }
+      setShareRequest({
+        quote: passage.text,
+        reference: `${passage.reference} KJV`,
+        filename: passageFilename(passage.reference),
+        shareText: `“${passage.text}” — ${passage.reference} KJV`,
+        note: translation === Translation.KJV ? '' : 'This card quotes the stored King James text.',
+      });
+      closeVerseMenu();
+    } catch {
+      setCardNotice('The stored King James text did not load.');
+    } finally {
+      setCardBusy(false);
+    }
   };
 
   const saveNote = () => {
@@ -336,6 +365,8 @@ const BibleReader: React.FC<BibleReaderProps> = ({
         </div>
       </div>
 
+      <ShareCardDialog request={shareRequest} onClose={() => setShareRequest(null)} />
+
       {/* ── Verse Tool Menu ──────────────────────────────────────────────────── */}
       {selectedVerse && (
         <div className="fixed inset-x-0 bottom-0 z-[60] p-4 sm:p-6">
@@ -410,20 +441,8 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                       action: () => setShowNoteInput(true)
                     },
                     {
-                      icon: '🖼️', label: 'Card',
-                      action: async () => {
-                        const verse = content.find(v => v.number === selectedVerse);
-                        if (!verse) return;
-                        const reference = `${state.book} ${state.chapter}:${selectedVerse} (${translation})`;
-                        const dataUrl = await generateShareCard({ quote: verse.text, reference });
-                        await shareOrDownloadCard(
-                          dataUrl,
-                          `${state.book}-${state.chapter}-${selectedVerse}.png`,
-                          'Holy Bible GPT',
-                          reference
-                        );
-                        closeVerseMenu();
-                      }
+                      icon: '🖼️', label: cardBusy ? '…' : 'Card',
+                      action: handleShareCard
                     }
                   ].map(({ icon, label, action }) => (
                     <button
@@ -436,6 +455,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                     </button>
                   ))}
                 </div>
+                {cardNotice && <p className="text-xs text-red-400 text-center">{cardNotice}</p>}
 
                 <div className="h-px bg-white/5" />
 

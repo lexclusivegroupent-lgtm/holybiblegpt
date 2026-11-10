@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Message, Role, PassageLink, AppMode } from '../types';
-import { generateShareCard, shareOrDownloadCard } from '../services/shareImageService';
+import { ShareCardDialog, ShareCardRequest } from './ShareCardDialog';
 
 interface MessageBubbleProps {
   message: Message;
@@ -177,23 +177,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
     setPrayerSaved(true);
   };
 
-  const [shareBusy, setShareBusy] = useState(false);
-  const handleShare = async () => {
-    setShareBusy(true);
-    try {
-      const dataUrl = await generateShareCard({
-        quote: cleanText,
-        reference: isPrayer ? 'Scripture Prayer' : 'Study Companion',
-      });
-      await shareOrDownloadCard(dataUrl, 'holybiblegpt-answer.png', 'Holy Bible GPT', cleanText.slice(0, 120));
-    } finally {
-      setShareBusy(false);
-    }
+  const [shareRequest, setShareRequest] = useState<ShareCardRequest | null>(null);
+  const handleShare = () => {
+    setShareRequest({
+      quote: cleanText,
+      reference: isPrayer ? 'Prayer' : 'Study note',
+      filename: 'holybiblegpt-note.png',
+      shareText: cleanText.slice(0, 180),
+      truncate: true,
+    });
   };
 
   const isWelcome = message.id === '0';
 
   return (
+    <>
     <div className={`flex w-full mb-8 ${isBot ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-[95%] sm:max-w-[88%] px-5 py-5 rounded-[1.75rem] relative transition-all ${
         isError
@@ -267,10 +265,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
                 )}
                 <button
                   onClick={handleShare}
-                  disabled={shareBusy}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold text-stone-500 border border-white/5 hover:text-[#D4AF37] hover:border-[#D4AF37]/20 transition-all min-h-[34px] disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-bold text-stone-500 border border-white/5 hover:text-[#D4AF37] hover:border-[#D4AF37]/20 transition-all min-h-[34px]"
                 >
-                  🖼️ {shareBusy ? 'Preparing…' : 'Share as Image'}
+                  Share as Image
                 </button>
               </div>
             )}
@@ -311,6 +308,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
         </div>
       </div>
     </div>
+    <ShareCardDialog request={shareRequest} onClose={() => setShareRequest(null)} />
+    </>
   );
 };
 
