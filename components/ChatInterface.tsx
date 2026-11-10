@@ -6,6 +6,7 @@ import { enrichWithVerseContext } from '../services/bibleService';
 import { storage } from '../services/storageService';
 import { getUserId, startCheckout } from '../services/syncService';
 import { getUsage, consumeUsage, UsageInfo } from '../services/usageService';
+import { chatUsageView } from '../services/usageGate';
 import MessageBubble from './MessageBubble';
 import { MODE_LABELS } from '../constants';
 
@@ -60,6 +61,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [signInError, setSignInError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
+  const [usageNotice, setUsageNotice] = useState<string | null>(null);
   const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -157,17 +159,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
-    // Free-tier gate: atomically check-and-consume one of the 5 free
-    // questions server-side before calling the AI. Pro users always pass.
+    // Free-tier gate. Pro skips it. Any 5xx and network errors do not call
+    // the AI. A 404, or a 2xx non-JSON body, means this host has no usage
+    // API, so the question is allowed. Bible reading does not use this gate.
     if (userId && !usage?.isPro) {
       const result = await consumeUsage(userId);
+      if (!result.allowed) {
+        if (result.unavailable) {
+          setUsageNotice('AI study is unavailable right now. Bible reading still works. Please try again in a moment.');
+          setUsage(prev => prev ? { ...prev, unavailable: true, isPro: false } : {
+            isPro: false, count: 0, remaining: null, limit: 5, unavailable: true,
+          });
+        } else {
+          setUsageNotice(null);
+          setUsage(prev => ({
+            isPro: false,
+            count: prev?.count ?? 0,
+            remaining: 0,
+            limit: prev?.limit ?? 5,
+          }));
+        }
+        return;
+      }
+      setUsageNotice(null);
       setUsage(prev => ({
         isPro: result.isPro,
         count: prev ? prev.count + 1 : 1,
         remaining: result.remaining,
         limit: prev?.limit ?? 5,
       }));
-      if (!result.allowed) return; // paywall banner takes over below
     }
 
     const activeMode = modeOverride ?? activeModeRef.current;
@@ -256,7 +276,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const needsSignIn = puterStatus === 'needs-signin';
   const loadFailed = puterStatus === 'load-failed';
   const isReady = puterStatus === 'ready';
-  const paywallReached = isReady && !!usage && !usage.isPro && usage.remaining === 0;
+  const paywallReached = isReady && chatUsageView(usage) === 'paywall';
   const inputDisabled = isLoading || needsSignIn || loadFailed || paywallReached;
 
   return (
@@ -345,9 +365,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <p className="text-[9px] text-stone-600 uppercase tracking-widest text-center">
           {MODE_LABELS[localMode]?.icon} {MODE_LABELS[localMode]?.description}
         </p>
-        {isReady && usage && !usage.isPro && usage.remaining !== null && usage.remaining > 0 && (
+        {isReady && chatUsageView(usage) === 'remaining' && usage?.remaining != null && (
           <p className="text-[9px] text-[#D4AF37]/70 uppercase tracking-widest text-center mt-0.5">
             {usage.remaining} free {usage.remaining === 1 ? 'question' : 'questions'} left
+          </p>
+        )}
+        {isReady && chatUsageView(usage) === 'unavailable' && (
+          <p className="text-[9px] text-stone-500 uppercase tracking-widest text-center mt-0.5">
+            Couldn’t check free questions. Bible reading still works.
           </p>
         )}
       </div>
@@ -483,6 +508,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* ── Input ───────────────────────────────────────────────────────── */}
       <div className="px-4 py-3 border-t border-white/5 bg-stone-900/20 shrink-0">
+        {usageNotice && (
+          <p className="text-[11px] text-stone-400 leading-relaxed mb-2">{usageNotice}</p>
+        )}
         <form
           onSubmit={e => { e.preventDefault(); handleSend(); }}
           className="flex gap-2 items-end"

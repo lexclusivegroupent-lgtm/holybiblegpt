@@ -1,5 +1,5 @@
 
-import { waitForPuter } from './aiService';
+import { getPuterAuthToken, waitForPuter } from './aiService';
 import { storage } from './storageService';
 
 export type ProStatus = 'free' | 'pro';
@@ -17,13 +17,21 @@ export const getUserId = async (): Promise<string | null> => {
   }
 };
 
+async function puterHeaders(extra: Record<string, string> = {}): Promise<Record<string, string>> {
+  const token = await getPuterAuthToken();
+  if (!token) throw new Error('Sign in required.');
+  return { Authorization: `Bearer ${token}`, ...extra };
+}
+
 export const checkProStatus = async (userId: string): Promise<ProStatus> => {
   try {
-    const res = await fetch(`/api/get-status?userId=${encodeURIComponent(userId)}`);
+    const headers = await puterHeaders();
+    const res = await fetch(`/api/get-status?userId=${encodeURIComponent(userId)}`, { headers });
     if (!res.ok) return 'free';
     const json = await res.json();
     return json.status === 'pro' ? 'pro' : 'free';
   } catch {
+    // Fail closed for paid features. A verification error is not Pro.
     return 'free';
   }
 };
@@ -31,7 +39,7 @@ export const checkProStatus = async (userId: string): Promise<ProStatus> => {
 export const startCheckout = async (userId: string): Promise<void> => {
   const res = await fetch('/api/create-checkout-session', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await puterHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ userId }),
   });
   const json = await res.json();
@@ -42,7 +50,7 @@ export const startCheckout = async (userId: string): Promise<void> => {
 export const openBillingPortal = async (userId: string): Promise<void> => {
   const res = await fetch('/api/create-portal-session', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await puterHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ userId }),
   });
   const json = await res.json();
@@ -76,7 +84,7 @@ export const pushSyncData = async (userId: string): Promise<void> => {
   const data = collectLocalData();
   const res = await fetch('/api/sync-push', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await puterHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ userId, data }),
   });
   if (!res.ok) {
@@ -87,7 +95,9 @@ export const pushSyncData = async (userId: string): Promise<void> => {
 
 // Returns true if remote data existed and was applied, false if there was nothing to pull yet.
 export const pullSyncData = async (userId: string): Promise<boolean> => {
-  const res = await fetch(`/api/sync-pull?userId=${encodeURIComponent(userId)}`);
+  const res = await fetch(`/api/sync-pull?userId=${encodeURIComponent(userId)}`, {
+    headers: await puterHeaders(),
+  });
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     throw new Error(json.error || 'Sync failed.');
