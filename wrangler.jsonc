@@ -20,8 +20,9 @@
   },
   "compatibility_date": "2026-08-18",
   "compatibility_flags": ["nodejs_compat"],
-  // Worker script handles /api/esv. Every other request is served from static
-  // assets. The binding name must be ASSETS: src/worker.ts calls env.ASSETS.fetch,
+  // Worker script handles /api/esv and the account routes in src/api.
+  // Every other request is served from static assets. The binding name must
+  // be ASSETS: src/worker.ts calls env.ASSETS.fetch,
   // and that call is what applies not_found_handling for routes with no file
   // (client pages and Bible chapters that were not prerendered).
   //
@@ -43,6 +44,24 @@
     // Serve /about as 200. /about/ redirects to /about, matching canonical URLs.
     "html_handling": "drop-trailing-slash"
   }
+  // D1 is intentionally not bound. An unknown database_id makes
+  // `wrangler deploy` fail, and Workers Builds would leave this version
+  // unpublished. The Worker treats a missing DB binding as unconfigured
+  // and still answers the account routes with JSON.
+  //
+  // Create a D1 database named holybiblegpt, then replace this comment
+  // with the binding below and the database_id from `wrangler d1 create`.
+  // Deploy, then apply migrations (deploy does not apply them):
+  //   npx wrangler d1 migrations apply holybiblegpt --remote
+  //
+  // "d1_databases": [
+  //   {
+  //     "binding": "DB",
+  //     "database_name": "holybiblegpt",
+  //     "database_id": "REPLACE_WITH_DATABASE_ID",
+  //     "migrations_dir": "migrations"
+  //   }
+  // ]
   // To enable ESV, add the API key as a Cloudflare secret:
   //   wrangler secret put ESV_API_KEY
   // Get a free ESV API key at: https://api.esv.org

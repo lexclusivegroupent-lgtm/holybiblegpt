@@ -4,10 +4,11 @@
 // verified from the caller's session token — never a client-supplied id
 // alone, and never a client-side count.
 //
-// The Worker on holybiblegpt.com does not implement these routes. A 404, or a
-// 2xx body that is not JSON, means there is no usage API and the question is
-// allowed. Any 5xx, JSON or not, and any network error fail closed. Bible
-// reading does not call this module.
+// The Worker implements these routes. Until D1 is bound and migrated, an
+// authenticated call gets 404, which this module treats as "no usage API":
+// the question is allowed. A real JSON body from D1 is enforced. Any 5xx,
+// JSON or not, and any network error fail closed. Bible reading does not
+// call this module.
 
 import { getPuterAuthToken } from './aiService';
 import { CLOSED_CONSUME, CLOSED_USAGE, consumeFromHttp, usageFromHttp } from './usageGate';

@@ -19,9 +19,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-// The Cloudflare Worker has no usage routes. A 404, or a 2xx whose body is
-// not JSON (the SPA shell), means this host has no usage API: let the
-// question through. Any 5xx, JSON or not, is an outage and fails closed.
+// A 404, or a 2xx whose body is not JSON (the SPA shell, or the usage routes
+// before D1 is provisioned), means this host is not enforcing a counter yet:
+// let the question through. Any 5xx, JSON or not, is an outage and fails closed.
 export const ABSENT_USAGE: UsageInfo = {
   isPro: false,
   count: 0,

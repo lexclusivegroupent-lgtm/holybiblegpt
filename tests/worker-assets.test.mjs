@@ -106,4 +106,9 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
     assert.match(api.body, /ESV_API_KEY/);
     assert.doesNotMatch(api.body, /APP_SHELL|<!doctype html>/i);
   }
+
+  const status = await get('/api/get-status');
+  assert.equal(status.status, 401);
+  assert.match(status.body, /Authentication required/);
+  assert.doesNotMatch(status.body, /APP_SHELL|<!doctype html>/i);
 });
