@@ -1,44 +1,62 @@
 // Free-tier usage gate for the AI chat: 5 free questions, then Pro
 // ($6.99/mo) is required. Enforced server-side (api/get-usage.ts,
-// api/increment-usage.ts) against Vercel KV, keyed by the same Puter
-// userId used for the Pro-tier cloud sync — never trust a client-side count.
+// api/increment-usage.ts) against Vercel KV, keyed by the Puter account
+// verified from the caller's session token — never a client-supplied id
+// alone, and never a client-side count.
+//
+// If the check cannot be completed, the gate fails closed: the AI question
+// is not sent. Bible reading does not call this module.
+
+import { getPuterAuthToken } from './aiService';
+import { CLOSED_CONSUME, CLOSED_USAGE, consumeFromPayload, usageFromPayload } from './usageGate';
 
 export interface UsageInfo {
   isPro: boolean;
   count: number;
-  remaining: number | null; // null = unlimited (Pro)
+  remaining: number | null; // null = unlimited (Pro) or unknown (unavailable)
   limit: number;
+  unavailable?: boolean;
 }
 
 export interface ConsumeResult {
   allowed: boolean;
   isPro: boolean;
   remaining: number | null;
+  unavailable?: boolean;
+}
+
+async function authHeader(): Promise<Record<string, string> | null> {
+  const token = await getPuterAuthToken();
+  if (!token) return null;
+  return { Authorization: `Bearer ${token}` };
 }
 
 export const getUsage = async (userId: string): Promise<UsageInfo> => {
-  const res = await fetch(`/api/get-usage?userId=${encodeURIComponent(userId)}`);
-  if (!res.ok) {
-    // Fail open on read errors — don't block the UI over an infra hiccup.
-    return { isPro: false, count: 0, remaining: 5, limit: 5 };
+  try {
+    const headers = await authHeader();
+    if (!headers) return { ...CLOSED_USAGE };
+    const res = await fetch(`/api/get-usage?userId=${encodeURIComponent(userId)}`, { headers });
+    const body = await res.json().catch(() => null);
+    return usageFromPayload(res.ok, body);
+  } catch {
+    return { ...CLOSED_USAGE };
   }
-  return res.json();
 };
 
-// Call this right before sending a message to the AI. Atomically checks and
-// consumes one of the free tries. If `allowed` is false, do not call the AI
-// — show the upgrade paywall instead.
+// Call this right before sending a message to the AI. If `allowed` is not
+// true, do not call the AI. Network and server errors return allowed: false.
 export const consumeUsage = async (userId: string): Promise<ConsumeResult> => {
   try {
+    const headers = await authHeader();
+    if (!headers) return { ...CLOSED_CONSUME };
     const res = await fetch('/api/increment-usage', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     });
-    if (!res.ok) return { allowed: true, isPro: false, remaining: null };
-    return res.json();
+    const body = await res.json().catch(() => null);
+    return consumeFromPayload(res.ok, body);
   } catch {
-    // Fail open — a network hiccup shouldn't block a free tool.
-    return { allowed: true, isPro: false, remaining: null };
+    return { ...CLOSED_CONSUME };
   }
 };

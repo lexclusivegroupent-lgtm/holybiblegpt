@@ -1,6 +1,8 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { kv } from '@vercel/kv';
 import webpush from 'web-push';
+import { authorizeCron } from './_lib/cronAuth.mjs';
+import { headerValue } from './_lib/puterIdentity.mjs';
 
 // Triggered once a day by Vercel Cron (see vercel.json "crons"). Picks a
 // verse reference deterministically by day-of-year, fetches its exact text
@@ -41,15 +43,12 @@ async function fetchVerse(ref: string): Promise<{ text: string; ref: string } | 
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Soft auth: if CRON_SECRET is configured, require it (Vercel Cron sends
-  // it automatically as a Bearer token). If not configured, allow through —
-  // so this doesn't hard-fail before that env var is set up.
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const auth = req.headers.authorization;
-    if (auth !== `Bearer ${cronSecret}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  // Fail closed. Vercel Cron attaches `Authorization: Bearer $CRON_SECRET`
+  // only after that env var is set on the project. With no secret, or with
+  // the wrong bearer, do not read subscriptions and do not send pushes.
+  const cron = authorizeCron(headerValue(req.headers.authorization), process.env.CRON_SECRET);
+  if (!cron.ok) {
+    return res.status(cron.status).json({ error: cron.error });
   }
 
   const vapidPublic = process.env.VAPID_PUBLIC_KEY;

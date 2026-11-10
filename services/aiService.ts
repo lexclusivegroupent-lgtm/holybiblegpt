@@ -5,6 +5,9 @@ import { AppMode, Translation } from "../types";
 declare global {
   interface Window {
     puter?: {
+      // Session token set by https://js.puter.com/v2/. Sent only to our API,
+      // which checks it with Puter's whoami endpoint. Never log this value.
+      authToken?: string;
       ai: {
         chat(
           messages: Array<{ role: string; content: string }> | string,
@@ -64,6 +67,17 @@ export const getPuterAuthState = async (): Promise<PuterStatus> => {
   } catch (e: any) {
     console.warn("[HolyBibleGPT] Puter load failed:", e?.message);
     return 'load-failed';
+  }
+};
+
+// Token for server-side whoami. Null when Puter is signed out or still loading.
+export const getPuterAuthToken = async (): Promise<string | null> => {
+  try {
+    const puter = await waitForPuter();
+    const token = puter.authToken;
+    return typeof token === 'string' && token.length > 0 ? token : null;
+  } catch {
+    return null;
   }
 };
 
