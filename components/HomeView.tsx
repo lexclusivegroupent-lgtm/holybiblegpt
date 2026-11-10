@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { VERSE_OF_THE_DAY } from '../data/verseOfTheDay.mjs';
 import { storage } from '../services/storageService';
+import { sentenceContinues } from '../services/shareCard/completeThought.mjs';
 import { Translation, AppTab } from '../types';
-import { generateStoryCard, shareOrDownloadCard } from '../services/shareImageService';
 import BibleBookLinks from './BibleBookLinks';
+import { ShareCardDialog, ShareCardRequest } from './ShareCardDialog';
 
 interface HomeViewProps {
   onOpenPassage: (book: string, chapter: string, verse?: string) => void;
@@ -25,10 +26,32 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onOpenBook, onTabCha
   const today = new Date().toLocaleDateString();
   const [completed, setCompleted] = useState(storage.getProgress().includes(today));
   const streak = storage.getStreak();
-  const [sharing, setSharing] = useState(false);
+  const [shareRequest, setShareRequest] = useState<ShareCardRequest | null>(null);
+  const [shareError, setShareError] = useState('');
 
   const dailyVerse = VERSE_OF_THE_DAY[new Date().getDate() % VERSE_OF_THE_DAY.length];
   const lampVerse = VERSE_OF_THE_DAY.find((verse) => verse.ref === 'Psalm 119:105');
+  const opensMidSentence = sentenceContinues(dailyVerse.text);
+  const [passage, setPassage] = useState<{ text: string; reference: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPassage(null);
+    import('../services/shareCard/resolvePassage')
+      .then(({ resolveKjvPassageFromRef }) => resolveKjvPassageFromRef(dailyVerse.ref))
+      .then((resolved) => {
+        if (!cancelled && resolved) {
+          setPassage({ text: resolved.text, reference: resolved.reference });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [dailyVerse.ref]);
+
+  const shownText = passage?.text ?? (opensMidSentence ? '' : dailyVerse.text);
+  const shownRef = passage ? `${passage.reference} KJV` : (opensMidSentence ? '' : `${dailyVerse.ref} KJV`);
 
   const handleComplete = () => {
     storage.markDayComplete(today);
@@ -45,25 +68,28 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onOpenBook, onTabCha
 
   const { book, chapter, verse } = parseVerseRef(dailyVerse.ref);
 
-  const handleShareStory = async () => {
-    if (sharing) return;
-    setSharing(true);
+  const handleShare = async () => {
+    setShareError('');
     try {
-      const dataUrl = await generateStoryCard({
-        quote: dailyVerse.text,
-        reference: `${dailyVerse.ref} (KJV)`,
+      const { resolveKjvPassageFromRef, passageFilename } = await import('../services/shareCard/resolvePassage');
+      const resolved = passage
+        ? null
+        : await resolveKjvPassageFromRef(dailyVerse.ref);
+      const text = passage?.text ?? resolved?.text;
+      const reference = passage?.reference ?? resolved?.reference;
+      if (!text || !reference) {
+        setShareError('The stored King James text did not load.');
+        return;
+      }
+      setShareRequest({
+        quote: text,
+        reference: `${reference} KJV`,
         label: 'Verse of the Day',
+        filename: passageFilename(reference),
+        shareText: `“${text}” — ${reference} KJV`,
       });
-      await shareOrDownloadCard(
-        dataUrl,
-        'holy-bible-gpt-verse-of-the-day.png',
-        'Holy Bible GPT',
-        `"${dailyVerse.text}" — ${dailyVerse.ref} (KJV)`
-      );
-    } catch (err) {
-      console.error('Share to Story failed:', err);
-    } finally {
-      setSharing(false);
+    } catch {
+      setShareError('The stored King James text did not load.');
     }
   };
 
@@ -100,19 +126,20 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onOpenBook, onTabCha
             <span className="text-[#D4AF37] text-[9px] font-bold uppercase tracking-[0.4em]">Today · {dailyVerse.focus}</span>
             <span className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
           </div>
-          <p className="bible-font text-2xl md:text-4xl text-stone-100 leading-[1.2] italic font-light">
-            "{dailyVerse.text}"
+          <p className="bible-font text-2xl md:text-4xl text-stone-100 leading-[1.2] italic font-light min-h-[4.5rem]">
+            {shownText ? `“${shownText}”` : '…'}
           </p>
           <div className="flex items-center justify-between pt-5 border-t border-white/5 gap-3 flex-wrap">
-            <span className="text-[10px] font-bold text-stone-600 tracking-[0.2em] uppercase">— {dailyVerse.ref} (KJV)</span>
+            <span className="text-[10px] font-bold text-stone-600 tracking-[0.2em] uppercase">
+              {shownRef ? `— ${shownRef}` : '…'}
+            </span>
             <div className="flex items-center gap-2">
               <button
-                onClick={handleShareStory}
-                disabled={sharing}
-                aria-label="Share Verse of the Day to Instagram Story"
-                className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-widest hover:text-white transition-colors py-2 px-3 bg-white/5 rounded-lg border border-white/5 min-h-[36px] disabled:opacity-50 flex items-center gap-1.5"
+                onClick={handleShare}
+                aria-label="Share Verse of the Day"
+                className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-widest hover:text-white transition-colors py-2 px-3 bg-white/5 rounded-lg border border-white/5 min-h-[36px]"
               >
-                {sharing ? '…' : '📤'} Share to Story
+                Share
               </button>
               <button
                 onClick={() => onOpenPassage(book, chapter, verse)}
@@ -196,6 +223,8 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onOpenBook, onTabCha
           </button>
         </div>
       </section>
+      {shareError && <p className="text-center text-xs text-red-400">{shareError}</p>}
+      <ShareCardDialog request={shareRequest} onClose={() => setShareRequest(null)} />
     </div>
   );
 };
