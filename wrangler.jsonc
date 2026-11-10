@@ -50,28 +50,20 @@
     "APP_URL": "https://holybiblegpt.com"
   },
   // Same hour as the old Vercel cron (13:00 UTC). The scheduled handler
-  // skips the send when VAPID keys or D1 are missing, and it does not throw.
+  // skips the send when the VAPID secrets are missing, and it does not throw.
   "triggers": {
     "crons": ["0 13 * * *"]
-  }
-  // D1 is intentionally not bound. An unknown database_id makes
-  // `wrangler deploy` fail, and Workers Builds would leave this version
-  // unpublished. The Worker treats a missing DB binding as unconfigured
-  // and still answers the account routes with JSON.
-  //
-  // Create a D1 database named holybiblegpt, then replace this comment
-  // with the binding below and the database_id from `wrangler d1 create`.
-  // Deploy, then apply migrations (deploy does not apply them):
-  //   npx wrangler d1 migrations apply holybiblegpt --remote
-  //
-  // "d1_databases": [
-  //   {
-  //     "binding": "DB",
-  //     "database_name": "holybiblegpt",
-  //     "database_id": "REPLACE_WITH_DATABASE_ID",
-  //     "migrations_dir": "migrations"
-  //   }
-  // ]
+  },
+  // Migration 0001_app_storage.sql is already applied on this database.
+  // Deploy does not run it again. The SQL only creates tables if they are missing.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "holybiblegpt",
+      "database_id": "57f368b2-1ece-47f3-9838-896ddbd5eabe",
+      "migrations_dir": "migrations"
+    }
+  ]
   // To enable ESV, add the API key as a Cloudflare secret:
   //   wrangler secret put ESV_API_KEY
   // Get a free ESV API key at: https://api.esv.org

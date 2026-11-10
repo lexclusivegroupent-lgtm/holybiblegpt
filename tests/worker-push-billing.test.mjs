@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { handleApi } from '../src/api/router.mjs';
 import { VAPID_PUBLIC_KEY, deliverPush, runScheduledPush, verseRefFor } from '../src/api/push.mjs';
+import { applicationServerKeysMatch, subscriptionNeedsRotation } from '../services/pushKey.mjs';
 import { createD1Kv } from '../src/api/d1kv.mjs';
 
 const PUBLIC_KEY = VAPID_PUBLIC_KEY;
@@ -78,6 +79,17 @@ function browserKeys() {
   return { p256dh, auth: randomBytes(16).toString('base64url') };
 }
 
+test('a browser subscription for another VAPID key needs to be replaced', () => {
+  const current = Uint8Array.from([4, 1, 2, 3]);
+  const previous = Uint8Array.from([4, 9, 9, 9]);
+  assert.equal(applicationServerKeysMatch(current, Uint8Array.from(current)), true);
+  assert.equal(applicationServerKeysMatch(previous, current), false);
+  assert.equal(applicationServerKeysMatch(new Uint8Array(current.buffer), current), true);
+  assert.equal(subscriptionNeedsRotation(null, current), false);
+  assert.equal(subscriptionNeedsRotation(previous, current), true);
+  assert.equal(subscriptionNeedsRotation(current, current), false);
+});
+
 test('the Worker public key is the key the browser already uses', () => {
   const source = readFileSync(new URL('../components/NotificationOptIn.tsx', import.meta.url), 'utf8');
   assert.match(source, new RegExp(PUBLIC_KEY));
@@ -86,7 +98,7 @@ test('the Worker public key is the key the browser already uses', () => {
     .replace(/^\s*\/\/.*$/gm, ''));
   assert.deepEqual(config.triggers.crons, ['0 13 * * *']);
   assert.equal(config.vars.APP_URL, 'https://holybiblegpt.com');
-  assert.equal(config.d1_databases, undefined);
+  assert.equal(config.d1_databases[0].database_id, '57f368b2-1ece-47f3-9838-896ddbd5eabe');
 });
 
 test('billing stays disabled without Stripe secrets and does not call Stripe', async () => {

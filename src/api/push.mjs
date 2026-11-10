@@ -5,7 +5,7 @@ import { json, readJson } from './responses.mjs';
 // Must match components/NotificationOptIn.tsx. The public key is not a secret.
 // A different public key on the Worker would accept subscriptions this app
 // cannot send to, so push stays off until the pair matches.
-export const VAPID_PUBLIC_KEY = 'BExXQ5p2sahc35RIVvLBCI0j79gHbg1anEPfZLGHMBwygoPW_c0OPTLcy07gkl7u8x09cLkTATBOkOQS-TLxbEY';
+export const VAPID_PUBLIC_KEY = 'BHs3h3Uf6SZS0-lWBqR8N4exZYiTg9wO_omqKyVt7zApL9uW0qJy4K6itjh2O0b7-HlO2TJwuk6ealDFKJkq9rU';
 const VAPID_SUBJECT = 'mailto:hi@holybiblegpt.com';
 
 const VERSE_REFS = [

@@ -70,7 +70,7 @@ async function read(response) {
   };
 }
 
-test('migration only creates tables and wrangler does not bind D1 yet', () => {
+test('migration only creates tables and wrangler binds the provisioned D1 database', () => {
   const sql = readFileSync(new URL('../migrations/0001_app_storage.sql', import.meta.url), 'utf8');
   assert.match(sql, /CREATE TABLE IF NOT EXISTS app_kv/);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS kv_set_members/);
@@ -80,10 +80,11 @@ test('migration only creates tables and wrangler does not bind D1 yet', () => {
 
   const raw = readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8');
   const config = JSON.parse(stripJsonc(raw));
-  assert.equal(config.d1_databases, undefined);
-  assert.match(raw, /"binding": "DB"/);
-  assert.match(raw, /"database_name": "holybiblegpt"/);
-  assert.match(raw, /REPLACE_WITH_DATABASE_ID/);
+  assert.equal(config.d1_databases[0].binding, 'DB');
+  assert.equal(config.d1_databases[0].database_name, 'holybiblegpt');
+  assert.equal(config.d1_databases[0].database_id, '57f368b2-1ece-47f3-9838-896ddbd5eabe');
+  assert.equal(config.d1_databases[0].migrations_dir, 'migrations');
+  assert.doesNotMatch(raw, /REPLACE_WITH_DATABASE_ID/);
 });
 
 test('account routes reject a missing Puter token with JSON, not the SPA', async () => {
