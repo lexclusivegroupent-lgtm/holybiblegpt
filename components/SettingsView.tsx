@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { storage } from '../services/storageService';
 import { initializeOfflineKJV, getCachedChapterCount } from '../services/bibleService';
-import { getUserId, checkProStatus, startCheckout, openBillingPortal, pushSyncData, pullSyncData, ProStatus } from '../services/syncService';
+import { getUserId, checkProStatus, startCheckout, openBillingPortal, pushSyncData, pullSyncData, getBillingAvailability, ProStatus, BillingAvailability } from '../services/syncService';
 import { signIntoPuter } from '../services/aiService';
 import { AppSettings, AppTab } from '../types';
 import NotificationOptIn from './NotificationOptIn';
@@ -21,6 +21,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
   const [proStatus, setProStatus] = useState<ProStatus | 'checking'>('checking');
   const [proBusy, setProBusy] = useState(false);
   const [proMessage, setProMessage] = useState<string | null>(null);
+  const [billing, setBilling] = useState<BillingAvailability | 'checking'>('checking');
 
   const refreshProStatus = async () => {
     const id = await getUserId();
@@ -35,6 +36,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
   useEffect(() => {
     getCachedChapterCount().then(setCachedCount);
     refreshProStatus();
+    getBillingAvailability().then(setBilling);
   }, []);
 
   const handleSignIn = async () => {
@@ -155,14 +157,20 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
             )}
           </div>
 
-          {proStatus === 'checking' && (
+          {(proStatus === 'checking' || billing === 'checking') && (
             <p className="text-xs text-stone-500">Checking status…</p>
           )}
 
-          {proStatus !== 'checking' && !userId && (
+          {billing !== 'checking' && !billing.checkout && proStatus !== 'pro' && (
+            <p className="text-xs text-stone-400 leading-relaxed">
+              Pro billing is not available on this site yet. Bible reading and the study tools stay available. Checkout appears when this deployment serves the billing API and a Stripe price is configured.
+            </p>
+          )}
+
+          {proStatus !== 'checking' && !userId && billing !== 'checking' && billing.checkout && (
             <>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Unlimited AI study questions (free accounts get 5), plus cross-device sync for your chat history, notes, bookmarks, prayers, and reading progress — $6.99/month.
+                Pro adds cross-device sync for chat history, notes, bookmarks, prayers, and reading progress. The price is the one configured in Stripe. Bible reading stays free.
               </p>
               <button
                 onClick={handleSignIn}
@@ -174,17 +182,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
             </>
           )}
 
-          {proStatus === 'free' && userId && (
+          {proStatus === 'free' && userId && billing !== 'checking' && billing.checkout && (
             <>
               <p className="text-xs text-stone-400 leading-relaxed">
-                Unlimited AI study questions (the free tier includes 5), plus sync for your chat history, notes, bookmarks, prayers, and reading progress across every device. Bible reading itself stays free, always.
+                Pro adds sync for your chat history, notes, bookmarks, prayers, and reading progress across devices. Bible reading stays free. The charge is the Stripe price configured for this site.
               </p>
               <button
                 onClick={handleUpgrade}
                 disabled={proBusy}
                 className="w-full py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] bg-[#D4AF37] text-black shadow-xl hover:scale-[1.01] active:scale-95 disabled:opacity-50"
               >
-                {proBusy ? 'Opening…' : 'Upgrade to Pro — $6.99/mo'}
+                {proBusy ? 'Opening…' : 'Upgrade to Pro'}
               </button>
             </>
           )}
@@ -210,13 +218,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
                   Restore
                 </button>
               </div>
-              <button
-                onClick={handleManage}
-                disabled={proBusy}
-                className="w-full py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-stone-300 disabled:opacity-50"
-              >
-                Manage Subscription
-              </button>
+              {billing !== 'checking' && billing.portal ? (
+                <button
+                  onClick={handleManage}
+                  disabled={proBusy}
+                  className="w-full py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-stone-300 disabled:opacity-50"
+                >
+                  Manage Subscription
+                </button>
+              ) : (
+                <p className="text-[10px] text-stone-500 text-center">The billing portal is not available on this site yet.</p>
+              )}
             </div>
           )}
 
@@ -296,7 +308,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
                 <li>• No payment info</li>
               </ul>
               <p className="text-[9px] text-stone-600 leading-snug">
-                Pro is optional. If you upgrade, billing is handled by Stripe — card details go directly to them, never to us.
+                Pro is optional. When billing is available, card details go to Stripe and are not stored by this site.
               </p>
             </div>
           </div>
