@@ -5,8 +5,8 @@ import { chatUsageView, consumeFromHttp, consumeFromPayload, usageFromHttp, usag
 const SPA_HTML = '<!doctype html><html><title>Holy Bible GPT</title><div id="root"></div></html>';
 
 test('a missing usage API lets the question through, and a real API error does not', () => {
-  // holybiblegpt.com is the Worker. It has no /api/increment-usage, so the
-  // asset fallback returns the SPA document. That must not block the chat.
+  // A 200 HTML body is the asset fallback. That must not block the chat.
+  // The same is true of 404, which the Worker returns for usage until D1 exists.
   const shell = consumeFromHttp(200, SPA_HTML);
   assert.equal(shell.allowed, true);
   assert.equal(shell.unavailable, undefined);

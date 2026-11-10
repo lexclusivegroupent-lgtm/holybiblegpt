@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
+import { handleApi } from "./api/router.mjs";
 import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
 
 /**
@@ -10,6 +11,10 @@ import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
  *     → Set ESV_API_KEY as a Cloudflare Secret:
  *         wrangler secret put ESV_API_KEY
  *     → Falls back with 503 when the key is not configured.
+ *   /api/sync-pull, /api/sync-push, /api/get-status, /api/check-status,
+ *   /api/get-usage, /api/increment-usage
+ *     → Puter-verified account routes. Storage is D1 (binding DB).
+ *       Until that binding exists, these routes still return JSON.
  *
  * All other requests fall through to the static React SPA via env.ASSETS.
  */
@@ -18,7 +23,19 @@ interface Env {
   ESV_API_KEY?: string;
   // Set with `npx wrangler secret put SENTRY_DSN`. Empty disables Sentry.
   SENTRY_DSN?: string;
+  // Present only after wrangler.jsonc binds D1. Missing is safe.
+  DB?: D1Like;
   ASSETS: { fetch(input: Request | string, init?: RequestInit): Promise<Response> };
+}
+
+interface D1Like {
+  prepare(sql: string): {
+    bind(...values: unknown[]): {
+      first<T = Record<string, unknown>>(): Promise<T | null>;
+      run(): Promise<{ meta?: { changes?: number } }>;
+      all<T = Record<string, unknown>>(): Promise<{ results?: T[] }>;
+    };
+  };
 }
 
 interface EsvVerse {
@@ -105,6 +122,20 @@ const worker = {
           JSON.stringify({ error: 'Failed to reach ESV API' }),
           { status: 502, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
         );
+      }
+    }
+
+    if (url.pathname.startsWith('/api/')) {
+      try {
+        const response = await handleApi(request, env);
+        if (response) return response;
+      } catch (err) {
+        console.error(JSON.stringify({ message: 'api failed', path: url.pathname }));
+        if (sentryDsnFrom(env.SENTRY_DSN)) Sentry.captureException(err);
+        return new Response(JSON.stringify({ error: 'Request failed.' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        });
       }
     }
 
