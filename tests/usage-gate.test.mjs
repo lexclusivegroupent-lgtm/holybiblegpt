@@ -39,7 +39,7 @@ test('a missing usage API lets the question through, and a real API error does n
   assert.equal(chatUsageView(usageFromHttp(503, JSON.stringify({
     error: 'Usage service unavailable.',
     unavailable: true,
-  }))), 'unavailable');
+  }))), 'hidden');
 
   const crashed = consumeFromHttp(500, JSON.stringify({ error: 'Usage service unavailable.' }));
   assert.equal(crashed.allowed, false);
@@ -85,8 +85,10 @@ test('client usage gate fails closed unless the server explicitly allows', () =>
   const readOutage = usageFromPayload(false, { isPro: true, remaining: 5, count: 0, limit: 5 });
   assert.equal(readOutage.isPro, false);
   assert.equal(readOutage.unavailable, true);
-  assert.equal(chatUsageView(readOutage), 'unavailable');
-  assert.equal(chatUsageView({ isPro: false, count: 5, remaining: 0, limit: 5 }), 'paywall');
-  assert.equal(chatUsageView({ isPro: true, count: 0, remaining: null, limit: 5 }), 'hidden');
-  assert.equal(chatUsageView({ isPro: false, count: 1, remaining: 4, limit: 5 }), 'remaining');
+  assert.equal(chatUsageView(readOutage), 'hidden');
+  assert.equal(chatUsageView({ isPro: false, count: 5, remaining: 0, limit: 5 }), 'hidden');
+  assert.equal(chatUsageView({ isPro: false, count: 100, remaining: 0, limit: 5 }), 'hidden');
+  assert.equal(chatUsageView({ isPro: true, count: 0, remaining: null, limit: null }), 'hidden');
+  assert.equal(chatUsageView({ isPro: false, count: 1, remaining: 4, limit: 5 }), 'hidden');
+  assert.equal(chatUsageView(null), 'hidden');
 });

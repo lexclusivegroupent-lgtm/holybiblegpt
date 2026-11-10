@@ -109,7 +109,8 @@ test('billing stays disabled without Stripe secrets and does not call Stripe', a
   const probe = await read(await handleApi(request('/api/create-checkout-session'), env, { fetchImpl }));
   assert.equal(probe.status, 200);
   assert.match(probe.type, /application\/json/);
-  assert.deepEqual(probe.json, { checkout: false, portal: false });
+  assert.deepEqual(probe.json, { checkout: false, portal: false, intervals: { month: false, year: false } });
+  assert.equal(probe.json.giftUrl, undefined);
   assert.doesNotMatch(probe.text, /<!doctype html>/i);
 
   const post = await read(await handleApi(
@@ -167,10 +168,18 @@ test('checkout uses the verified account, and the webhook grants Pro once', asyn
     { ...env, DB: undefined },
     { fetchImpl },
   ));
-  assert.deepEqual(hiddenWithoutStore.json, { checkout: false, portal: false });
+  assert.equal(hiddenWithoutStore.json.checkout, false);
+  assert.equal(hiddenWithoutStore.json.portal, false);
+  assert.deepEqual(hiddenWithoutStore.json.intervals, { month: true, year: false });
+  assert.equal(hiddenWithoutStore.json.giftUrl, undefined);
 
   const ready = await read(await handleApi(request('/api/create-checkout-session'), env, { fetchImpl }));
-  assert.deepEqual(ready.json, { checkout: true, portal: true });
+  assert.deepEqual(ready.json, {
+    checkout: true,
+    portal: true,
+    intervals: { month: true, year: false },
+  });
+  assert.equal(ready.json.giftUrl, undefined);
 
   const denied = await read(await handleApi(
     request('/api/create-checkout-session', { method: 'POST', token: 't', body: { userId: 'bob' } }),
@@ -189,6 +198,8 @@ test('checkout uses the verified account, and the webhook grants Pro once', asyn
   assert.equal(checkout.json.url, 'https://checkout.stripe.test/session');
   assert.match(stripeCalls[0].init.body, /metadata%5BuserId%5D=alice/);
   assert.match(stripeCalls[0].init.body, /price_placeholder/);
+  assert.match(stripeCalls[0].init.body, /metadata%5Binterval%5D=month/);
+  assert.doesNotMatch(stripeCalls[0].init.body, /payment_method_types/);
   assert.equal(stripeCalls[0].init.headers.Authorization, 'Bearer sk_test_placeholder');
 
   const raw = JSON.stringify({
@@ -267,6 +278,149 @@ test('checkout uses the verified account, and the webhook grants Pro once', asyn
   ));
   assert.equal(downgraded.status, 200);
   assert.equal(await kv.get('user:alice:status'), 'free');
+});
+
+test('month and year checkouts use their prices, and both webhooks grant Plus', async () => {
+  const env = {
+    APP_URL: 'https://holybiblegpt.com',
+    STRIPE_SECRET_KEY: 'sk_test_placeholder',
+    STRIPE_PRICE_ID: 'price_legacy',
+    STRIPE_PRICE_ID_MONTHLY: 'price_month',
+    STRIPE_PRICE_ID_YEARLY: 'price_year',
+    STRIPE_WEBHOOK_SECRET: 'whsec_test_placeholder',
+    GIFT_URL: 'https://buy.stripe.com/test_gift',
+    DB: sqliteDb(),
+  };
+  const kv = createD1Kv(env.DB);
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push(String(init?.body || ''));
+    return new Response(JSON.stringify({ url: 'https://checkout.stripe.test/session' }), { status: 200 });
+  };
+
+  const probe = await read(await handleApi(request('/api/create-checkout-session'), env, { fetchImpl }));
+  assert.equal(probe.json.checkout, true);
+  assert.equal(probe.json.portal, true);
+  assert.deepEqual(probe.json.intervals, { month: true, year: true });
+  assert.equal(probe.json.giftUrl, 'https://buy.stripe.com/test_gift');
+  assert.doesNotMatch(probe.text, /sk_test|whsec_|price_month|price_year|price_legacy/);
+
+  const month = await read(await handleApi(
+    request('/api/create-checkout-session', {
+      method: 'POST',
+      token: 't',
+      body: { userId: 'alice', interval: 'month' },
+    }),
+    env,
+    { fetchImpl, verify: session('alice') },
+  ));
+  assert.equal(month.status, 200);
+  assert.match(calls[0], /price_month/);
+  assert.doesNotMatch(calls[0], /price_legacy/);
+
+  const year = await read(await handleApi(
+    request('/api/create-checkout-session', {
+      method: 'POST',
+      token: 't',
+      body: { userId: 'bob', interval: 'year' },
+    }),
+    env,
+    { fetchImpl, verify: session('bob') },
+  ));
+  assert.equal(year.status, 200);
+  assert.match(calls[1], /price_year/);
+
+  const missing = await read(await handleApi(
+    request('/api/create-checkout-session', {
+      method: 'POST',
+      token: 't',
+      body: { userId: 'alice', interval: 'week' },
+    }),
+    env,
+    { fetchImpl, verify: session('alice') },
+  ));
+  assert.equal(missing.status, 400);
+  assert.equal(calls.length, 2);
+
+  for (const [user, interval, eventId] of [
+    ['alice', 'month', 'evt_month123'],
+    ['bob', 'year', 'evt_year123'],
+  ]) {
+    const raw = JSON.stringify({
+      id: eventId,
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          mode: 'subscription',
+          metadata: { userId: user, interval },
+          customer: user === 'alice' ? 'cus_alice' : 'cus_bob',
+        },
+      },
+    });
+    const granted = await read(await handleApi(
+      request('/api/stripe-webhook', {
+        method: 'POST',
+        body: raw,
+        headers: { 'stripe-signature': sign(env.STRIPE_WEBHOOK_SECRET, raw) },
+      }),
+      env,
+    ));
+    assert.equal(granted.status, 200, user);
+    assert.equal(await kv.get(`user:${user}:status`), 'pro');
+  }
+
+  const gift = JSON.stringify({
+    id: 'evt_gift123',
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        mode: 'payment',
+        metadata: { userId: 'cara' },
+        customer: 'cus_cara',
+      },
+    },
+  });
+  const ignored = await read(await handleApi(
+    request('/api/stripe-webhook', {
+      method: 'POST',
+      body: gift,
+      headers: { 'stripe-signature': sign(env.STRIPE_WEBHOOK_SECRET, gift) },
+    }),
+    env,
+  ));
+  assert.equal(ignored.status, 200);
+  assert.equal(await kv.get('user:cara:status'), null);
+
+  const portal = await read(await handleApi(
+    request('/api/create-portal-session', { method: 'POST', token: 't', body: { userId: 'bob' } }),
+    env,
+    { fetchImpl, verify: session('bob') },
+  ));
+  assert.equal(portal.status, 200);
+  assert.match(calls.at(-1), /customer=cus_bob/);
+
+  const yearlyOnly = {
+    ...env,
+    STRIPE_PRICE_ID: '',
+    STRIPE_PRICE_ID_MONTHLY: '',
+    DB: sqliteDb(),
+  };
+  let yearlyCalls = 0;
+  const yearFetch = async () => {
+    yearlyCalls += 1;
+    return new Response(JSON.stringify({ url: 'https://checkout.stripe.test/year' }), { status: 200 });
+  };
+  const noMonth = await read(await handleApi(
+    request('/api/create-checkout-session', {
+      method: 'POST',
+      token: 't',
+      body: { userId: 'bob', interval: 'month' },
+    }),
+    yearlyOnly,
+    { fetchImpl: yearFetch, verify: session('bob') },
+  ));
+  assert.equal(noMonth.status, 503);
+  assert.equal(yearlyCalls, 0);
 });
 
 test('push degrades without keys, and the daily route rejects a bad cron token', async () => {

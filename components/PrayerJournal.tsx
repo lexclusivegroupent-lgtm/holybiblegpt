@@ -124,7 +124,7 @@ const PrayerJournal: React.FC = () => {
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-1 accent-[#D4AF37]"
             />
-            <span>Save this prayer on this device. It can show my religious beliefs. It is uploaded only if I use Pro sync. "Help me write" sends the topic to Puter before anything is saved.</span>
+            <span>Save this prayer on this device. It can show my religious beliefs. It is uploaded only if I use Plus sync. "Help me write" sends the topic to Puter before anything is saved.</span>
           </label>
           <div className="flex gap-4">
             <button onClick={handleSave} disabled={!consent} className="flex-1 bg-[#D4AF37] text-black py-5 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl active:scale-95 disabled:opacity-40">Save Petition</button>

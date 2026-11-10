@@ -220,7 +220,7 @@ const App: React.FC = () => {
     const billingStatus = params.get('billing_status');
     if (billingStatus === 'success') {
       setActiveTab('settings');
-      setTimeout(() => alert("Upgrade Successful! Thank you for supporting the ministry."), 1000);
+      setTimeout(() => alert('Plus is active. Cloud backup and cross-device sync are available for this account. Reading, search, and AI study stay free.'), 1000);
       window.history.replaceState({}, '', '/');
     } else if (billingStatus === 'cancel') {
       setActiveTab('settings');

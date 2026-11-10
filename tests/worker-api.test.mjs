@@ -188,12 +188,12 @@ test('a caller cannot read or write another account, and sync round-trips', asyn
   assert.equal(check.json.isPro, true);
 });
 
-test('usage counts to the free limit and a storage error does not allow another question', async () => {
+test('usage counts past five questions and a storage error still allows study', async () => {
   const env = { DB: sqliteDb() };
   const alice = session('alice');
 
   const counts = [];
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 6; i += 1) {
     const response = await read(await handleApi(
       request('/api/increment-usage', { method: 'POST', token: 'alice-token', body: { userId: 'alice' } }),
       env,
@@ -202,26 +202,19 @@ test('usage counts to the free limit and a storage error does not allow another 
     assert.equal(response.status, 200);
     assert.equal(response.json.allowed, true);
     assert.equal(response.json.isPro, false);
+    assert.equal(response.json.remaining, null);
     counts.push(response.json.count);
   }
-  assert.deepEqual(counts, [1, 2, 3, 4, 5]);
-
-  const blocked = await read(await handleApi(
-    request('/api/increment-usage', { method: 'POST', token: 'alice-token', body: { userId: 'alice' } }),
-    env,
-    { verify: alice },
-  ));
-  assert.equal(blocked.json.allowed, false);
-  assert.equal(blocked.json.remaining, 0);
-  assert.equal(blocked.json.count, 5);
+  assert.deepEqual(counts, [1, 2, 3, 4, 5, 6]);
 
   const usage = await read(await handleApi(
     request('/api/get-usage', { token: 'alice-token', search: { userId: 'alice' } }),
     env,
     { verify: alice },
   ));
-  assert.equal(usage.json.count >= 5, true);
-  assert.equal(usage.json.remaining, 0);
+  assert.equal(usage.json.count, 6);
+  assert.equal(usage.json.remaining, null);
+  assert.equal(usage.json.limit, null);
   assert.equal(usage.json.isPro, false);
 
   await createD1Kv(env.DB).set('user:alice:status', 'pro');
@@ -245,9 +238,10 @@ test('usage counts to the free limit and a storage error does not allow another 
       },
     },
   ));
-  assert.equal(outage.status, 503);
-  assert.equal(outage.json.allowed, false);
+  assert.equal(outage.status, 200);
+  assert.equal(outage.json.allowed, true);
   assert.equal(outage.json.unavailable, true);
+  assert.equal(outage.json.remaining, null);
   assert.equal(JSON.stringify(outage.json).includes('d1 down'), false);
 });
 

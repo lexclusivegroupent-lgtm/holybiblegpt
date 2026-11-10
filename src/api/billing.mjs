@@ -1,7 +1,15 @@
 import { createHmac } from 'node:crypto';
 import { secretsMatch } from '../../api/_lib/secureCompare.mjs';
 import { USERNAME_RE, verifyPuterIdentity } from '../../api/_lib/puterIdentity.mjs';
-import { isProSubscriptionStatus, subscriptionIdFromInvoice } from '../../services/billingAvailability.mjs';
+import {
+  describeBilling,
+  isProSubscriptionStatus,
+  priceForInterval,
+  publicBillingStatus,
+  publicOrigin,
+  sessionGrantsPlus,
+  subscriptionIdFromInvoice,
+} from '../../services/billingAvailability.mjs';
 import { createCheckoutHandler, createPortalHandler } from '../../api/_lib/userHandlers.mjs';
 import { openStore } from './d1kv.mjs';
 import { callHandler, json, readJson } from './responses.mjs';
@@ -16,36 +24,15 @@ function nonempty(value) {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : '';
 }
 
-export function publicOrigin(value) {
-  if (!value) return '';
-  try {
-    const url = new URL(value);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return '';
-    if (url.username || url.password) return '';
-    if (url.search || url.hash) return '';
-    if (url.pathname !== '/' && url.pathname !== '') return '';
-    return url.origin;
-  } catch {
-    return '';
-  }
-}
+export { publicOrigin };
 
 // Checkout and the portal stay off until Stripe is configured AND storage
 // can record the customer. A public APP_URL by itself does not enable them.
+// STRIPE_PRICE_ID_MONTHLY, or STRIPE_PRICE_ID as the monthly fallback, and
+// STRIPE_PRICE_ID_YEARLY are the Plus prices. At least one price is required
+// for checkout. GIFT_URL is optional and never enables checkout.
 export function billingConfig(env, storeReady) {
-  const secret = nonempty(env?.STRIPE_SECRET_KEY);
-  const price = nonempty(env?.STRIPE_PRICE_ID);
-  const webhookSecret = nonempty(env?.STRIPE_WEBHOOK_SECRET);
-  const appUrl = publicOrigin(nonempty(env?.APP_URL) || nonempty(env?.VITE_APP_URL));
-  const ready = storeReady === true;
-  return {
-    secret,
-    price,
-    webhookSecret,
-    appUrl,
-    checkout: Boolean(secret && price && appUrl && ready),
-    portal: Boolean(secret && appUrl && ready),
-  };
+  return describeBilling(env, storeReady);
 }
 
 async function resolveStore(env, deps) {
@@ -81,18 +68,18 @@ async function stripeRequest(env, path, { method, body, fetchImpl }) {
   }
 }
 
-async function createCheckoutSession(env, config, userId, fetchImpl) {
+async function createCheckoutSession(env, config, userId, priceId, interval, fetchImpl) {
   return stripeRequest(env, 'checkout/sessions', {
     method: 'POST',
     fetchImpl,
     body: formBody([
       ['mode', 'subscription'],
-      ['payment_method_types[0]', 'card'],
-      ['line_items[0][price]', config.price],
+      ['line_items[0][price]', priceId],
       ['line_items[0][quantity]', '1'],
       ['success_url', `${config.appUrl}/?billing_status=success`],
       ['cancel_url', `${config.appUrl}/?billing_status=cancel`],
       ['metadata[userId]', userId],
+      ['metadata[interval]', interval],
       ['allow_promotion_codes', 'true'],
     ]),
   });
@@ -146,6 +133,7 @@ async function applyEvent(kv, event, env, fetchImpl) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data?.object;
+      if (!sessionGrantsPlus(session)) return;
       const userId = session?.metadata?.userId;
       const customerId = customerIdOf(session?.customer);
       if (typeof userId === 'string' && USERNAME_RE.test(userId) && customerId) {
@@ -191,7 +179,7 @@ export async function handleBillingApi(request, env, deps = {}) {
   const config = billingConfig(env, Boolean(kv));
 
   if (url.pathname === '/api/create-checkout-session' && request.method === 'GET') {
-    return json({ checkout: config.checkout, portal: config.portal });
+    return json(publicBillingStatus(config));
   }
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
@@ -215,7 +203,15 @@ export async function handleBillingApi(request, env, deps = {}) {
   const handler = url.pathname === '/api/create-checkout-session'
     ? createCheckoutHandler({
       verify: async () => identity,
-      createSession: (userId) => createCheckoutSession(env, config, userId, fetchImpl),
+      createSession: (userId, interval) => {
+        const selected = priceForInterval(env, interval);
+        if (!selected.ok) {
+          const error = new Error(selected.error);
+          error.statusCode = selected.reason === 'invalid' ? 400 : 503;
+          throw error;
+        }
+        return createCheckoutSession(env, config, userId, selected.price, selected.interval, fetchImpl);
+      },
     })
     : createPortalHandler({
       kv,

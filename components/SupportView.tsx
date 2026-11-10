@@ -1,5 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
+import MissionGift from './MissionGift';
+import PlusPlan from './PlusPlan';
+import { signIntoPuter } from '../services/aiService';
+import {
+  BillingAvailability,
+  BillingInterval,
+  checkProStatus,
+  getBillingAvailability,
+  getUserId,
+  startCheckout,
+} from '../services/syncService';
 
 interface SupportViewProps {
   onOpenTerms?: () => void;
@@ -7,6 +18,63 @@ interface SupportViewProps {
 
 const SupportView: React.FC<SupportViewProps> = ({ onOpenTerms }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [billing, setBilling] = useState<BillingAvailability | 'checking'>('checking');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [active, setActive] = useState(false);
+  const [accountKnown, setAccountKnown] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getBillingAvailability().then((next) => {
+      if (!cancelled) setBilling(next);
+    });
+    getUserId().then(async (id) => {
+      if (cancelled) return;
+      setUserId(id);
+      if (!id) {
+        setActive(false);
+        setAccountKnown(true);
+        return;
+      }
+      const status = await checkProStatus(id);
+      if (cancelled) return;
+      setActive(status === 'pro');
+      setAccountKnown(true);
+    }).catch(() => {
+      if (!cancelled) setAccountKnown(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSignIn = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await signIntoPuter();
+      const id = await getUserId();
+      setUserId(id);
+      setActive(id ? (await checkProStatus(id)) === 'pro' : false);
+      setAccountKnown(true);
+    } catch (e: any) {
+      setMessage(e.message || 'Sign-in failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCheckout = async (interval: BillingInterval) => {
+    if (!userId) return handleSignIn();
+    setBusy(true);
+    setMessage(null);
+    try {
+      await startCheckout(userId, interval);
+    } catch (e: any) {
+      setMessage(e.message || 'Could not start checkout.');
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     const handleStatusChange = () => setIsOnline(navigator.onLine);
@@ -32,7 +100,7 @@ const SupportView: React.FC<SupportViewProps> = ({ onOpenTerms }) => {
       <section className="glass-dark border border-white/5 rounded-[3rem] p-8 md:p-16 shadow-[0_30px_70px_rgba(0,0,0,0.6)] space-y-12">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <p className="bible-font text-2xl md:text-3xl text-stone-200 leading-relaxed font-light italic">
-            “This project helps people understand the Bible and the gospel. Your support keeps the study tools and chat running and covers the API costs.”
+            Reading, search, and AI study are free forever. Plus and gifts are optional.
           </p>
         </div>
 
@@ -43,6 +111,19 @@ const SupportView: React.FC<SupportViewProps> = ({ onOpenTerms }) => {
             </p>
           </div>
         )}
+
+        <PlusPlan
+          billing={billing}
+          signedIn={Boolean(userId)}
+          active={active}
+          accountKnown={accountKnown}
+          busy={busy}
+          message={message}
+          onSignIn={handleSignIn}
+          onCheckout={handleCheckout}
+        />
+
+        <MissionGift giftUrl={billing === 'checking' ? '' : billing.giftUrl} />
 
         <div className="grid md:grid-cols-2 gap-10 items-stretch">
           {/* Section 1 - Give a Gift */}
@@ -98,15 +179,9 @@ const SupportView: React.FC<SupportViewProps> = ({ onOpenTerms }) => {
           </div>
         </div>
 
-        <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[2rem] space-y-6">
-          <p className="text-xs text-stone-500 leading-relaxed italic text-center">
-            “Every donation, large or small, helps us maintain a distraction-free environment for Scripture study. Giving is always optional and deeply appreciated.”
-          </p>
-        </div>
-
         <footer className="text-center pt-10 space-y-10">
-          <p className="text-[#D4AF37] text-sm md:text-base italic font-medium tracking-wide">
-            “Thank you for helping us share God’s Word with more people.”
+          <p className="text-stone-400 text-sm md:text-base tracking-wide">
+            Reading, search, and AI study stay free whether or not you subscribe or give.
           </p>
           <div className="flex flex-col gap-6">
             <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-600">

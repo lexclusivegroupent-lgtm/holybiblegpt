@@ -1,19 +1,19 @@
 # Account API on the Cloudflare Worker
 
-holybiblegpt.com is the Worker `holybiblegpt`. Sync and the free-question counter run in that Worker at the same paths the app already calls.
+holybiblegpt.com is the Worker `holybiblegpt`. Sync and the usage counter run in that Worker at the same paths the app already calls. The counter does not cap AI study.
 
 | Path | Method | Auth |
 | --- | --- | --- |
-| `/api/sync-pull` | GET | Puter bearer token. `userId` must be that account. Pro only. |
-| `/api/sync-push` | POST | Same. Body `{ userId, data }`. Pro only. |
+| `/api/sync-pull` | GET | Puter bearer token. `userId` must be that account. Plus only (stored as `pro`). |
+| `/api/sync-push` | POST | Same. Body `{ userId, data }`. Plus only. |
 | `/api/get-status` | GET | Same. `{ status: "pro" \| "free" }`. |
 | `/api/check-status` | GET | Same. `{ isPro: boolean }`. |
-| `/api/get-usage` | GET | Same. |
-| `/api/increment-usage` | POST | Same. Five free questions, then `allowed: false`. |
-| `/api/create-checkout-session` | GET | No auth. `{ checkout, portal }`. Both false until Stripe and D1 are ready. |
-| `/api/create-checkout-session` | POST | Puter bearer token. Starts Stripe Checkout. |
+| `/api/get-usage` | GET | Same. `{ remaining: null }`. Analytics count only. |
+| `/api/increment-usage` | POST | Same. Always `allowed: true` after auth. Never a question cap. |
+| `/api/create-checkout-session` | GET | No auth. `{ checkout, portal, intervals }`. `checkout` stays false until Stripe and D1 are ready. `giftUrl` only when `GIFT_URL` is set. |
+| `/api/create-checkout-session` | POST | Puter bearer token. Body `{ userId, interval }` with `interval` `month` or `year`. |
 | `/api/create-portal-session` | POST | Puter bearer token. Opens the billing portal. |
-| `/api/stripe-webhook` | POST | Stripe signature. No Puter token. |
+| `/api/stripe-webhook` | POST | Stripe signature. No Puter token. Grants Plus for monthly and yearly subscriptions. |
 | `/api/push-subscribe` | POST | Browser push subscription. No Puter token. |
 | `/api/push-unsubscribe` | POST | `{ endpoint }`. |
 | `/api/push-send-daily` | GET or POST | `Authorization: Bearer $CRON_SECRET`. |
@@ -28,13 +28,18 @@ The old Vercel functions under `api/` are unused by this host. Leave them in pla
 
 ## Billing secrets
 
-`APP_URL` is a var in `wrangler.jsonc` (`https://holybiblegpt.com`), not a secret. Checkout stays off until the three secrets below exist and D1 is ready. Do not commit the values.
+`APP_URL` is a var in `wrangler.jsonc` (`https://holybiblegpt.com`), not a secret. Checkout stays off until `STRIPE_SECRET_KEY`, at least one price, and D1 are ready. Do not commit the values.
 
 ```bash
 npx wrangler secret put STRIPE_SECRET_KEY
+npx wrangler secret put STRIPE_PRICE_ID_MONTHLY
+npx wrangler secret put STRIPE_PRICE_ID_YEARLY
 npx wrangler secret put STRIPE_PRICE_ID
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
+npx wrangler secret put GIFT_URL
 ```
+
+`STRIPE_PRICE_ID` is the monthly fallback when `STRIPE_PRICE_ID_MONTHLY` is unset. `GIFT_URL` is optional. Leave it unset to hide the gift link. Details are in `docs/billing.md`.
 
 Point the Stripe webhook at `https://holybiblegpt.com/api/stripe-webhook`. Subscribe it to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`. Details are in `docs/billing.md`.
 

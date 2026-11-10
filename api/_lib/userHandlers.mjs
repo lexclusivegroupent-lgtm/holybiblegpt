@@ -1,5 +1,6 @@
-import { FREE_LIMIT, usageUnavailableBody } from './usageGate.mjs';
+import { usageUnavailableBody } from './usageGate.mjs';
 import { headerValue } from './puterIdentity.mjs';
+import { hasPlusEntitlement } from '../../services/billingAvailability.mjs';
 
 function requestedUserId(value) {
   return typeof value === 'string' ? value : '';
@@ -24,8 +25,8 @@ export function createSyncPullHandler({ kv, verify }) {
 
     try {
       const status = await kv.get(`user:${identity.username}:status`);
-      if (status !== 'pro') {
-        return res.status(403).json({ error: 'Pro subscription required for sync.' });
+      if (!hasPlusEntitlement(status)) {
+        return res.status(403).json({ error: 'Plus subscription required for sync.' });
       }
       const data = await kv.get(`user:${identity.username}:data`);
       return res.status(200).json({ data: data ?? null });
@@ -51,8 +52,8 @@ export function createSyncPushHandler({ kv, verify }) {
 
     try {
       const status = await kv.get(`user:${identity.username}:status`);
-      if (status !== 'pro') {
-        return res.status(403).json({ error: 'Pro subscription required for sync.' });
+      if (!hasPlusEntitlement(status)) {
+        return res.status(403).json({ error: 'Plus subscription required for sync.' });
       }
       const size = JSON.stringify(data).length;
       if (size > 500_000) {
@@ -78,7 +79,7 @@ export function createGetStatusHandler({ kv, verify }) {
 
     try {
       const status = await kv.get(`user:${identity.username}:status`);
-      return res.status(200).json({ status: status === 'pro' ? 'pro' : 'free' });
+      return res.status(200).json({ status: hasPlusEntitlement(status) ? 'pro' : 'free' });
     } catch (error) {
       console.error('Status check error:', error);
       return res.status(503).json({ error: 'Could not check status.' });
@@ -96,7 +97,7 @@ export function createCheckStatusHandler({ kv, verify }) {
 
     try {
       const status = await kv.get(`user:${identity.username}:status`);
-      return res.status(200).json({ isPro: status === 'pro' });
+      return res.status(200).json({ isPro: hasPlusEntitlement(status) });
     } catch (error) {
       console.error('Status Check Error:', error);
       return res.status(503).json({ error: 'Could not check status.' });
@@ -104,7 +105,7 @@ export function createCheckStatusHandler({ kv, verify }) {
   };
 }
 
-export function createGetUsageHandler({ kv, verify, limit = FREE_LIMIT }) {
+export function createGetUsageHandler({ kv, verify }) {
   return async function handler(req, res) {
     if (req.method !== 'GET') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -114,15 +115,12 @@ export function createGetUsageHandler({ kv, verify, limit = FREE_LIMIT }) {
 
     try {
       const status = await kv.get(`user:${identity.username}:status`);
-      if (status === 'pro') {
-        return res.status(200).json({ isPro: true, count: 0, remaining: null, limit });
-      }
       const count = (await kv.get(`usage:${identity.username}:count`)) || 0;
       return res.status(200).json({
-        isPro: false,
+        isPro: hasPlusEntitlement(status),
         count,
-        remaining: Math.max(0, limit - count),
-        limit,
+        remaining: null,
+        limit: null,
       });
     } catch (error) {
       console.error('Get usage error:', error);
@@ -131,7 +129,9 @@ export function createGetUsageHandler({ kv, verify, limit = FREE_LIMIT }) {
   };
 }
 
-export function createIncrementUsageHandler({ kv, verify, limit = FREE_LIMIT }) {
+// Counts a question for analytics. There is no lifetime cap. A storage
+// error still allows the question: counting must not block study.
+export function createIncrementUsageHandler({ kv, verify }) {
   return async function handler(req, res) {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -139,34 +139,38 @@ export function createIncrementUsageHandler({ kv, verify, limit = FREE_LIMIT }) 
     const identity = await requireIdentity(verify, req, requestedUserId(req.body?.userId));
     if (!identity.ok) return deny(res, identity);
 
+    let isPro = false;
     try {
       const status = await kv.get(`user:${identity.username}:status`);
-      if (status === 'pro') {
-        return res.status(200).json({ allowed: true, isPro: true, remaining: null });
-      }
-
-      const count = await kv.incr(`usage:${identity.username}:count`);
-      if (count > limit) {
-        return res.status(200).json({
-          allowed: false,
-          isPro: false,
-          remaining: 0,
-          count: limit,
-          limit,
-        });
-      }
-
+      isPro = hasPlusEntitlement(status);
+    } catch (error) {
+      console.error('Increment usage status error:', error);
       return res.status(200).json({
         allowed: true,
         isPro: false,
-        remaining: limit - count,
+        remaining: null,
+        count: null,
+        unavailable: true,
+      });
+    }
+
+    try {
+      const count = await kv.incr(`usage:${identity.username}:count`);
+      return res.status(200).json({
+        allowed: true,
+        isPro,
+        remaining: null,
         count,
-        limit,
       });
     } catch (error) {
-      console.error('Increment usage error:', error);
-      // Fail closed. A KV error must not grant another AI question.
-      return res.status(503).json(usageUnavailableBody());
+      console.error('Increment usage count error:', error);
+      return res.status(200).json({
+        allowed: true,
+        isPro,
+        remaining: null,
+        count: null,
+        unavailable: true,
+      });
     }
   };
 }
@@ -180,12 +184,18 @@ export function createCheckoutHandler({ verify, createSession }) {
     if (!identity.ok) return deny(res, identity);
 
     try {
-      const session = await createSession(identity.username);
+      const session = await createSession(identity.username, req.body?.interval);
       if (!session?.url) {
         return res.status(500).json({ error: 'Could not start checkout.' });
       }
       return res.status(200).json({ url: session.url });
     } catch (error) {
+      const status = error?.statusCode;
+      const message = error?.message;
+      const safe = message === 'Choose month or year.' || message === 'That billing interval is not configured.';
+      if ((status === 400 || status === 503) && safe) {
+        return res.status(status).json({ error: message });
+      }
       console.error('Stripe Error:', error);
       return res.status(500).json({ error: 'Could not start checkout.' });
     }

@@ -45,7 +45,9 @@
     "html_handling": "drop-trailing-slash"
   },
   // Public Stripe return origin. Not a secret. Checkout stays off until
-  // STRIPE_SECRET_KEY and STRIPE_PRICE_ID are set with `wrangler secret put`.
+  // STRIPE_SECRET_KEY and a Plus price are set with `wrangler secret put`.
+  // Prices: STRIPE_PRICE_ID_MONTHLY, STRIPE_PRICE_ID_YEARLY, and
+  // STRIPE_PRICE_ID (monthly fallback). GIFT_URL is optional.
   "vars": {
     "APP_URL": "https://holybiblegpt.com"
   },

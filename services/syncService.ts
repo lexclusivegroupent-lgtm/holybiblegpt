@@ -3,7 +3,14 @@ import { getPuterAuthToken, waitForPuter } from './aiService';
 import { interpretBillingResponse } from './billingAvailability.mjs';
 import { storage } from './storageService';
 
-export type BillingAvailability = { checkout: boolean; portal: boolean };
+export type BillingInterval = 'month' | 'year';
+
+export type BillingAvailability = {
+  checkout: boolean;
+  portal: boolean;
+  intervals: { month: boolean; year: boolean };
+  giftUrl: string;
+};
 
 export const getBillingAvailability = async (): Promise<BillingAvailability> => {
   try {
@@ -12,7 +19,7 @@ export const getBillingAvailability = async (): Promise<BillingAvailability> => 
     const body = contentType?.includes('application/json') ? await res.json() : null;
     return interpretBillingResponse(res.status, contentType, body);
   } catch {
-    return { checkout: false, portal: false };
+    return { checkout: false, portal: false, intervals: { month: false, year: false }, giftUrl: '' };
   }
 };
 
@@ -50,11 +57,11 @@ export const checkProStatus = async (userId: string): Promise<ProStatus> => {
   }
 };
 
-export const startCheckout = async (userId: string): Promise<void> => {
+export const startCheckout = async (userId: string, interval: BillingInterval = 'month'): Promise<void> => {
   const res = await fetch('/api/create-checkout-session', {
     method: 'POST',
     headers: await puterHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify({ userId, interval }),
   });
   const json = await res.json();
   if (!res.ok || !json.url) throw new Error(json.error || 'Could not start checkout.');

@@ -43,7 +43,7 @@ const PrivacyView: React.FC = () => {
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">On this device</h2>
           <p>
-            Reading progress, bookmarks, highlights, notes, prayers, settings, and the chat transcript are stored in this browser (local storage). Chapters you cache are stored in this browser's IndexedDB. They stay here unless you use Pro sync or ask the study aid for help.
+            Reading progress, bookmarks, highlights, notes, prayers, settings, and the chat transcript are stored in this browser (local storage). Chapters you cache are stored in this browser's IndexedDB. They stay here unless you use Plus sync or ask the study aid for help.
           </p>
           <p>
             A prayer can show religious belief. The prayer journal asks before the first prayer is saved. Prayers and notes are kept on the basis of consent. Notes are the words you write. They are part of the browser copy you can download or delete below. There is no separate notes checkbox.
@@ -63,7 +63,7 @@ const PrivacyView: React.FC = () => {
         <section className="space-y-3">
           <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Cloudflare D1, Stripe, and analytics</h2>
           <p>
-            If Pro sync is used, the browser bundle (notes, prayers, highlights, bookmarks, settings, and chat) is stored in Cloudflare D1 under the Puter username. That write sets no expiry. The server copy stays until a deletion request for that account is carried out. Pro sync is kept on the basis of the contract for that service. Daily verse push, if you subscribe, stores the browser's push subscription in Cloudflare D1, also with no expiry in the code. Copies written before this move may still exist in Vercel KV. This site no longer writes those routes there.
+            If Plus sync is used, the browser bundle (notes, prayers, highlights, bookmarks, settings, and chat) is stored in Cloudflare D1 under the Puter username. That write sets no expiry. The server copy stays until a deletion request for that account is carried out. Plus sync is kept on the basis of the contract for that service. Daily verse push, if you subscribe, stores the browser's push subscription in Cloudflare D1, also with no expiry in the code. Copies written before this move may still exist in Vercel KV. This site no longer writes those routes there.
           </p>
           <p>
             If you subscribe, card details are entered on Stripe's page. This app stores the Stripe customer id, not the card number. The Stripe account name is not set in this site's code, so it is not stated here.
@@ -89,7 +89,7 @@ const PrivacyView: React.FC = () => {
             If you live in California, the CCPA/CPRA gives you the rights below.
           </p>
           <p>
-            Categories collected: identifiers (a Puter username, a Stripe customer id, and a push subscription if you turn daily verses on); commercial information (whether a Pro subscription is active; card numbers stay on Stripe's page); internet activity (a page view through Vercel Analytics, and the book and chapter sent to bible-api.com); and content you write (notes, prayers, highlights, bookmarks, settings, and chat). A prayer can show religious belief.
+            Categories collected: identifiers (a Puter username, a Stripe customer id, and a push subscription if you turn daily verses on); commercial information (whether a Plus subscription is active; card numbers stay on Stripe's page); internet activity (a page view through Vercel Analytics, and the book and chapter sent to bible-api.com); and content you write (notes, prayers, highlights, bookmarks, settings, and chat). A prayer can show religious belief.
           </p>
           <p>
             We do not sell personal information. We do not share it for cross-context behavioral advertising.
@@ -112,7 +112,7 @@ const PrivacyView: React.FC = () => {
             You can download the browser copy below, and you can delete that copy. Deleting it does not close the Puter account and does not cancel Stripe. For a server copy, email thechristiansdeck@gmail.com. A signed-in delete button for the server copy is waiting on the authenticated API. This page does not offer deletion by typing a username, because that API is not a proof of identity.
           </p>
           <p>
-            Prayers and notes are processed on the basis of consent. The Puter account and Pro sync are processed on the basis of contract.
+            Prayers and notes are processed on the basis of consent. The Puter account and Plus sync are processed on the basis of contract.
           </p>
           <p>
             People outside the United States, including in the EU and the EEA, can use the same email. They may also complain to their local data protection authority. One example is Integritetsskyddsmyndigheten (IMY), <a className="text-[#D4AF37] underline" href="https://www.imy.se">imy.se</a>.

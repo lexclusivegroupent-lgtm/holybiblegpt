@@ -22,7 +22,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onAccept }) => {
     {
       icon: '🌱',
       title: 'Grow Daily',
-      desc: 'Track your reading, save prayer notes, and let Scripture shape your day. No subscriptions. No limits. Just God\'s Word.',
+      desc: 'Track your reading and save prayer notes on this device. Reading, search, and AI study have no question limit. Plus, if you want it, is only for sync and backup.',
     },
     {
       icon: '⚠️',

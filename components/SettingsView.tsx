@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { storage } from '../services/storageService';
 import { initializeOfflineKJV, getCachedChapterCount } from '../services/bibleService';
-import { getUserId, checkProStatus, startCheckout, openBillingPortal, pushSyncData, pullSyncData, getBillingAvailability, ProStatus, BillingAvailability } from '../services/syncService';
+import { getUserId, checkProStatus, startCheckout, openBillingPortal, pushSyncData, pullSyncData, getBillingAvailability, ProStatus, BillingAvailability, BillingInterval } from '../services/syncService';
+import PlusPlan from './PlusPlan';
 import { signIntoPuter } from '../services/aiService';
 import { AppSettings, AppTab } from '../types';
 import NotificationOptIn from './NotificationOptIn';
@@ -51,12 +52,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
     }
   };
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (interval: BillingInterval) => {
     if (!userId) return handleSignIn();
     setProBusy(true);
     setProMessage(null);
     try {
-      await startCheckout(userId);
+      await startCheckout(userId, interval);
     } catch (e: any) {
       setProMessage(e.message || 'Could not start checkout.');
       setProBusy(false);
@@ -141,101 +142,27 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
             <h3 className="text-sm font-bold uppercase tracking-[0.3em] text-[#D4AF37]">Free AI Study Helper</h3>
           </div>
           <p className="text-xs text-stone-400 leading-relaxed">
-            Holy Bible GPT keeps the AI study helper completely free by using a free third-party AI service — no subscription or credit card required. A free sign-in is needed to activate it. Bible reading, notes, and Gospel Harmony work without any account.
+            Reading, search, and the AI study helper are free forever, with no question limit. A free sign-in is needed for the study helper because it runs on a free third-party AI service. Bible reading works without an account.
           </p>
           <p className="text-[10px] text-stone-600 leading-snug">
             The AI is a study aid, not a pastor or spiritual authority · Scripture is the final authority
           </p>
         </div>
 
-        {/* Holy Bible GPT Pro */}
-        <div className="glass-dark border border-[#D4AF37]/30 p-8 rounded-[2rem] space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37]">Holy Bible GPT Pro</h3>
-            {proStatus === 'pro' && (
-              <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-500 bg-emerald-950/30 px-3 py-1 rounded-full">Active</span>
-            )}
-          </div>
-
-          {(proStatus === 'checking' || billing === 'checking') && (
-            <p className="text-xs text-stone-500">Checking status…</p>
-          )}
-
-          {billing !== 'checking' && !billing.checkout && proStatus !== 'pro' && (
-            <p className="text-xs text-stone-400 leading-relaxed">
-              Pro billing is not available on this site yet. Bible reading and the study tools stay available. Checkout appears when this deployment serves the billing API and a Stripe price is configured.
-            </p>
-          )}
-
-          {proStatus !== 'checking' && !userId && billing !== 'checking' && billing.checkout && (
-            <>
-              <p className="text-xs text-stone-400 leading-relaxed">
-                Pro adds cross-device sync for chat history, notes, bookmarks, prayers, and reading progress. The price is the one configured in Stripe. Bible reading stays free.
-              </p>
-              <button
-                onClick={handleSignIn}
-                disabled={proBusy}
-                className="w-full py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] bg-[#D4AF37] text-black shadow-xl hover:scale-[1.01] active:scale-95 disabled:opacity-50"
-              >
-                {proBusy ? 'Opening…' : 'Sign In to Continue'}
-              </button>
-            </>
-          )}
-
-          {proStatus === 'free' && userId && billing !== 'checking' && billing.checkout && (
-            <>
-              <p className="text-xs text-stone-400 leading-relaxed">
-                Pro adds sync for your chat history, notes, bookmarks, prayers, and reading progress across devices. Bible reading stays free. The charge is the Stripe price configured for this site.
-              </p>
-              <button
-                onClick={handleUpgrade}
-                disabled={proBusy}
-                className="w-full py-5 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] bg-[#D4AF37] text-black shadow-xl hover:scale-[1.01] active:scale-95 disabled:opacity-50"
-              >
-                {proBusy ? 'Opening…' : 'Upgrade to Pro'}
-              </button>
-            </>
-          )}
-
-          {proStatus === 'pro' && (
-            <div className="space-y-4">
-              <p className="text-xs text-stone-400 leading-relaxed">
-                Unlimited AI questions and cloud sync are active for this account.
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleBackup}
-                  disabled={proBusy}
-                  className="py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-[#D4AF37] text-black disabled:opacity-50"
-                >
-                  Back Up
-                </button>
-                <button
-                  onClick={handleRestore}
-                  disabled={proBusy}
-                  className="py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest glass-dark border border-white/10 text-stone-300 disabled:opacity-50"
-                >
-                  Restore
-                </button>
-              </div>
-              {billing !== 'checking' && billing.portal ? (
-                <button
-                  onClick={handleManage}
-                  disabled={proBusy}
-                  className="w-full py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-stone-300 disabled:opacity-50"
-                >
-                  Manage Subscription
-                </button>
-              ) : (
-                <p className="text-[10px] text-stone-500 text-center">The billing portal is not available on this site yet.</p>
-              )}
-            </div>
-          )}
-
-          {proMessage && (
-            <p className="text-[10px] text-stone-500 text-center">{proMessage}</p>
-          )}
-        </div>
+        <PlusPlan
+          billing={billing}
+          signedIn={Boolean(userId)}
+          active={proStatus === 'pro'}
+          accountKnown={proStatus !== 'checking'}
+          busy={proBusy}
+          message={proMessage}
+          onSignIn={handleSignIn}
+          onCheckout={handleUpgrade}
+          onBackup={handleBackup}
+          onRestore={handleRestore}
+          onManage={handleManage}
+          showSyncActions
+        />
 
         {/* Safety Section */}
         <div className="glass-dark border border-white/5 p-8 rounded-[2rem] space-y-6">
@@ -308,7 +235,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onTabChange, onReport }) =>
                 <li>• No payment info</li>
               </ul>
               <p className="text-[9px] text-stone-600 leading-snug">
-                Pro is optional. When billing is available, card details go to Stripe and are not stored by this site.
+                Plus is optional and is only for sync and backup. When billing is available, card details go to Stripe and are not stored by this site.
               </p>
             </div>
           </div>
