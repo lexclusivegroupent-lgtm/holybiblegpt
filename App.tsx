@@ -48,11 +48,13 @@ const CorrectionsView = lazy(() => import('./components/CorrectionsView'));
 import { Translation, ReaderState, PassageLink, AppMode, AppTab } from './types';
 import { storage } from './services/storageService';
 import { initializeOfflineKJV, BIBLE_BOOKS, HISTORICAL_BOOKS } from './services/bibleService';
+import { bookPath, bookToSlug as slugify, chapterPath } from './services/routes.mjs';
+import BookIndexView from './components/BookIndexView';
 
 // ── URL ↔ App-state utilities ───────────────────────────────────────────────
 
 const ALL_BOOKS = [...BIBLE_BOOKS, ...HISTORICAL_BOOKS];
-const bookToSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
+const bookToSlug = (name: string) => slugify(name);
 const slugToBook = (slug: string): string | null =>
   ALL_BOOKS.find(b => bookToSlug(b.name) === slug)?.name ?? null;
 
@@ -119,6 +121,24 @@ const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
   corrections:  ['Corrections – Holy Bible GPT', 'How to report a verse that does not match its label, or an answer that adds to the text.'],
 };
 
+function readInitialRoute(): { tab: AppTab; book: string; chapter: string } {
+  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  const chapterMatch = path.match(/^\/bible\/([^/]+)\/(\d+)$/);
+  const bookMatch = path.match(/^\/bible\/([^/]+)$/);
+  if (chapterMatch) {
+    const book = slugToBook(chapterMatch[1]);
+    if (book) return { tab: 'read', book, chapter: chapterMatch[2] };
+  }
+  if (bookMatch) {
+    const book = slugToBook(bookMatch[1]);
+    if (book) return { tab: 'read', book, chapter: '' };
+  }
+  if (ROUTE_TO_TAB[path] && ROUTE_TO_TAB[path] !== 'home') {
+    return { tab: ROUTE_TO_TAB[path], book: 'Genesis', chapter: '1' };
+  }
+  return { tab: 'home', book: 'Genesis', chapter: '1' };
+}
+
 function updateMeta(title: string, desc: string, path: string) {
   document.title = title;
   const sel = <T extends Element>(q: string) => document.querySelector<T>(q);
@@ -134,7 +154,8 @@ function updateMeta(title: string, desc: string, path: string) {
 
 const App: React.FC = () => {
   const [currentTranslation, setCurrentTranslation] = useState<Translation>(Translation.KJV);
-  const [activeTab, setActiveTab] = useState<AppTab>('home');
+  const initialRoute = readInitialRoute();
+  const [activeTab, setActiveTab] = useState<AppTab>(initialRoute.tab);
   const [currentMode, setCurrentMode] = useState<AppMode>(AppMode.CHAT);
   const [pendingQuery, setPendingQuery] = useState<{ query: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -144,8 +165,8 @@ const App: React.FC = () => {
 
   const [readerState, setReaderState] = useState<ReaderState>({
     isOpen: true,
-    book: 'Genesis',
-    chapter: '1',
+    book: initialRoute.book,
+    chapter: initialRoute.chapter,
     verses: ''
   });
 
@@ -159,10 +180,15 @@ const App: React.FC = () => {
     let desc: string;
 
     if (activeTab === 'read') {
-      const slug = bookToSlug(readerState.book);
-      path = `/bible/${slug}/${readerState.chapter}`;
-      title = `${readerState.book} ${readerState.chapter} – Bible Reading – Holy Bible GPT`;
-      desc = `Read ${readerState.book} chapter ${readerState.chapter} in the ${currentTranslation === Translation.ESV ? 'King James Version. ESV is not offered here' : currentTranslation}. Study, highlight, bookmark, and explore Scripture.`;
+      if (!readerState.chapter) {
+        path = bookPath(readerState.book);
+        title = `${readerState.book} – King James Version – Holy Bible GPT`;
+        desc = `King James Version, public domain. Chapters of ${readerState.book} on Holy Bible GPT.`;
+      } else {
+        path = chapterPath(readerState.book, readerState.chapter);
+        title = `${readerState.book} ${readerState.chapter} KJV – Holy Bible GPT`;
+        desc = `King James Version, public domain. ${readerState.book} ${readerState.chapter} on Holy Bible GPT.`;
+      }
     } else {
       path = TAB_ROUTES[activeTab] ?? '/';
       const [t, d] = PAGE_META[activeTab] ?? PAGE_META.home!;
@@ -170,26 +196,16 @@ const App: React.FC = () => {
       desc = d;
     }
 
-    if (window.location.pathname !== path) {
-      window.history.pushState(null, '', path);
+    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+    const targetPath = path.replace(/\/$/, '') || '/';
+    if (currentPath !== targetPath) {
+      window.history.pushState(null, '', targetPath);
     }
     updateMeta(title, desc, path);
   }, [activeTab, readerState.book, readerState.chapter, currentTranslation]);
 
   useEffect(() => {
     // ── Parse initial URL so deep-links and shared links work ──
-    const path = window.location.pathname;
-    const bibleMatch = path.match(/^\/bible\/([^/]+)\/(\d+)$/);
-    if (bibleMatch) {
-      const book = slugToBook(bibleMatch[1]);
-      if (book) {
-        setReaderState(prev => ({ ...prev, book, chapter: bibleMatch[2] }));
-        setActiveTab('read');
-      }
-    } else if (ROUTE_TO_TAB[path] && ROUTE_TO_TAB[path] !== 'home') {
-      setActiveTab(ROUTE_TO_TAB[path]);
-    }
-
     const accepted = localStorage.getItem('hbgpt_onboarding_accepted');
     if (!accepted) setShowOnboarding(true);
 
@@ -278,9 +294,19 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home': return <HomeView onOpenPassage={handleOpenPassage} onTabChange={setActiveTab} translation={currentTranslation} />;
+      case 'home': return <HomeView onOpenPassage={handleOpenPassage} onOpenBook={(book) => { setReaderState(prev => ({ ...prev, book, chapter: '' })); setActiveTab('read'); }} onTabChange={setActiveTab} translation={currentTranslation} />;
       case 'read':
-        return <BibleReader state={readerState} translation={currentTranslation} onClose={() => setActiveTab('home')} onNavigate={handleNavigateReader} onStudyVerse={handleStudyVerse} onStudyChapter={handleStudyChapter} onReport={() => setShowReportForm(true)} />;
+        if (!readerState.chapter) {
+          return (
+            <BookIndexView
+              book={readerState.book}
+              onOpenChapter={(chapter) => handleNavigateReader(readerState.book, chapter)}
+              onOpenBook={(book) => setReaderState(prev => ({ ...prev, book, chapter: '' }))}
+              onHome={() => setActiveTab('home')}
+            />
+          );
+        }
+        return <BibleReader state={readerState} translation={currentTranslation} onClose={() => setActiveTab('home')} onNavigate={handleNavigateReader} onOpenBook={(book) => setReaderState(prev => ({ ...prev, book, chapter: '' }))} onStudyVerse={handleStudyVerse} onStudyChapter={handleStudyChapter} onReport={() => setShowReportForm(true)} />;
       case 'study':
         return (
           <ChatInterface
@@ -359,15 +385,15 @@ const App: React.FC = () => {
       {activeTab !== 'read' && activeTab !== 'study' && (
         <footer className="glass-dark border-t border-white/5 py-5 px-6 flex flex-col items-center gap-3">
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[9px] font-bold uppercase tracking-widest text-stone-600">
-            <button onClick={() => setActiveTab('privacy')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Privacy</button>
-            <button onClick={() => setActiveTab('terms')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Terms</button>
-            <button onClick={() => setActiveTab('about')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">About</button>
-            <button onClick={() => setActiveTab('faq')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">FAQ</button>
-            <button onClick={() => setActiveTab('contact')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Contact</button>
-            <button onClick={() => setActiveTab('methodology')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Method</button>
-            <button onClick={() => setActiveTab('limitations')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Limits</button>
-            <button onClick={() => setActiveTab('copyrights')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Copyright</button>
-            <button onClick={() => setActiveTab('corrections')} className="hover:text-[#D4AF37] transition-colors min-h-[36px]">Corrections</button>
+            <a href="/privacy" onClick={(event) => { event.preventDefault(); setActiveTab('privacy'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Privacy</a>
+            <a href="/terms" onClick={(event) => { event.preventDefault(); setActiveTab('terms'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Terms</a>
+            <a href="/about" onClick={(event) => { event.preventDefault(); setActiveTab('about'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">About</a>
+            <a href="/faq" onClick={(event) => { event.preventDefault(); setActiveTab('faq'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">FAQ</a>
+            <a href="/contact" onClick={(event) => { event.preventDefault(); setActiveTab('contact'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Contact</a>
+            <a href="/methodology" onClick={(event) => { event.preventDefault(); setActiveTab('methodology'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Method</a>
+            <a href="/limitations" onClick={(event) => { event.preventDefault(); setActiveTab('limitations'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Limits</a>
+            <a href="/copyrights" onClick={(event) => { event.preventDefault(); setActiveTab('copyrights'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Copyright</a>
+            <a href="/corrections" onClick={(event) => { event.preventDefault(); setActiveTab('corrections'); }} className="hover:text-[#D4AF37] transition-colors min-h-[36px] inline-flex items-center">Corrections</a>
           </div>
           <a href="https://thechristiansdeck.com" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#D4AF37] hover:text-[#F9E3A5] transition-all">POWERED BY THE CHRISTIAN'S DECK</a>
         </footer>

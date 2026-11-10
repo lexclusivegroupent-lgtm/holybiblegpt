@@ -12,6 +12,7 @@ interface BibleReaderProps {
   translation: Translation;
   onClose: () => void;
   onNavigate: (book: string, chapter: string) => void;
+  onOpenBook?: (book: string) => void;
   onStudyVerse?: (mode: AppMode, verse: number) => void;
   onStudyChapter?: (mode: AppMode) => void;
   onReport?: () => void;
@@ -23,6 +24,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
   state,
   translation,
   onNavigate,
+  onOpenBook,
   onStudyVerse,
   onStudyChapter,
   onReport,
@@ -113,6 +115,9 @@ const BibleReader: React.FC<BibleReaderProps> = ({
   const chapterNum = parseInt(state.chapter, 10);
   const hasPrev = chapterNum > 1;
   const hasNext = chapterNum < currentBookData.chapters;
+  const slug = state.book.toLowerCase().replace(/\s+/g, '-');
+  const prevHref = hasPrev ? `/bible/${slug}/${chapterNum - 1}` : `/bible/${slug}`;
+  const nextHref = hasNext ? `/bible/${slug}/${chapterNum + 1}` : `/bible/${slug}`;
 
   if (showIntro) {
     return (
@@ -196,22 +201,30 @@ const BibleReader: React.FC<BibleReaderProps> = ({
 
         {/* Chapter navigation — double-chevrons so they look nothing like Back */}
         <div className="flex items-center gap-0.5 shrink-0">
-          <button
-            onClick={() => hasPrev && onNavigate(state.book, (chapterNum - 1).toString())}
-            disabled={!hasPrev}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-stone-500 hover:text-white disabled:opacity-20 transition-colors rounded-lg hover:bg-white/5 text-lg font-bold"
+          <a
+            href={prevHref}
+            onClick={(event) => {
+              event.preventDefault();
+              if (hasPrev) onNavigate(state.book, (chapterNum - 1).toString());
+              else onOpenBook?.(state.book);
+            }}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-stone-500 hover:text-white transition-colors rounded-lg hover:bg-white/5 text-lg font-bold"
             aria-label="Previous chapter"
           >
             «
-          </button>
-          <button
-            onClick={() => hasNext && onNavigate(state.book, (chapterNum + 1).toString())}
-            disabled={!hasNext}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-stone-500 hover:text-white disabled:opacity-20 transition-colors rounded-lg hover:bg-white/5 text-lg font-bold"
+          </a>
+          <a
+            href={nextHref}
+            onClick={(event) => {
+              event.preventDefault();
+              if (hasNext) onNavigate(state.book, (chapterNum + 1).toString());
+              else onOpenBook?.(state.book);
+            }}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-stone-500 hover:text-white transition-colors rounded-lg hover:bg-white/5 text-lg font-bold"
             aria-label="Next chapter"
           >
             »
-          </button>
+          </a>
         </div>
       </div>
 
@@ -219,10 +232,17 @@ const BibleReader: React.FC<BibleReaderProps> = ({
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto px-4 md:px-0 py-10 scroll-smooth">
         <div className="max-w-3xl mx-auto w-full">
 
+          <nav aria-label="Breadcrumb" className="mb-6 text-[10px] uppercase tracking-widest text-stone-400">
+            <a href="/" onClick={(event) => { event.preventDefault(); onClose(); }} className="hover:text-[#D4AF37]">Home</a>
+            <span> / </span>
+            <a href={`/bible/${slug}`} onClick={(event) => { event.preventDefault(); onOpenBook?.(state.book); }} className="hover:text-[#D4AF37]">{state.book}</a>
+            <span> / </span>
+            <span>{state.chapter}</span>
+          </nav>
           <header className="mb-12 text-center space-y-3">
-            <h2 className="accent-font text-4xl md:text-5xl font-bold tracking-[0.1em] gold-gradient-text uppercase">
+            <h1 className="accent-font text-4xl md:text-5xl font-bold tracking-[0.1em] gold-gradient-text uppercase">
               {state.book} {state.chapter}
-            </h2>
+            </h1>
             <p className="text-[10px] uppercase font-bold tracking-[0.4em] text-stone-700">
               Holy Scripture · {translation}
             </p>
@@ -283,26 +303,34 @@ const BibleReader: React.FC<BibleReaderProps> = ({
           {/* Bottom chapter navigation */}
           {content.length > 0 && (
             <div className="flex items-center justify-between mt-14 pt-8 border-t border-white/5 gap-4">
-              <button
-                onClick={() => hasPrev && onNavigate(state.book, (chapterNum - 1).toString())}
-                disabled={!hasPrev}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-white hover:border-white/20 disabled:opacity-20 transition-all min-h-[44px]"
+              <a
+                href={prevHref}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (hasPrev) onNavigate(state.book, (chapterNum - 1).toString());
+                  else onOpenBook?.(state.book);
+                }}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-white hover:border-white/20 transition-all min-h-[44px]"
               >
                 « Prev Chapter
-              </button>
+              </a>
               <button
                 onClick={() => onStudyChapter?.(AppMode.CHAPTER_OVERVIEW)}
                 className="px-5 py-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-all min-h-[44px]"
               >
                 📋 Chapter Overview
               </button>
-              <button
-                onClick={() => hasNext && onNavigate(state.book, (chapterNum + 1).toString())}
-                disabled={!hasNext}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-white hover:border-white/20 disabled:opacity-20 transition-all min-h-[44px]"
+              <a
+                href={nextHref}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (hasNext) onNavigate(state.book, (chapterNum + 1).toString());
+                  else onOpenBook?.(state.book);
+                }}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-white hover:border-white/20 transition-all min-h-[44px]"
               >
                 Next Chapter »
-              </button>
+              </a>
             </div>
           )}
         </div>

@@ -24,6 +24,6 @@ every chapter has its own URL with the full verse text.
 
 ## Notes for AI systems
 
-- Bible text served in the reader is public domain: the King James Version and, when selected, the World English Bible. The English Standard Version is not served. Do not describe KJV text on this site as ESV.
+- Bible text served for the chapter pages is the public-domain King James Version stored in this site. The World English Bible is public domain when that translation is selected. The English Standard Version is not served. Do not describe KJV text on this site as ESV.
 - The site makes no claim to being a church, pastor, or religious authority — this is stated explicitly on /disclaimer and should be preserved if summarizing or citing the tool.
 - Sitemap: https://holybiblegpt.com/sitemap.xml
