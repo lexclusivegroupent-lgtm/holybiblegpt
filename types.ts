@@ -91,6 +91,7 @@ export interface AppSettings {
   historicalWarningAccepted: boolean;
   privacyAccepted: boolean;
   kidsMode: boolean;
+  prayerConsent?: boolean;
   lastRead?: {
     book: string;
     chapter: string;
@@ -100,4 +101,4 @@ export interface AppSettings {
 }
 
 
-export type AppTab = 'home' | 'study' | 'read' | 'library' | 'learn' | 'references' | 'support' | 'prayer' | 'settings' | 'privacy' | 'about' | 'terms' | 'instructions' | 'search' | 'contact' | 'faq' | 'changelog' | 'faith' | 'disclaimer' | 'translations' | 'guidelines' | 'roadmap' | 'thanks' | 'kids' | 'groups' | 'theology' | 'harmony' | 'notes';
+export type AppTab = 'home' | 'study' | 'read' | 'library' | 'learn' | 'references' | 'support' | 'prayer' | 'settings' | 'privacy' | 'about' | 'terms' | 'instructions' | 'search' | 'contact' | 'faq' | 'changelog' | 'faith' | 'disclaimer' | 'translations' | 'guidelines' | 'roadmap' | 'thanks' | 'kids' | 'groups' | 'theology' | 'harmony' | 'notes' | 'methodology' | 'limitations' | 'copyrights' | 'corrections';

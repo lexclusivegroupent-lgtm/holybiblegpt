@@ -13,9 +13,11 @@ const PrayerJournal: React.FC = () => {
   const [newText, setNewText] = useState('');
   const [newCategory, setNewCategory] = useState<PrayerCategory>('Other');
   const [isAIHelping, setIsAIHelping] = useState(false);
+  const [consent, setConsent] = useState(storage.getSettings().prayerConsent === true);
 
   const handleSave = () => {
-    if (!newText.trim()) return;
+    if (!newText.trim() || !consent) return;
+    storage.givePrayerConsent();
     const entry: PrayerEntry = {
       id: Date.now().toString(),
       title: newTitle || 'Untitled Prayer',
@@ -34,6 +36,8 @@ const PrayerJournal: React.FC = () => {
 
   const handleAIHelp = async () => {
     if (isAIHelping) return;
+    const agreed = window.confirm('This sends the prayer topic to Puter and its AI provider. It is not kept only on this device. Continue?');
+    if (!agreed) return;
     setIsAIHelping(true);
     const prompt = `Help me write a prayer about ${newCategory}${newTitle ? ` specifically regarding: ${newTitle}` : ''}. Keep it short and rooted in Scripture.`;
     try {
@@ -113,8 +117,17 @@ const PrayerJournal: React.FC = () => {
               className="w-full bg-stone-900/50 border border-white/10 rounded-2xl px-6 py-4 outline-none text-stone-300 text-sm italic"
             />
           </div>
+          <label className="flex items-start gap-3 text-xs text-stone-400 leading-relaxed">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-1 accent-[#D4AF37]"
+            />
+            <span>Save this prayer on this device. It can show my religious beliefs. It is uploaded only if I use Pro sync. "Help me write" sends the topic to Puter before anything is saved.</span>
+          </label>
           <div className="flex gap-4">
-            <button onClick={handleSave} className="flex-1 bg-[#D4AF37] text-black py-5 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl active:scale-95">Save Petition</button>
+            <button onClick={handleSave} disabled={!consent} className="flex-1 bg-[#D4AF37] text-black py-5 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl active:scale-95 disabled:opacity-40">Save Petition</button>
             <button onClick={() => setIsAdding(false)} className="flex-1 bg-white/5 text-stone-500 py-5 rounded-2xl font-bold uppercase tracking-widest text-xs active:scale-95">Cancel</button>
           </div>
         </div>
