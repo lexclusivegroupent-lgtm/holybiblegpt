@@ -2,26 +2,33 @@
 
 Holy Bible GPT does not create Stripe products, prices, or live keys. The owner does that in the Stripe Dashboard. Until the steps below are done on the host that actually serves `/api`, the site hides the upgrade and billing-portal buttons.
 
-The canonical site is the Cloudflare Worker. That Worker does not run these Vercel functions. A GET to `/api/create-checkout-session` there returns the app shell, not JSON, so the buttons stay hidden. POST on that same route still requires a verified Puter session and starts checkout. There is no separate billing-config function, because the Vercel Hobby plan allows only 12 serverless functions. Do not point the public site at a second deployment just to reach an API that is still being locked down. Checkout appears on its own once `/api` is served by the deployment that has these variables.
+The canonical site is the Cloudflare Worker. GET `/api/create-checkout-session` returns JSON booleans. Checkout and the portal stay false until the Worker has `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `APP_URL`, and the D1 binding from `docs/cloudflare-api.md`. POST still requires a verified Puter session. The files under `api/` are the previous Vercel copy. They are not what holybiblegpt.com runs. Do not delete that project from here.
 
 ## What to create in Stripe
 
 1. A product and a recurring price for Pro. Copy the price id (`price_...`).
-2. A webhook endpoint on the host that runs the functions: `https://<that-host>/api/stripe-webhook`.
+2. A webhook endpoint at `https://holybiblegpt.com/api/stripe-webhook`.
 3. Subscribe the endpoint to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`.
 4. Turn on the Stripe Customer Portal, with subscription cancel and payment-method update.
 
 ## Environment variables
 
-Set these on the deployment that runs `api/`. Do not commit the values.
+Set these on the Worker. Do not commit the values. `APP_URL` is already `https://holybiblegpt.com` in `wrangler.jsonc`.
+
+```bash
+npx wrangler secret put STRIPE_SECRET_KEY
+npx wrangler secret put STRIPE_PRICE_ID
+npx wrangler secret put STRIPE_WEBHOOK_SECRET
+```
 
 | Name | Purpose |
 | --- | --- |
 | `STRIPE_SECRET_KEY` | Secret key. Use a test key until you are ready to charge. |
 | `STRIPE_PRICE_ID` | The price id from step 1. |
-| `STRIPE_WEBHOOK_SECRET` | Signing secret for the endpoint above. |
-| `VITE_APP_URL` | Public origin with no trailing slash, `https://holybiblegpt.com`. Success, cancel, and portal return use it. |
-| `KV_REST_API_URL` and `KV_REST_API_TOKEN` | Already used to store Pro status. Required for the webhook and the portal. |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret for `https://holybiblegpt.com/api/stripe-webhook`. |
+| `APP_URL` | Public origin with no trailing slash. Success, cancel, and portal return use it. |
+
+The webhook and the portal also need the D1 database from `docs/cloudflare-api.md`. Pro status is stored there, not in Vercel KV.
 
 The screen no longer shows a fixed monthly amount. The amount is whatever price you attached to `STRIPE_PRICE_ID`.
 
@@ -31,7 +38,7 @@ The screen no longer shows a fixed monthly amount. The amount is whatever price 
 - `customer.subscription.updated` keeps Pro only while the status is `active` or `trialing`. `past_due`, `unpaid`, `canceled`, `incomplete`, and `incomplete_expired` set the account back to free.
 - `customer.subscription.deleted` sets the account back to free.
 - `invoice.payment_failed` loads the subscription and applies the same rule.
-- Each event id is stored in KV. A repeat delivery does not grant Pro twice.
+- Each event id is stored in D1. A repeat delivery does not grant Pro twice.
 
 ## What Pro does not lock
 

@@ -61,9 +61,9 @@ const PrivacyView: React.FC = () => {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Vercel KV, Stripe, and analytics</h2>
+          <h2 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">Cloudflare D1, Stripe, and analytics</h2>
           <p>
-            If Pro sync is used, the browser bundle (notes, prayers, highlights, bookmarks, settings, and chat) is stored in Vercel KV under the Puter username. That write sets no expiry. The server copy stays until a deletion request for that account is carried out. Pro sync is kept on the basis of the contract for that service. Daily verse push, if you subscribe, stores the browser's push subscription in Vercel KV, also with no expiry in the code.
+            If Pro sync is used, the browser bundle (notes, prayers, highlights, bookmarks, settings, and chat) is stored in Cloudflare D1 under the Puter username. That write sets no expiry. The server copy stays until a deletion request for that account is carried out. Pro sync is kept on the basis of the contract for that service. Daily verse push, if you subscribe, stores the browser's push subscription in Cloudflare D1, also with no expiry in the code. Copies written before this move may still exist in Vercel KV. This site no longer writes those routes there.
           </p>
           <p>
             If you subscribe, card details are entered on Stripe's page. This app stores the Stripe customer id, not the card number. The Stripe account name is not set in this site's code, so it is not stated here.

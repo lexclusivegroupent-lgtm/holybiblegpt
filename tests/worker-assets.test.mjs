@@ -111,4 +111,13 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
   assert.equal(status.status, 401);
   assert.match(status.body, /Authentication required/);
   assert.doesNotMatch(status.body, /APP_SHELL|<!doctype html>/i);
+
+  const billing = await get('/api/create-checkout-session');
+  assert.equal(billing.status, 200);
+  assert.deepEqual(JSON.parse(billing.body), { checkout: false, portal: false });
+
+  const push = await get('/api/push-send-daily');
+  assert.equal(push.status, 503);
+  assert.match(push.body, /CRON_SECRET/);
+  assert.doesNotMatch(push.body, /APP_SHELL|<!doctype html>/i);
 });
