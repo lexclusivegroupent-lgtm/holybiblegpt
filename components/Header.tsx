@@ -31,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({
             height={40}
             className="w-8 h-8 sm:w-10 sm:h-10 shrink-0"
           />
-          <h1 className="text-sm sm:text-lg font-bold accent-font tracking-[0.1em] gold-gradient-text leading-tight uppercase">Holy Bible GPT</h1>
+          <a href="/" className="text-sm sm:text-lg font-bold accent-font tracking-[0.1em] gold-gradient-text leading-tight uppercase">Holy Bible GPT</a>
         </div>
         
         <button

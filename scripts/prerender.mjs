@@ -1,123 +1,167 @@
-// Runs after `vite build` (see package.json "postbuild"). Generates static
-// HTML for every URL in sitemap.xml — the 1,189 Bible chapter pages plus the
-// 11 static routes — so crawlers get real, unique content and correct
-// <title>/meta/canonical tags on the FIRST byte, instead of the same empty
-// SPA shell for all 1,200+ URLs.
-//
-// Why this matters: App.tsx already rewrites title/meta/canonical correctly
-// client-side after React mounts, but that only helps crawlers that execute
-// JS (Google, eventually, on a second pass). Crawlers and bots that don't
-// run JS — most link-preview scrapers (iMessage, WhatsApp, Slack), and
-// Bing's/Google's first-pass crawl — see identical, generic homepage
-// content for every single URL today. That's a duplicate-content signal at
-// scale, and it costs render budget Google won't spend unlimited amounts of
-// on a new, low-authority domain.
-//
-// How: reads dist/index.html as the page shell, and for each URL swaps in
-// the per-page title/meta/canonical/OG tags (mirroring App.tsx's PAGE_META),
-// plus — for Bible chapters — injects the actual verse text as visible,
-// server-delivered HTML inside #root. React still mounts and takes over
-// normally on load; this only changes what's in the HTML before JS runs.
-//
-// Non-fatal: wrapped so a failure here never breaks `vite build`'s output —
-// worst case, this step no-ops and the site ships exactly as it did before.
-
-import fs from 'node:fs/promises';
-import path from 'node:path';
+// Writes real HTML for the homepage, every book, and all 1,189 chapters.
+// Titles, descriptions, canonicals, and BreadcrumbList markup are unique.
+// The sitemap lists only the pages this step wrote.
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { bookPath, bookToSlug, chapterPath } from '../services/routes.mjs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '..');
-const DIST = path.join(ROOT, 'dist');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const dist = join(root, 'dist');
+const origin = 'https://holybiblegpt.com';
 
-const bookToSlug = (name) => name.toLowerCase().replace(/\s+/g, '-');
-const escapeHtml = (s) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-// Mirror of App.tsx's PAGE_META — keep these two in sync if page copy changes there.
 const STATIC_PAGES = {
-  '/about':         ['About Holy Bible GPT – Scripture-First, Always Free', 'Learn how Holy Bible GPT works: a Scripture-first study tool that quotes the Word of God before everything else.'],
-  '/faq':           ['FAQ – Holy Bible GPT', 'Frequently asked questions about Holy Bible GPT, free AI Bible study, and how to use the Scripture study tools.'],
-  '/privacy':       ['Privacy Policy – Holy Bible GPT', 'How Holy Bible GPT uses Puter, the model provider, this browser, Vercel KV, Stripe, bible-api.com, and Vercel Analytics.'],
-  '/methodology':   ['How answers are made – Holy Bible GPT', 'Scripture is retrieved before an explanation. A quotation and an explanation are kept apart.'],
-  '/limitations':   ['Limits of the study aid – Holy Bible GPT', 'The study aid can be wrong. It is instructed to say when a claim is not established from Scripture.'],
-  '/copyrights':    ['Translation copyright – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered.'],
-  '/corrections':   ['Corrections – Holy Bible GPT', 'How to report a verse that does not match its label, or an answer that adds to the text.'],
-  '/terms':         ['Terms of Service – Holy Bible GPT', 'Terms of service for the Holy Bible GPT free Scripture study app.'],
-  '/contact':       ['Contact – Holy Bible GPT', 'Get in touch with the Holy Bible GPT team. Send feedback, report an issue, or ask a question.'],
-  '/instructions':  ['How to Use – Holy Bible GPT', 'A quick guide to getting the most out of Holy Bible GPT for daily Bible study.'],
-  '/disclaimer':    ['AI Disclaimer – Holy Bible GPT', 'Understanding the role and limits of AI in Holy Bible GPT.'],
-  '/translations':  ['About Bible Translations – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered, so the label always matches the text.'],
-  '/faith':         ['What We Believe – Holy Bible GPT', 'The faith foundation behind Holy Bible GPT and our commitment to Scripture as the final authority.'],
-  '/harmony':       ['Gospel Harmony – Holy Bible GPT', 'See parallel accounts of the life of Christ across Matthew, Mark, Luke, and John — side by side.'],
-  '/changelog':     ["What's New – Holy Bible GPT Changelog", 'Latest updates and new features added to Holy Bible GPT: search tools, offline KJV, prayer journal, and more.'],
+  '/about': ['About Holy Bible GPT – Scripture-First, Always Free', 'Learn how Holy Bible GPT works: a Scripture-first study tool. The Bible is the authority and the study aid is an assistant.'],
+  '/faq': ['FAQ – Holy Bible GPT', 'Questions about Holy Bible GPT, the public-domain Bible text, and the study aid.'],
+  '/privacy': ['Privacy Policy – Holy Bible GPT', 'How Holy Bible GPT uses Puter, the model provider, this browser, Vercel KV, Stripe, bible-api.com, and Vercel Analytics.'],
+  '/methodology': ['How answers are made – Holy Bible GPT', 'Scripture is retrieved before an explanation. A quotation and an explanation are kept apart.'],
+  '/limitations': ['Limits of the study aid – Holy Bible GPT', 'The study aid can be wrong. It is instructed to say when a claim is not established from Scripture.'],
+  '/copyrights': ['Translation copyright – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered.'],
+  '/corrections': ['Corrections – Holy Bible GPT', 'How to report a verse that does not match its label, or an answer that adds to the text.'],
+  '/terms': ['Terms of Service – Holy Bible GPT', 'Terms of service for the Holy Bible GPT Scripture study app.'],
+  '/contact': ['Contact – Holy Bible GPT', 'Send feedback, report a verse that does not match its label, or ask a question.'],
+  '/instructions': ['How to Use – Holy Bible GPT', 'A short guide to reading and studying with Holy Bible GPT.'],
+  '/disclaimer': ['AI Disclaimer – Holy Bible GPT', 'The study aid can be wrong. Scripture remains the authority.'],
+  '/translations': ['About Bible Translations – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered.'],
+  '/faith': ['What We Believe – Holy Bible GPT', 'The faith foundation behind Holy Bible GPT and the commitment to Scripture as the final authority.'],
+  '/harmony': ['Gospel Harmony – Holy Bible GPT', 'Parallel accounts of the life of Christ in Matthew, Mark, Luke, and John.'],
+  '/changelog': ["What's New – Holy Bible GPT Changelog", 'Recent updates to Holy Bible GPT.'],
 };
 
-function injectMeta(html, { title, desc, path: urlPath }) {
-  const canonicalUrl = `https://holybiblegpt.com${urlPath}`;
-  return html
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[c]));
+
+function breadcrumbJson(items) {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: `${origin}${item.path}`,
+    })),
+  });
+}
+
+function inject(html, { title, desc, path, crumbs }) {
+  const canonical = `${origin}${path === '/' ? '/' : path}`;
+  let next = html
     .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(title)}</title>`)
     .replace(/(<meta name="description" content=")[^"]*(")/, `$1${escapeHtml(desc)}$2`)
-    .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${canonicalUrl}$2`)
+    .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${canonical}$2`)
     .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escapeHtml(title)}$2`)
     .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escapeHtml(desc)}$2`)
-    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonicalUrl}$2`)
+    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
     .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escapeHtml(title)}$2`)
     .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escapeHtml(desc)}$2`);
+  const block = `<script type="application/ld+json" id="breadcrumb-jsonld">${breadcrumbJson(crumbs)}</script>`;
+  if (next.includes('id="breadcrumb-jsonld"')) {
+    next = next.replace(/<script type="application\/ld\+json" id="breadcrumb-jsonld">.*?<\/script>/, block);
+  } else {
+    next = next.replace('</head>', `${block}\n</head>`);
+  }
+  return next;
 }
 
-function injectRootContent(html, bodyHtml) {
-  return html.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`);
+function write(urlPath, html) {
+  const dir = urlPath === '/' ? dist : join(dist, urlPath.replace(/^\//, ''));
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'index.html'), html);
 }
 
-async function writePage(urlPath, html) {
-  const outDir = path.join(DIST, urlPath.replace(/^\//, ''));
-  await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(path.join(outDir, 'index.html'), html);
+function nav(links) {
+  return `<nav>${links.map((link) => `<a href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`).join(' · ')}</nav>`;
 }
 
-async function run() {
-  const shell = await fs.readFile(path.join(DIST, 'index.html'), 'utf8');
-  let count = 0;
-
-  // ── Static routes ──────────────────────────────────────────────────────
-  for (const [urlPath, [title, desc]] of Object.entries(STATIC_PAGES)) {
-    const html = injectMeta(shell, { title, desc, path: urlPath });
-    await writePage(urlPath, html);
-    count++;
-  }
-
-  // ── Bible chapters ──────────────────────────────────────────────────────
-  let chapters = [];
-  try {
-    const raw = await fs.readFile(path.join(ROOT, 'public', 'bible', 'kjv.json'), 'utf8');
-    chapters = JSON.parse(raw);
-  } catch (err) {
-    console.warn('[prerender] Could not read kjv.json, skipping Bible chapter prerendering:', err.message);
-  }
-
-  for (const { book, chapter, verses } of chapters) {
-    const slug = bookToSlug(book);
-    const urlPath = `/bible/${slug}/${chapter}`;
-    const title = `${book} ${chapter} – Bible Reading – Holy Bible GPT`;
-    const desc = `Read ${book} chapter ${chapter} in the King James Version (public domain). The English Standard Version is not offered on this page.`;
-
-    const verseHtml = verses
-      .map(v => `<p><strong>${v.number}</strong> ${escapeHtml(v.text)}</p>`)
-      .join('\n');
-    const bodyHtml = `<main><h1>${escapeHtml(book)} ${escapeHtml(chapter)}</h1><div>${verseHtml}</div></main>`;
-
-    let html = injectMeta(shell, { title, desc, path: urlPath });
-    html = injectRootContent(html, bodyHtml);
-    await writePage(urlPath, html);
-    count++;
-  }
-
-  console.log(`[prerender] Generated ${count} static pages (${Object.keys(STATIC_PAGES).length} static routes + ${chapters.length} Bible chapters).`);
-  if (chapters.length < 1189) {
-    console.warn(`[prerender] Only ${chapters.length}/1189 chapters were prerendered — kjv.json is incomplete this build. Will fill in more on the next deploy as ensure-kjv.mjs catches up.`);
-  }
+const shell = readFileSync(join(dist, 'index.html'), 'utf8');
+const chapters = JSON.parse(readFileSync(join(root, 'public/bible/kjv.json'), 'utf8'));
+if (chapters.length !== 1189) {
+  throw new Error(`Refusing to prerender ${chapters.length} chapters.`);
 }
 
-run().catch(err => {
-  console.warn('[prerender] Failed, but vite build output is untouched — site still works as a plain SPA:', err.message);
+const byBook = new Map();
+for (const chapter of chapters) {
+  if (!byBook.has(chapter.book)) byBook.set(chapter.book, []);
+  byBook.get(chapter.book).push(chapter);
+}
+
+const urls = [];
+const homeLinks = [...byBook.keys()].map((book) => `<a href="${bookPath(book)}">${escapeHtml(book)}</a>`).join(' ');
+const homeBody = `<main><h1>Holy Bible GPT</h1><p>Read the King James Version, public domain.</p><nav aria-label="Books of the Bible">${homeLinks}</nav></main>`;
+let home = inject(shell, {
+  title: 'Holy Bible GPT – Free Scripture-First Bible Study',
+  desc: 'Read every chapter of the King James Version. Scripture is the authority and the study aid is an assistant.',
+  path: '/',
+  crumbs: [{ name: 'Home', path: '/' }],
 });
+home = home.replace('<div id="root"></div>', `<div id="root">${homeBody}</div>`);
+write('/', home);
+urls.push('/');
+
+for (const [urlPath, [title, desc]] of Object.entries(STATIC_PAGES)) {
+  const html = inject(shell, {
+    title,
+    desc,
+    path: urlPath,
+    crumbs: [{ name: 'Home', path: '/' }, { name: title.split('–')[0].trim(), path: urlPath }],
+  });
+  write(urlPath, html);
+  urls.push(urlPath);
+}
+
+const bookNames = [...byBook.keys()];
+bookNames.forEach((book, bookIndex) => {
+  const list = byBook.get(book);
+  const chapterLinks = list.map((chapter) => `<a href="${chapterPath(book, chapter.chapter)}">${escapeHtml(book)} ${escapeHtml(chapter.chapter)}</a>`).join(' ');
+  const neighbors = [];
+  if (bookIndex > 0) neighbors.push({ href: bookPath(bookNames[bookIndex - 1]), label: bookNames[bookIndex - 1] });
+  neighbors.push({ href: '/', label: 'All books' });
+  if (bookIndex < bookNames.length - 1) neighbors.push({ href: bookPath(bookNames[bookIndex + 1]), label: bookNames[bookIndex + 1] });
+  const body = `<main><nav aria-label="Breadcrumb"><a href="/">Home</a> / <span>${escapeHtml(book)}</span></nav><h1>${escapeHtml(book)}</h1><p>King James Version, public domain. ${list.length} chapters.</p><nav aria-label="Chapters">${chapterLinks}</nav>${nav(neighbors)}</main>`;
+  let html = inject(shell, {
+    title: `${book} – King James Version – Holy Bible GPT`,
+    desc: `King James Version, public domain. ${book} has ${list.length} chapters on Holy Bible GPT.`,
+    path: bookPath(book),
+    crumbs: [{ name: 'Home', path: '/' }, { name: book, path: bookPath(book) }],
+  });
+  html = html.replace('<div id="root"></div>', `<div id="root">${body}</div>`);
+  write(bookPath(book), html);
+  urls.push(bookPath(book));
+
+  list.forEach((chapter, index) => {
+    const verses = chapter.verses.map((verse) => `<p><strong>${verse.number}</strong> ${escapeHtml(verse.text)}</p>`).join('\n');
+    const prev = index > 0
+      ? { href: chapterPath(book, list[index - 1].chapter), label: `Previous: ${book} ${list[index - 1].chapter}` }
+      : { href: bookPath(book), label: `${book} chapters` };
+    const next = index < list.length - 1
+      ? { href: chapterPath(book, list[index + 1].chapter), label: `Next: ${book} ${list[index + 1].chapter}` }
+      : { href: bookPath(book), label: `${book} chapters` };
+    const path = chapterPath(book, chapter.chapter);
+    const bodyHtml = `<main><nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="${bookPath(book)}">${escapeHtml(book)}</a> / <span>${escapeHtml(chapter.chapter)}</span></nav><h1>${escapeHtml(book)} ${escapeHtml(chapter.chapter)}</h1><p>King James Version, public domain.</p><article>${verses}</article>${nav([prev, { href: bookPath(book), label: 'All chapters' }, next])}</main>`;
+    let page = inject(shell, {
+      title: `${book} ${chapter.chapter} KJV – Holy Bible GPT`,
+      desc: `King James Version, public domain. ${book} ${chapter.chapter} has ${chapter.verses.length} verses on Holy Bible GPT.`,
+      path,
+      crumbs: [
+        { name: 'Home', path: '/' },
+        { name: book, path: bookPath(book) },
+        { name: `${book} ${chapter.chapter}`, path },
+      ],
+    });
+    page = page.replace('<div id="root"></div>', `<div id="root">${bodyHtml}</div>`);
+    write(path, page);
+    urls.push(path);
+  });
+});
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${
+  urls.map((url) => `  <url><loc>${origin}${url === '/' ? '/' : url}</loc></url>`).join('\n')
+}\n</urlset>\n`;
+writeFileSync(join(dist, 'sitemap.xml'), sitemap);
+writeFileSync(join(root, 'public/sitemap.xml'), sitemap);
+if (urls.length !== 1 + Object.keys(STATIC_PAGES).length + 66 + 1189) {
+  throw new Error(`Sitemap has ${urls.length} URLs, expected ${1 + Object.keys(STATIC_PAGES).length + 66 + 1189}.`);
+}
+console.log(`[prerender] Wrote ${urls.length} pages and a sitemap of the same URLs.`);

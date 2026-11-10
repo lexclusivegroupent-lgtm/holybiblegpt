@@ -1,42 +1,12 @@
+# This file is the site's crawler policy.
+# Cloudflare's managed robots.txt is prepended in production and can contradict
+# these groups. Turn that managed file off, or this Allow list will not be what
+# crawlers see. AI citation is allowed here. Training opt-out is the owner's
+# Cloudflare choice, not a second policy in this file.
+
 User-agent: *
 Allow: /
-
-# Keep the ESV proxy private (server-side only, not useful to crawl)
 Disallow: /api/
-
-# Keep generated assets out of the index (they're cache-busted anyway)
 Disallow: /assets/
-
-# ── AI crawlers — explicitly allowed ────────────────────────────────────
-# "Allow: /" above already covers these (no disallow applies to them
-# either), but naming them directly is the honest, explicit signal that
-# this content is meant to be read and cited by AI tools, not just
-# search engines.
-User-agent: GPTBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: CCBot
-Allow: /
-
-User-agent: Applebot-Extended
-Allow: /
 
 Sitemap: https://holybiblegpt.com/sitemap.xml

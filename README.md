@@ -1,73 +1,53 @@
-# Bible Study Buddy
+# Holy Bible GPT
 
-**Legacy project name:** Holy Bible GPT.
+Holy Bible GPT is a Scripture-first Bible study app. The Bible text is the authority. The study aid is an assistant. It does not replace a pastor, a church, or reading the passage yourself.
 
-Bible Study Buddy is a modernized Christian Bible study assistant that combines chat-based study, verse reflection workflows, devotionals, prayer notes, and saved verses in one clean app.
+The public site is [https://holybiblegpt.com](https://holybiblegpt.com).
 
-## Features
-- Bible Chat with suggested prompts and response states.
-- Verse Study workflow (explanation, context, application, prayer, related verses).
-- Devotional section (topic, verse, reflection, prayer, action step).
-- Prayer Notes (add/edit/delete with local persistence).
-- Saved Verses (save/remove with local persistence).
-- Core theological guardrails in `src/lib/bibleAssistantGuidelines.ts`.
+## What is in this repo
 
-## Tech Stack
-- React + TypeScript
-- Vite
-- Local storage persistence for notes/verses
+- A React and Vite reader for the King James Version and the World English Bible. The King James Version is committed in `public/bible/kjv.json` (public domain, 1,189 chapters). The build fails if that file is incomplete or a stored quotation does not match it.
+- Sign-in and the study aid use [Puter.js](https://js.puter.com/v2/) in the browser. There is no separate account system.
+- Chapter pages, book indexes, and the homepage are prerendered with the King James text, a title, a description, a canonical URL, and breadcrumb markup.
+- Vercel functions under `api/` cover billing, sync, and daily push. They run only on a host that deploys those functions. The Cloudflare Worker serves the site and the ESV proxy route.
+- The English Standard Version is not offered. Do not label King James text as ESV.
 
-## Local Setup
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Copy environment template:
-   ```bash
-   cp .env.example .env.local
-   ```
-3. Add your keys (if using external AI or billing endpoints).
-4. Start development server:
-   ```bash
-   npm run dev
-   ```
+## Local setup
 
-## Build
 ```bash
+npm install
+npm run dev
+```
+
+The dev server is Vite. Open the URL it prints.
+
+## Build and tests
+
+```bash
+npm test
 npm run build
 ```
 
-## Environment Variables
-- `GEMINI_API_KEY`: AI provider key (never hard-code keys).
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`: optional billing support.
-- See `.env.example` for the full list, including `CRON_SECRET` and Sentry.
+`npm test` checks the King James file and every stored quotation. `npm run build` runs those checks, then Vite, then prerender. Prerender writes `dist/` pages and `public/sitemap.xml`.
 
-## Observability and Sentry
+## Environment
 
-Workers Logs and traces are turned on in `wrangler.jsonc` (`observability.enabled`, plus logs and traces). They start on the next `wrangler deploy`. Nothing in this repo sends a Sentry DSN. Sentry stays off until these are set.
+Do not commit secrets.
 
-Create two Sentry projects (https://sentry.io):
+Billing variables, and the fact that this repo does not create Stripe products, are listed in `docs/billing.md` on the billing change. Until that file is on this branch, the names are `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `VITE_APP_URL`, and the Vercel KV tokens. The owner creates the Stripe price.
 
-1. Platform **Cloudflare Workers**, for the `holybiblegpt` Worker.
-2. Platform **React**, for the Vite app.
+`ESV_API_KEY` is a Cloudflare secret for the Worker proxy. Leave it unset until a Crossway license and the required copyright notice are in place.
 
-Then:
+Puter does not use a key in this repo.
 
-| Variable | Where | When it is read |
-|---|---|---|
-| `SENTRY_DSN` | Cloudflare secret: `npx wrangler secret put SENTRY_DSN` | Worker runtime. `wrangler secret put` deploys a new version. Do not put the DSN in `wrangler.jsonc`. |
-| `VITE_SENTRY_DSN` | Cloudflare Workers build variables, and the Vercel project if that copy should report too | `npm run build`. Vite inlines it into the browser bundle. Change it and rebuild. It is public in the shipped JavaScript. |
-| `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | The build environment, only if you want readable server/browser stack traces | Source map upload. Not required for errors to be captured. |
+Workers Logs and traces are on in `wrangler.jsonc`. Sentry stays off until `SENTRY_DSN` (Cloudflare secret) and `VITE_SENTRY_DSN` (build variable) are set. See `.env.example`. Do not put a DSN in `wrangler.jsonc`.
 
-Local Worker development can use `.dev.vars` (gitignored) with `SENTRY_DSN=`. Do not commit that file.
+## Hosts
 
-The SDKs are `@sentry/cloudflare` (wrapped with `Sentry.withSentry` in `src/worker.ts`) and `@sentry/react`. The browser SDK is a separate chunk and is downloaded only when `VITE_SENTRY_DSN` is non-empty at build time. Headers, cookies, user ids, request bodies, and query strings are not attached, so the ESV API key and the Puter session token are not copied into events. Sentry traces are sampled at 5%. Workers traces in `wrangler.jsonc` are sampled at 1%. Worker logs are not sampled down.
+Canonical URLs have no trailing slash and use `https://holybiblegpt.com`. `holy-bible-gpt-new.vercel.app` redirects to that host in `vercel.json`. Other `*.vercel.app` hosts are sent there by `public/canonical-host.js`, which also marks `*.workers.dev` as `noindex`.
 
-To confirm after deploy: set the DSNs, deploy, load the site, and trigger a test error in a non-production way only if you are comfortable sending it. This repo does not include a public debug route.
+The Worker asset setting `html_handling: "drop-trailing-slash"` is a separate change so it can land after the asset-binding fix. Until that setting is deployed, Cloudflare may redirect `/about` to `/about/`.
 
-## Google Play Store Notes
-This repository is currently a **web Vite app**, not an Expo/React Native project. No Android manifest, Gradle, or Play-specific package files were found in this repo. For Play Store deployment, create a mobile client (Expo recommended) that consumes the same backend/API contracts and reuses this app’s brand/design/theology guardrails.
+## Not in this repo
 
-## Branding
-- Public brand: **Bible Study Buddy**
-- Historical/internal legacy reference: **Holy Bible GPT**
+This is not an Android or iOS project. There is no Gemini key.

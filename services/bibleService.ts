@@ -131,9 +131,38 @@ const fetchESV = async (book: string, chapter: string): Promise<VerseData[]> => 
 
 // ── KJV Fetch (public domain via bible-api.com) ────────────────────────────────
 
+let kjvIndex: Promise<Map<string, VerseData[]>> | null = null;
+
+const loadKjvIndex = (): Promise<Map<string, VerseData[]>> => {
+  if (!kjvIndex) {
+    kjvIndex = fetch('/bible/kjv.json')
+      .then((res) => {
+        if (!res.ok) throw new Error('Local KJV file missing');
+        return res.json();
+      })
+      .then((rows: Array<{ book: string; chapter: string; verses: VerseData[] }>) => {
+        const map = new Map<string, VerseData[]>();
+        for (const row of rows) map.set(`${row.book}|${row.chapter}`, row.verses);
+        return map;
+      })
+      .catch((err) => {
+        kjvIndex = null;
+        throw err;
+      });
+  }
+  return kjvIndex;
+};
+
 const fetchKJV = async (book: string, chapter: string): Promise<VerseData[]> => {
+  const canonical = book === 'Psalm' ? 'Psalms' : book;
+  try {
+    const local = (await loadKjvIndex()).get(`${canonical}|${chapter}`);
+    if (local?.length) return local;
+  } catch {
+    // bible-api.com remains the fallback when the local file cannot be read.
+  }
   const data = await fetchWithRetry(
-    `https://bible-api.com/${encodeURIComponent(book)}%20${chapter}?translation=kjv`
+    `https://bible-api.com/${encodeURIComponent(canonical)}%20${chapter}?translation=kjv`
   );
   if (!data.verses?.length) throw new Error('No KJV verses returned');
   return data.verses.map((v: any) => ({ number: v.verse, text: v.text.trim() }));

@@ -28,6 +28,20 @@
             ]
         }
     ],
+    "redirects": [
+        {
+            "source": "/",
+            "has": [{ "type": "host", "value": "holy-bible-gpt-new.vercel.app" }],
+            "destination": "https://holybiblegpt.com/",
+            "permanent": true
+        },
+        {
+            "source": "/:path*",
+            "has": [{ "type": "host", "value": "holy-bible-gpt-new.vercel.app" }],
+            "destination": "https://holybiblegpt.com/:path*",
+            "permanent": true
+        }
+    ],
     "rewrites": [
         {
             "source": "/(.*)",

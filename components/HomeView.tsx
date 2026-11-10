@@ -4,9 +4,11 @@ import { VERSE_OF_THE_DAY } from '../data/verseOfTheDay.mjs';
 import { storage } from '../services/storageService';
 import { Translation, AppTab } from '../types';
 import { generateStoryCard, shareOrDownloadCard } from '../services/shareImageService';
+import BibleBookLinks from './BibleBookLinks';
 
 interface HomeViewProps {
   onOpenPassage: (book: string, chapter: string, verse?: string) => void;
+  onOpenBook: (book: string) => void;
   onTabChange: (tab: AppTab) => void;
   translation: Translation;
 }
@@ -18,7 +20,7 @@ const parseVerseRef = (ref: string) => {
   return { book: match[1].trim(), chapter: match[2], verse: match[3] };
 };
 
-const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, translation }) => {
+const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onOpenBook, onTabChange, translation }) => {
   const settings = storage.getSettings();
   const today = new Date().toLocaleDateString();
   const [completed, setCompleted] = useState(storage.getProgress().includes(today));
@@ -71,7 +73,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5">
         <div className="space-y-1">
-          <h1 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest leading-none">My Walk</h1>
+          <h1 className="accent-font text-2xl font-bold gold-gradient-text uppercase tracking-widest leading-none">Holy Bible GPT</h1>
           <p className="text-[10px] text-stone-600 uppercase tracking-[0.3em]">Daily Discipleship · Holy Bible GPT</p>
         </div>
         <div className="flex items-center gap-3">
@@ -144,6 +146,8 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onTabChange, transla
         </div>
         <span className="text-2xl text-stone-700 group-hover:text-[#D4AF37] group-hover:translate-x-2 transition-all shrink-0">→</span>
       </button>
+
+      <BibleBookLinks onOpenBook={onOpenBook} />
 
       {/* Quick Access Grid */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">

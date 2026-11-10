@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Translation, AppTab } from '../types';
+import { TAB_ROUTES } from '../services/routes.mjs';
 
 interface SideDrawerProps {
   isOpen: boolean;
@@ -45,9 +46,13 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
   ];
 
   const renderLink = (link: { id: AppTab; label: string; icon: string }) => (
-    <button
+    <a
       key={link.id}
-      onClick={() => onTabChange(link.id)}
+      href={link.id === 'read' ? '/bible/genesis/1' : (TAB_ROUTES[link.id] ?? '/')}
+      onClick={(event) => {
+        event.preventDefault();
+        onTabChange(link.id);
+      }}
       className={`w-full flex items-center gap-4 px-4 min-h-[48px] rounded-xl text-left transition-all group ${activeTab === link.id
           ? 'bg-[#D4AF37] text-black shadow-lg scale-[1.02]'
           : 'text-stone-400 hover:bg-white/5 hover:text-stone-100'
@@ -55,7 +60,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     >
       <span className="text-lg shrink-0" aria-hidden="true">{link.icon}</span>
       <span className="text-[10px] font-bold uppercase tracking-[0.15em]">{link.label}</span>
-    </button>
+    </a>
   );
 
   return (
