@@ -199,7 +199,11 @@ test('checkout uses the verified account, and the webhook grants Pro once', asyn
   assert.match(stripeCalls[0].init.body, /metadata%5BuserId%5D=alice/);
   assert.match(stripeCalls[0].init.body, /price_placeholder/);
   assert.match(stripeCalls[0].init.body, /metadata%5Binterval%5D=month/);
+  assert.match(stripeCalls[0].init.body, /automatic_tax%5Benabled%5D=true/);
+  assert.match(stripeCalls[0].init.body, /billing_address_collection=required/);
   assert.doesNotMatch(stripeCalls[0].init.body, /payment_method_types/);
+  assert.doesNotMatch(stripeCalls[0].init.body, /tax_behavior=inclusive/);
+  assert.doesNotMatch(stripeCalls[0].init.body, /customer_update/);
   assert.equal(stripeCalls[0].init.headers.Authorization, 'Bearer sk_test_placeholder');
 
   const raw = JSON.stringify({
@@ -316,6 +320,7 @@ test('month and year checkouts use their prices, and both webhooks grant Plus', 
   ));
   assert.equal(month.status, 200);
   assert.match(calls[0], /price_month/);
+  assert.match(calls[0], /automatic_tax%5Benabled%5D=true/);
   assert.doesNotMatch(calls[0], /price_legacy/);
 
   const year = await read(await handleApi(
@@ -329,6 +334,8 @@ test('month and year checkouts use their prices, and both webhooks grant Plus', 
   ));
   assert.equal(year.status, 200);
   assert.match(calls[1], /price_year/);
+  assert.match(calls[1], /automatic_tax%5Benabled%5D=true/);
+  assert.match(calls[1], /billing_address_collection=required/);
 
   const missing = await read(await handleApi(
     request('/api/create-checkout-session', {

@@ -81,6 +81,11 @@ async function createCheckoutSession(env, config, userId, priceId, interval, fet
       ['metadata[userId]', userId],
       ['metadata[interval]', interval],
       ['allow_promotion_codes', 'true'],
+      // Prices stay tax-exclusive on the Stripe Price. Checkout adds tax on top.
+      // No customer is sent, so customer_update is omitted (Stripe rejects it
+      // unless a customer id is present).
+      ['automatic_tax[enabled]', 'true'],
+      ['billing_address_collection', 'required'],
     ]),
   });
 }
