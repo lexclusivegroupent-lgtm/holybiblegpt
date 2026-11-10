@@ -2,6 +2,14 @@
 import { GLOBAL_BEHAVIOR, MODE_PROMPTS, MODE_LABELS } from "../constants";
 import { AppMode, Translation } from "../types";
 import { groundUserMessage } from "./bibleService";
+import {
+  classifySignInError,
+  clearReturnPath,
+  currentLocationPath,
+  notifyAuthChanged,
+  readReturnPath,
+  rememberReturnPath,
+} from "./authSession";
 
 declare global {
   interface Window {
@@ -92,10 +100,43 @@ export const getPuterAuthToken = async (): Promise<string | null> => {
   }
 };
 
-// Explicitly trigger the Puter sign-in popup
+// One call opens Puter's sign-in and sign-up. The page stays put. If the
+// provider sends the browser away and back, the saved path is restored on load.
 export const signIntoPuter = async (): Promise<void> => {
-  const puter = await waitForPuter();
-  await puter.auth.signIn();
+  try {
+    rememberReturnPath(currentLocationPath(), sessionStorage);
+  } catch {
+    // Storage can be blocked. Sign-in still opens on this page.
+  }
+
+  try {
+    const puter = await waitForPuter();
+    await puter.auth.signIn();
+    if (!puter.auth.isSignedIn?.()) {
+      try { clearReturnPath(sessionStorage); } catch { /* ignore */ }
+      throw new Error('Sign-in did not finish. You can try again whenever you like.');
+    }
+
+    let saved: string | null = null;
+    let here = '';
+    try {
+      here = currentLocationPath();
+      saved = readReturnPath(sessionStorage);
+      clearReturnPath(sessionStorage);
+    } catch {
+      saved = null;
+    }
+    notifyAuthChanged();
+    if (saved && saved !== here) {
+      window.location.assign(saved);
+    }
+  } catch (error) {
+    try { clearReturnPath(sessionStorage); } catch { /* ignore */ }
+    if (error instanceof Error && error.message.startsWith('Sign-in did not finish')) {
+      throw error;
+    }
+    throw new Error(classifySignInError(error).message);
+  }
 };
 
 // Returns true if the error message suggests the user needs to sign in
@@ -131,11 +172,11 @@ const classifyError = (error: any): string => {
     raw.includes('login') || raw.includes('not logged') || raw.includes('unauthenticated') ||
     raw.includes('unauthorized') || raw.includes('authentication')
   ) {
-    return 'Please sign in to Puter to use the free AI — tap "Sign In to Puter" above and allow the pop-up.';
+    return 'The study helper needs a free account for that question. Use Sign in in the header, and allow the pop-up if the browser asks.';
   }
 
   if (raw.includes('popup') || raw.includes('pop-up') || raw.includes('window was blocked')) {
-    return 'The sign-in pop-up was blocked. Allow pop-ups for this site, then tap "Sign In to Puter" again.';
+    return 'The sign-in window was blocked. Allow pop-ups for this site, then try Sign in again.';
   }
 
   if (raw.includes('rate') || raw.includes('limit') || raw.includes('quota') ||

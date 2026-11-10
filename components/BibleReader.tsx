@@ -6,6 +6,8 @@ import { HISTORICAL_INTRODUCTIONS } from '../constants';
 import { storage } from '../services/storageService';
 import CrossReferencePanel from './CrossReferencePanel';
 import { ShareCardDialog, ShareCardRequest } from './ShareCardDialog';
+import { useAuth } from './AuthProvider';
+import SaveAcrossDevicesNote from './SaveAcrossDevicesNote';
 
 interface BibleReaderProps {
   state: ReaderState;
@@ -42,6 +44,8 @@ const BibleReader: React.FC<BibleReaderProps> = ({
   const [shareRequest, setShareRequest] = useState<ShareCardRequest | null>(null);
   const [cardBusy, setCardBusy] = useState(false);
   const [cardNotice, setCardNotice] = useState('');
+  const [savePrompt, setSavePrompt] = useState(false);
+  const auth = useAuth();
 
   const settings = storage.getSettings();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -82,6 +86,17 @@ const BibleReader: React.FC<BibleReaderProps> = ({
     setSelectedVerse(null);
     setShowNoteInput(false);
     setNoteInput('');
+    setSavePrompt(false);
+    auth.clearError();
+  };
+
+  const finishLocalSave = () => {
+    if (auth.status === 'signed-in') {
+      closeVerseMenu();
+      return;
+    }
+    setShowNoteInput(false);
+    setSavePrompt(true);
   };
 
   const handleVerseClick = (num: number) => {
@@ -91,6 +106,8 @@ const BibleReader: React.FC<BibleReaderProps> = ({
       setSelectedVerse(num);
       setShowNoteInput(false);
       setNoteInput('');
+      setSavePrompt(false);
+      auth.clearError();
       storage.saveLastRead(state.book, state.chapter, num);
     }
   };
@@ -100,7 +117,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
     const h: Highlight = { book: state.book, chapter: state.chapter, verse: selectedVerse, color, timestamp: Date.now() };
     storage.addHighlight(h);
     setHighlights(storage.getHighlights());
-    closeVerseMenu();
+    finishLocalSave();
   };
 
   const handleShareCard = async () => {
@@ -132,6 +149,8 @@ const BibleReader: React.FC<BibleReaderProps> = ({
   const saveNote = () => {
     if (selectedVerse && noteInput.trim()) {
       storage.saveNote(`${state.book}-${state.chapter}-${selectedVerse}`, noteInput.trim());
+      finishLocalSave();
+      return;
     }
     closeVerseMenu();
   };
@@ -387,7 +406,25 @@ const BibleReader: React.FC<BibleReaderProps> = ({
 
             {/* Scrollable body */}
             <div className="overflow-y-auto flex-1 px-5 pb-5">
-            {showNoteInput ? (
+            {savePrompt ? (
+              <div className="pt-5 space-y-4">
+                <p className="text-sm text-stone-200">Saved on this device.</p>
+                <SaveAcrossDevicesNote
+                  onSignIn={() => {
+                    auth.signIn().then((ok) => { if (ok) closeVerseMenu(); });
+                  }}
+                  busy={auth.signingIn}
+                  error={auth.error}
+                />
+                <button
+                  type="button"
+                  onClick={closeVerseMenu}
+                  className="w-full min-h-[44px] border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-white"
+                >
+                  Keep reading
+                </button>
+              </div>
+            ) : showNoteInput ? (
               <div className="space-y-3 pt-5">
                 <textarea
                   autoFocus
@@ -429,7 +466,7 @@ const BibleReader: React.FC<BibleReaderProps> = ({
                       icon: '🔖', label: 'Bookmark',
                       action: () => {
                         storage.addBookmark({ book: state.book, chapter: state.chapter, verse: selectedVerse!, timestamp: Date.now() });
-                        closeVerseMenu();
+                        finishLocalSave();
                       }
                     },
                     {

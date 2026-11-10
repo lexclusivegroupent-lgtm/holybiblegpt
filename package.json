@@ -12,7 +12,8 @@
     "test:worker-assets": "node --test tests/worker-assets.test.mjs",
     "test:observability": "node --experimental-strip-types --test tests/observability.test.mjs",
     "test:api-auth": "node --experimental-strip-types --test tests/api-auth.test.mjs tests/usage-gate.test.mjs",
-    "test": "node --experimental-strip-types --test tests/observability.test.mjs tests/api-auth.test.mjs tests/usage-gate.test.mjs && node --test tests/worker-api.test.mjs tests/worker-push-billing.test.mjs tests/worker-assets.test.mjs services/scriptureGrounding.test.mjs services/scriptureSearch.test.mjs services/shareCard.test.mjs scripts/verify-verses.mjs services/billingAvailability.test.mjs scripts/privacy-copy.test.mjs scripts/hardening.test.mjs && node scripts/verify-kjv.mjs && node scripts/verify-quotes.mjs"
+    "test:e2e": "playwright test",
+    "test": "node --experimental-strip-types --test tests/observability.test.mjs tests/api-auth.test.mjs tests/usage-gate.test.mjs services/authSession.test.mjs && node --test tests/worker-api.test.mjs tests/worker-push-billing.test.mjs tests/worker-assets.test.mjs services/scriptureGrounding.test.mjs services/scriptureSearch.test.mjs services/shareCard.test.mjs scripts/verify-verses.mjs services/billingAvailability.test.mjs scripts/privacy-copy.test.mjs scripts/hardening.test.mjs && node scripts/verify-kjv.mjs && node scripts/verify-quotes.mjs && playwright test"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",
@@ -29,13 +30,14 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
-    "vercel": "^50.1.3",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
+    "vercel": "^50.1.3",
     "vite": "^6.2.0",
     "wrangler": "^4.160.0"
   }
