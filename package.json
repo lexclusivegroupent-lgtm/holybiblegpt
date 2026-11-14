@@ -13,7 +13,7 @@
     "test:observability": "node --experimental-strip-types --test tests/observability.test.mjs",
     "test:api-auth": "node --experimental-strip-types --test tests/api-auth.test.mjs tests/usage-gate.test.mjs",
     "test:e2e": "playwright test",
-    "test": "node --experimental-strip-types --test tests/observability.test.mjs tests/api-auth.test.mjs tests/usage-gate.test.mjs services/authSession.test.mjs && node --test tests/worker-api.test.mjs tests/worker-push-billing.test.mjs tests/worker-assets.test.mjs services/scriptureGrounding.test.mjs services/scriptureSearch.test.mjs services/shareCard.test.mjs scripts/verify-verses.mjs services/billingAvailability.test.mjs scripts/privacy-copy.test.mjs scripts/hardening.test.mjs && node scripts/verify-kjv.mjs && node scripts/verify-quotes.mjs && playwright test"
+    "test": "node --experimental-strip-types --test tests/observability.test.mjs tests/api-auth.test.mjs tests/usage-gate.test.mjs services/authSession.test.mjs && node --test tests/worker-api.test.mjs tests/worker-push-billing.test.mjs tests/worker-assets.test.mjs tests/journal-delivery.test.mjs services/scriptureGrounding.test.mjs services/scriptureSearch.test.mjs services/shareCard.test.mjs scripts/verify-verses.mjs services/billingAvailability.test.mjs scripts/privacy-copy.test.mjs scripts/hardening.test.mjs && node scripts/verify-kjv.mjs && node scripts/verify-quotes.mjs && playwright test"
   },
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",

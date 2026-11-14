@@ -17,7 +17,10 @@ import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
  *     → Puter-verified account routes. Storage is D1 (binding DB).
  *       Until that binding exists, these routes still return JSON.
  *   /api/create-checkout-session, /api/create-portal-session, /api/stripe-webhook
- *     → Billing. Disabled until the Stripe secrets below are set.
+ *     → Plus billing. Disabled until the Stripe secrets below are set.
+ *   /api/journal/offer, /api/journal/checkout, /api/journal/session, /api/journal/file
+ *     → Optional journal. Closed until STRIPE_JOURNAL_PRICE_ID, a download
+ *       secret, and the private journal files are set. See docs/journal.md.
  *   /api/push-subscribe, /api/push-unsubscribe, /api/push-send-daily
  *     → Daily verse push. Disabled until VAPID keys are set.
  *       A cron trigger also calls the daily send. It does not use CRON_SECRET.
@@ -45,6 +48,22 @@ interface Env {
   STRIPE_PRICE_ID?: string;
   // wrangler secret put STRIPE_WEBHOOK_SECRET
   STRIPE_WEBHOOK_SECRET?: string;
+  // wrangler secret put STRIPE_JOURNAL_PRICE_ID
+  // One-time journal price. Missing keeps the buy button hidden.
+  STRIPE_JOURNAL_PRICE_ID?: string;
+  // Set to "true" in production so journal Checkout uses automatic tax.
+  // Unset leaves tax off. See docs/journal.md.
+  STRIPE_JOURNAL_TAX_ENABLED?: string;
+  // Unset means the offer is enabled. "false" hides checkout.
+  JOURNAL_OFFER_ENABLED?: string;
+  // wrangler secret put JOURNAL_DOWNLOAD_SECRET
+  // At least 32 characters. Signs short-lived download links.
+  JOURNAL_DOWNLOAD_SECRET?: string;
+  // Private R2 bucket. Absent keeps checkout closed.
+  JOURNAL_FILES?: {
+    head(key: string): Promise<unknown>;
+    get(key: string): Promise<{ bytes?: Uint8Array; arrayBuffer(): Promise<ArrayBuffer> } | null>;
+  };
   // Public Payment Link. Set in wrangler.jsonc vars, not a secret.
   GIFT_URL?: string;
   // wrangler secret put VAPID_PUBLIC_KEY

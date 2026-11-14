@@ -68,6 +68,9 @@ self.addEventListener('notificationclick', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
+  // Paid journal files and other API responses must not enter the app cache.
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) return;
+
   // The page shell ('/' and '/index.html') references content-hashed JS/CSS
   // filenames that change on every deploy. Serving it stale-first (as the
   // old strategy below did for everything) meant a returning visitor could

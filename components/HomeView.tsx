@@ -5,6 +5,7 @@ import { storage } from '../services/storageService';
 import { sentenceContinues } from '../services/shareCard/completeThought.mjs';
 import { Translation, AppTab } from '../types';
 import BibleBookLinks from './BibleBookLinks';
+import JournalPromo from './JournalPromo';
 import { ShareCardDialog, ShareCardRequest } from './ShareCardDialog';
 
 interface HomeViewProps {
@@ -173,6 +174,8 @@ const HomeView: React.FC<HomeViewProps> = ({ onOpenPassage, onOpenBook, onTabCha
         </div>
         <span className="text-2xl text-stone-700 group-hover:text-[#D4AF37] group-hover:translate-x-2 transition-all shrink-0">→</span>
       </button>
+
+      <JournalPromo onOpen={() => onTabChange('journal')} />
 
       <BibleBookLinks onOpenBook={onOpenBook} />
 
