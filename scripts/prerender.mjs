@@ -26,6 +26,7 @@ const STATIC_PAGES = {
   '/faith': ['What We Believe – Holy Bible GPT', 'The faith foundation behind Holy Bible GPT and the commitment to Scripture as the final authority.'],
   '/harmony': ['Gospel Harmony – Holy Bible GPT', 'Parallel accounts of the life of Christ in Matthew, Mark, Luke, and John.'],
   '/changelog': ["What's New – Holy Bible GPT Changelog", 'Recent updates to Holy Bible GPT.'],
+  '/journal': ['30 Days in the Word – Holy Bible GPT', 'Optional $9 printable KJV study journal from The Christian\'s Deck. Reading, search, and AI study on Holy Bible GPT stay free.'],
 };
 
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ({

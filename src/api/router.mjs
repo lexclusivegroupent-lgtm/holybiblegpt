@@ -1,4 +1,5 @@
 import { handleBillingApi } from './billing.mjs';
+import { handleJournalApi } from './journal.mjs';
 import { handlePushApi } from './push.mjs';
 import { handleUserApi } from './userRoutes.mjs';
 
@@ -8,5 +9,6 @@ import { handleUserApi } from './userRoutes.mjs';
 export async function handleApi(request, env, deps = {}) {
   return await handleUserApi(request, env, deps)
     ?? await handleBillingApi(request, env, deps)
+    ?? await handleJournalApi(request, env, deps)
     ?? await handlePushApi(request, env, deps);
 }

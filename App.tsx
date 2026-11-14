@@ -44,6 +44,7 @@ const MethodologyView = lazy(() => import('./components/MethodologyView'));
 const LimitationsView = lazy(() => import('./components/LimitationsView'));
 const CopyrightView = lazy(() => import('./components/CopyrightView'));
 const CorrectionsView = lazy(() => import('./components/CorrectionsView'));
+const JournalView = lazy(() => import('./components/JournalView'));
 
 import { Translation, ReaderState, PassageLink, AppMode, AppTab } from './types';
 import { storage } from './services/storageService';
@@ -88,6 +89,7 @@ const TAB_ROUTES: Partial<Record<AppTab, string>> = {
   limitations: '/limitations',
   copyrights: '/copyrights',
   corrections: '/corrections',
+  journal: '/journal',
 };
 const ROUTE_TO_TAB: Record<string, AppTab> = Object.fromEntries(
   Object.entries(TAB_ROUTES).map(([k, v]) => [v, k as AppTab])
@@ -119,6 +121,7 @@ const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
   limitations:  ['Limits of the study aid – Holy Bible GPT', 'The study aid can be wrong. It is instructed to say when a claim is not established from Scripture.'],
   copyrights:   ['Translation copyright – Holy Bible GPT', 'The King James Version and the World English Bible are public domain. The English Standard Version is not offered.'],
   corrections:  ['Corrections – Holy Bible GPT', 'How to report a verse that does not match its label, or an answer that adds to the text.'],
+  journal:      ['30 Days in the Word – Holy Bible GPT', 'Optional $9 printable KJV study journal from The Christian\'s Deck. Reading, search, and AI study on Holy Bible GPT stay free.'],
 };
 
 function readInitialRoute(): { tab: AppTab; book: string; chapter: string } {
@@ -357,6 +360,7 @@ const App: React.FC = () => {
       case 'limitations': return <LimitationsView />;
       case 'copyrights': return <CopyrightView />;
       case 'corrections': return <CorrectionsView />;
+      case 'journal': return <JournalView />;
       default: return <NotFoundView onGoHome={() => setActiveTab('home')} />;
     }
   };

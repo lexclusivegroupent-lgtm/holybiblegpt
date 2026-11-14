@@ -12,6 +12,10 @@ holybiblegpt.com is the Worker `holybiblegpt`. Sync and the usage counter run in
 | `/api/increment-usage` | POST | Same. Always `allowed: true` after auth. Never a question cap. |
 | `/api/create-checkout-session` | GET | No auth. `{ checkout, portal, intervals }`. `checkout` stays false until Stripe and D1 are ready. `giftUrl` only when `GIFT_URL` is set. |
 | `/api/create-checkout-session` | POST | Puter bearer token. Body `{ userId, interval }` with `interval` `month` or `year`. |
+| `/api/journal/offer` | GET | No auth. `{ enabled, checkout }`. `checkout` stays false until the journal price, download secret, and private files exist. |
+| `/api/journal/checkout` | POST | No Puter token. Opens a one-time Checkout Session when the offer is on. |
+| `/api/journal/session` | GET | `session_id`. Verifies `payment_status` before any download link. |
+| `/api/journal/file` | GET | Short-lived token. Streams a private journal file only after a paid session check. |
 | `/api/create-portal-session` | POST | Puter bearer token. Opens the billing portal. |
 | `/api/stripe-webhook` | POST | Stripe signature. No Puter token. Grants Plus for monthly and yearly subscriptions. |
 | `/api/push-subscribe` | POST | Browser push subscription. No Puter token. |
@@ -38,7 +42,7 @@ npx wrangler secret put STRIPE_PRICE_ID
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
 ```
 
-`STRIPE_PRICE_ID` is the monthly fallback when `STRIPE_PRICE_ID_MONTHLY` is unset. `GIFT_URL` is a public var in `wrangler.jsonc`, not a secret. Details are in `docs/billing.md`.
+`STRIPE_PRICE_ID` is the monthly fallback when `STRIPE_PRICE_ID_MONTHLY` is unset. `GIFT_URL` is a public var in `wrangler.jsonc`, not a secret. Details are in `docs/billing.md`. The journal is separate. Its price, tax flag, download secret, and private files are in `docs/journal.md`.
 
 Point the Stripe webhook at `https://holybiblegpt.com/api/stripe-webhook`. Subscribe it to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`. Details are in `docs/billing.md`.
 
