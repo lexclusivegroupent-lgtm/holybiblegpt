@@ -59,10 +59,10 @@ interface Env {
   // wrangler secret put JOURNAL_DOWNLOAD_SECRET
   // At least 32 characters. Signs short-lived download links.
   JOURNAL_DOWNLOAD_SECRET?: string;
-  // Private R2 bucket. Absent keeps checkout closed.
+  // Private Workers KV namespace holding the paid files. Absent keeps checkout closed.
   JOURNAL_FILES?: {
-    head(key: string): Promise<unknown>;
-    get(key: string): Promise<{ bytes?: Uint8Array; arrayBuffer(): Promise<ArrayBuffer> } | null>;
+    list(options?: { prefix?: string }): Promise<{ keys: { name: string }[] }>;
+    get(key: string, options: { type: 'arrayBuffer' }): Promise<ArrayBuffer | null>;
   };
   // Public Payment Link. Set in wrangler.jsonc vars, not a secret.
   GIFT_URL?: string;

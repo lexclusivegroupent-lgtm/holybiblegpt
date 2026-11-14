@@ -67,6 +67,15 @@
       "database_id": "57f368b2-1ece-47f3-9838-896ddbd5eabe",
       "migrations_dir": "migrations"
     }
+  ],
+  // Private store for the paid journal files (see docs/journal.md). R2 is not
+  // enabled on this account, so the files live in Workers KV. They are only
+  // served by /api/journal/file after Stripe confirms the payment.
+  "kv_namespaces": [
+    {
+      "binding": "JOURNAL_FILES",
+      "id": "df230d3dda794bdca2cfb95d9e4db992"
+    }
   ]
   // To enable ESV, add the API key as a Cloudflare secret:
   //   wrangler secret put ESV_API_KEY

@@ -48,31 +48,31 @@ async function stripeRequest(env, path, { method, body, fetchImpl }) {
 
 async function availableFileIds(env, deps) {
   if (Array.isArray(deps.availableIds)) return deps.availableIds;
-  const bucket = env?.JOURNAL_FILES;
-  if (!bucket || typeof bucket.head !== 'function') return [];
-  const found = [];
-  for (const id of Object.keys(JOURNAL_OBJECTS)) {
-    try {
-      const head = await bucket.head(JOURNAL_OBJECTS[id].key);
-      if (head) found.push(id);
-    } catch {
-      // A missing object is not an outage. Checkout stays closed.
-    }
+  // JOURNAL_FILES is a private Workers KV namespace. R2 is not enabled on
+  // this Cloudflare account. One list call finds which files are uploaded.
+  const store = env?.JOURNAL_FILES;
+  if (!store || typeof store.list !== 'function') return [];
+  try {
+    const listed = await store.list({ prefix: 'private/' });
+    const names = new Set((listed?.keys || []).map((k) => k?.name).filter(Boolean));
+    return Object.keys(JOURNAL_OBJECTS).filter((id) => names.has(JOURNAL_OBJECTS[id].key));
+  } catch {
+    // A failed lookup is not an outage. Checkout stays closed.
+    return [];
   }
-  return found;
 }
 
 async function readObjectBytes(env, deps, fileId) {
   const spec = JOURNAL_OBJECTS[fileId];
   if (!spec) return null;
   if (typeof deps.readObject === 'function') return deps.readObject(spec.key);
-  const bucket = env?.JOURNAL_FILES;
-  if (!bucket || typeof bucket.get !== 'function') return null;
+  const store = env?.JOURNAL_FILES;
+  if (!store || typeof store.get !== 'function') return null;
   try {
-    const object = await bucket.get(spec.key);
-    if (!object) return null;
-    if (object.bytes instanceof Uint8Array) return object.bytes;
-    if (typeof object.arrayBuffer === 'function') return new Uint8Array(await object.arrayBuffer());
+    const value = await store.get(spec.key, { type: 'arrayBuffer' });
+    if (!value) return null;
+    if (value instanceof Uint8Array) return value;
+    if (value instanceof ArrayBuffer) return new Uint8Array(value);
     return null;
   } catch {
     return null;

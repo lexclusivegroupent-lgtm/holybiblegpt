@@ -6,7 +6,7 @@ import { JOURNAL_SESSION_RE } from './journalOffer.mjs';
 export const JOURNAL_PRODUCT = 'journal';
 export const DOWNLOAD_TTL_SECONDS = 15 * 60;
 
-// Private R2 object keys. Not public URLs. Checkout stays closed until
+// Private Workers KV keys. Not public URLs. Checkout stays closed until
 // the zip is present, or both PDFs are present.
 export const JOURNAL_OBJECTS = {
   zip: {

@@ -28,13 +28,16 @@ function bucket(ids, custom) {
     const bytes = custom?.get(id) ?? (id === 'zip' ? zipBytes() : pdfBytes());
     map.set(JOURNAL_OBJECTS[id].key, bytes);
   }
+  // Mirrors the Workers KV API: list({ prefix }) and get(key, { type: 'arrayBuffer' }).
   return {
-    async head(key) {
-      return map.has(key) ? { key } : null;
+    async list({ prefix = '' } = {}) {
+      return { keys: [...map.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name })), list_complete: true };
     },
-    async get(key) {
+    async get(key, options) {
       const bytes = map.get(key);
-      return bytes ? { bytes } : null;
+      if (!bytes) return null;
+      assert.equal(options?.type, 'arrayBuffer');
+      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     },
   };
 }
