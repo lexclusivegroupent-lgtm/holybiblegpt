@@ -8,7 +8,7 @@ const LimitationsView: React.FC = () => {
       </header>
       <section className="glass-dark border border-white/5 p-8 rounded-[2rem] space-y-4">
         <p>The study aid can be wrong. It can miss a passage, flatten a disagreement, or sound more certain than the text is.</p>
-        <p>It is instructed to quote only text that was retrieved for that question, and to say "I cannot establish that from Scripture" when the retrieved text does not support the claim. It is also instructed not to invent a Hebrew or Greek word or a historical source. Those are instructions, not a guarantee. Nothing in the browser checks the finished paragraph against the text.</p>
+        <p>It is instructed to quote only text that was retrieved for that question, and to say "I cannot establish that from Scripture" when nothing was retrieved, or when asked to confirm a wording, fact, name, or source that the retrieved text does not contain. It is also instructed not to invent a Hebrew or Greek word or a historical source. Those are instructions, not a guarantee. Nothing in the browser checks the finished paragraph against the text.</p>
         <p>The model runs through your Puter account as gpt-4o-mini. Puter and its model provider see the question.</p>
         <p>If an answer and the passage disagree, trust the passage. Read the chapter, and talk with your pastor or church when the question is one Christians have long disputed.</p>
         <p>By The Christian's Deck</p>

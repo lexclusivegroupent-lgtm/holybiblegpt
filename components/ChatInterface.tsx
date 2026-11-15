@@ -8,6 +8,7 @@ import { getUserId } from '../services/syncService';
 import { consumeUsage } from '../services/usageService';
 import MessageBubble from './MessageBubble';
 import { MODE_LABELS } from '../constants';
+import { isRefusalOrFallback } from '../services/scriptureGrounding.mjs';
 
 interface ChatInterfaceProps {
   currentTranslation: Translation;
@@ -191,6 +192,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [input, isLoading, currentTranslation, messages, userId, readingContext]);
 
   const handlePray = useCallback((messageText: string) => {
+    if (isRefusalOrFallback(messageText)) return;
     const prompt = `Based on this Scripture teaching, write a short prayer:\n\n"${messageText.slice(0, 400)}"`;
     handleSend(prompt, AppMode.PRAYER_HELP);
   }, [handleSend]);
