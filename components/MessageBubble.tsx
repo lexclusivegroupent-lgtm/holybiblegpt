@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Message, Role, PassageLink, AppMode } from '../types';
 import { ShareCardDialog, ShareCardRequest } from './ShareCardDialog';
+import { isRefusalOrFallback } from '../services/scriptureGrounding.mjs';
 
 interface MessageBubbleProps {
   message: Message;
@@ -253,7 +254,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOpenReader, on
             )}
 
             {/* Pray about this / Share */}
-            {!isWelcome && cleanText.trim().length > 30 && (
+            {!isWelcome && cleanText.trim().length > 30 && !isRefusalOrFallback(cleanText) && (
               <div className="flex flex-wrap gap-2">
                 {!isPrayer && (
                   <button

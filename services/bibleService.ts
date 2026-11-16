@@ -1,6 +1,7 @@
 
 import { Translation } from "../types";
-import { formatRetrievedBlock, planRetrieval } from "./scriptureGrounding.mjs";
+import { formatRetrievedBlock, KEYWORD_REASON, keywordRetrieval, planRetrieval } from "./scriptureGrounding.mjs";
+import { loadBundledIndex } from "./scriptureSearch.mjs";
 
 export interface VerseData {
   number: number;
@@ -380,7 +381,14 @@ export const groundUserMessage = async (
 ): Promise<string> => {
   if (!message || message.includes('RETRIEVED SCRIPTURE')) return message;
   const usable = translation === Translation.ESV ? Translation.KJV : translation;
-  const plan = planRetrieval(message, readingContext);
+  let plan = planRetrieval(message, readingContext);
+  if (!plan.items.length) {
+    const index = await loadBundledIndex(usable);
+    const items = keywordRetrieval(message, index);
+    if (items.length) {
+      plan = { reason: KEYWORD_REASON, items };
+    }
+  }
   const lines: string[] = [];
   let count = 0;
   for (const item of plan.items) {
