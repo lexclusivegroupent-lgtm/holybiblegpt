@@ -48,51 +48,16 @@ const JournalView = lazy(() => import('./components/JournalView'));
 
 import { Translation, ReaderState, PassageLink, AppMode, AppTab } from './types';
 import { storage } from './services/storageService';
-import { initializeOfflineKJV, BIBLE_BOOKS, HISTORICAL_BOOKS } from './services/bibleService';
-import { bookPath, bookToSlug as slugify, chapterPath } from './services/routes.mjs';
+import { initializeOfflineKJV } from './services/bibleService';
+import { TAB_ROUTES, bookPath, chapterPath, parseBiblePath } from './services/routes.mjs';
 import BookIndexView from './components/BookIndexView';
 
 // ── URL ↔ App-state utilities ───────────────────────────────────────────────
 
-const ALL_BOOKS = [...BIBLE_BOOKS, ...HISTORICAL_BOOKS];
-const bookToSlug = (name: string) => slugify(name);
-const slugToBook = (slug: string): string | null =>
-  ALL_BOOKS.find(b => bookToSlug(b.name) === slug)?.name ?? null;
-
-// Tabs that get a real URL path (read gets /bible/book/chapter instead)
-const TAB_ROUTES: Partial<Record<AppTab, string>> = {
-  home: '/',
-  about: '/about',
-  faq: '/faq',
-  privacy: '/privacy',
-  terms: '/terms',
-  contact: '/contact',
-  search: '/search',
-  library: '/library',
-  prayer: '/prayer',
-  settings: '/settings',
-  learn: '/learn',
-  references: '/references',
-  harmony: '/harmony',
-  kids: '/kids',
-  faith: '/faith',
-  disclaimer: '/disclaimer',
-  translations: '/translations',
-  guidelines: '/guidelines',
-  instructions: '/instructions',
-  changelog: '/changelog',
-  groups: '/groups',
-  theology: '/theology',
-  notes: '/notes',
-  support: '/support',
-  methodology: '/methodology',
-  limitations: '/limitations',
-  copyrights: '/copyrights',
-  corrections: '/corrections',
-  journal: '/journal',
-};
+// Tabs that get a real URL path (read gets /bible/book/chapter instead).
+// The list lives in services/routes.mjs so the Worker agrees with the app.
 const ROUTE_TO_TAB: Record<string, AppTab> = Object.fromEntries(
-  Object.entries(TAB_ROUTES).map(([k, v]) => [v, k as AppTab])
+  Object.entries(TAB_ROUTES).map(([k, v]) => [v as string, k as AppTab])
 );
 
 // Per-page title + description used both for document.title and OG tags
@@ -125,34 +90,42 @@ const PAGE_META: Partial<Record<AppTab, [string, string]>> = {
 };
 
 function readInitialRoute(): { tab: AppTab; book: string; chapter: string } {
-  const path = window.location.pathname.replace(/\/$/, '') || '/';
-  const chapterMatch = path.match(/^\/bible\/([^/]+)\/(\d+)$/);
-  const bookMatch = path.match(/^\/bible\/([^/]+)$/);
-  if (chapterMatch) {
-    const book = slugToBook(chapterMatch[1]);
-    if (book) return { tab: 'read', book, chapter: chapterMatch[2] };
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  if (path.startsWith('/bible/')) {
+    const bible = parseBiblePath(path);
+    if (!bible) return { tab: 'notfound', book: 'Genesis', chapter: '1' };
+    return { tab: 'read', book: bible.name, chapter: bible.chapter };
   }
-  if (bookMatch) {
-    const book = slugToBook(bookMatch[1]);
-    if (book) return { tab: 'read', book, chapter: '' };
-  }
-  if (ROUTE_TO_TAB[path] && ROUTE_TO_TAB[path] !== 'home') {
-    return { tab: ROUTE_TO_TAB[path], book: 'Genesis', chapter: '1' };
-  }
-  return { tab: 'home', book: 'Genesis', chapter: '1' };
+  const tab = ROUTE_TO_TAB[path];
+  if (tab) return { tab, book: 'Genesis', chapter: '1' };
+  return { tab: 'notfound', book: 'Genesis', chapter: '1' };
 }
 
-function updateMeta(title: string, desc: string, path: string) {
+function updateMeta(title: string, desc: string, path: string, indexable = true) {
   document.title = title;
   const sel = <T extends Element>(q: string) => document.querySelector<T>(q);
   sel<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content', desc);
   sel<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', title);
   sel<HTMLMetaElement>('meta[property="og:description"]')?.setAttribute('content', desc);
-  sel<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', `https://holybiblegpt.com${path}`);
   sel<HTMLMetaElement>('meta[name="twitter:title"]')?.setAttribute('content', title);
   sel<HTMLMetaElement>('meta[name="twitter:description"]')?.setAttribute('content', desc);
-  const canonical = sel<HTMLLinkElement>('link[rel="canonical"]');
-  if (canonical) canonical.href = `https://holybiblegpt.com${path}`;
+  const robots = sel<HTMLMetaElement>('meta[name="robots"]');
+  if (robots) robots.content = indexable ? 'index, follow' : 'noindex';
+  const canonicalHref = `https://holybiblegpt.com${path}`;
+  let canonical = sel<HTMLLinkElement>('link[rel="canonical"]');
+  const ogUrl = sel<HTMLMetaElement>('meta[property="og:url"]');
+  if (!indexable) {
+    canonical?.remove();
+    ogUrl?.remove();
+    return;
+  }
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    document.head.appendChild(canonical);
+  }
+  canonical.href = canonicalHref;
+  if (ogUrl) ogUrl.setAttribute('content', canonicalHref);
 }
 
 const App: React.FC = () => {
@@ -179,6 +152,12 @@ const App: React.FC = () => {
 
   // ── URL-sync effect: runs whenever the active tab or reader position changes ──
   useEffect(() => {
+    if (activeTab === 'notfound') {
+      const path = window.location.pathname.replace(/\/+$/, '') || '/';
+      updateMeta('Page Not Found – Holy Bible GPT', 'That page is not on Holy Bible GPT.', path, false);
+      return;
+    }
+
     let path: string;
     let title: string;
     let desc: string;
@@ -200,8 +179,8 @@ const App: React.FC = () => {
       desc = d;
     }
 
-    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
-    const targetPath = path.replace(/\/$/, '') || '/';
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const targetPath = path.replace(/\/+$/, '') || '/';
     if (currentPath !== targetPath) {
       window.history.pushState(null, '', targetPath);
     }
@@ -361,6 +340,7 @@ const App: React.FC = () => {
       case 'copyrights': return <CopyrightView />;
       case 'corrections': return <CorrectionsView />;
       case 'journal': return <JournalView />;
+      case 'notfound': return <NotFoundView onGoHome={() => setActiveTab('home')} />;
       default: return <NotFoundView onGoHome={() => setActiveTab('home')} />;
     }
   };

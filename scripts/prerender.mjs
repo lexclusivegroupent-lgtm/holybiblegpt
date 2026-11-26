@@ -1,10 +1,12 @@
-// Writes real HTML for the homepage, every book, and all 1,189 chapters.
-// Titles, descriptions, canonicals, and BreadcrumbList markup are unique.
+// Writes real HTML for the homepage, info/legal pages, every book, and all
+// 1,189 chapters. Titles, descriptions, canonicals, and BreadcrumbList markup
+// are unique. Info pages include the same text the React views render.
 // The sitemap lists only the pages this step wrote.
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bookPath, bookToSlug, chapterPath } from '../services/routes.mjs';
+import { createServer } from 'vite';
+import { bookPath, chapterPath } from '../services/routes.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -46,7 +48,7 @@ function breadcrumbJson(items) {
   });
 }
 
-function inject(html, { title, desc, path, crumbs }) {
+function inject(html, { title, desc, path, crumbs, extraHead = '' }) {
   const canonical = `${origin}${path === '/' ? '/' : path}`;
   let next = html
     .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(title)}</title>`)
@@ -63,6 +65,7 @@ function inject(html, { title, desc, path, crumbs }) {
   } else {
     next = next.replace('</head>', `${block}\n</head>`);
   }
+  if (extraHead) next = next.replace('</head>', `${extraHead}\n</head>`);
   return next;
 }
 
@@ -77,6 +80,25 @@ function nav(links) {
 }
 
 const shell = readFileSync(join(dist, 'index.html'), 'utf8');
+const vite = await createServer({
+  configFile: join(root, 'vite.config.ts'),
+  server: { middlewareMode: true, hmr: false },
+  appType: 'custom',
+  logLevel: 'error',
+  // This server only renders a few views. Skip the index.html dependency scan,
+  // which otherwise races with server.close().
+  optimizeDeps: { noDiscovery: true, entries: [] },
+});
+let renderInfoBody;
+let faqHead;
+try {
+  const renderer = await vite.ssrLoadModule('/scripts/render-info-pages.tsx');
+  renderInfoBody = renderer.renderInfoBody;
+  faqHead = renderer.faqHead;
+} catch (error) {
+  await vite.close();
+  throw error;
+}
 const chapters = JSON.parse(readFileSync(join(root, 'public/bible/kjv.json'), 'utf8'));
 if (chapters.length !== 1189) {
   throw new Error(`Refusing to prerender ${chapters.length} chapters.`);
@@ -102,12 +124,24 @@ write('/', home);
 urls.push('/');
 
 for (const [urlPath, [title, desc]] of Object.entries(STATIC_PAGES)) {
-  const html = inject(shell, {
+  const body = renderInfoBody(urlPath);
+  const text = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length < 80) throw new Error(`Info page ${urlPath} prerendered without its content.`);
+  let html = inject(shell, {
     title,
     desc,
     path: urlPath,
     crumbs: [{ name: 'Home', path: '/' }, { name: title.split('–')[0].trim(), path: urlPath }],
+    extraHead: urlPath === '/faq' ? faqHead() : '',
   });
+  if (!html.includes('<div id="root"></div>')) {
+    throw new Error('The built shell no longer has an empty root for info pages.');
+  }
+  html = html.replace('<div id="root"></div>', `<div id="root">${body}</div>`);
+  const canonical = `https://holybiblegpt.com${urlPath}`;
+  if (!html.includes(`<link rel="canonical" href="${canonical}">`) || html.includes('<div id="root"></div>')) {
+    throw new Error(`${urlPath} did not receive its canonical and content.`);
+  }
   write(urlPath, html);
   urls.push(urlPath);
 }
@@ -165,4 +199,5 @@ writeFileSync(join(root, 'public/sitemap.xml'), sitemap);
 if (urls.length !== 1 + Object.keys(STATIC_PAGES).length + 66 + 1189) {
   throw new Error(`Sitemap has ${urls.length} URLs, expected ${1 + Object.keys(STATIC_PAGES).length + 66 + 1189}.`);
 }
+await vite.close();
 console.log(`[prerender] Wrote ${urls.length} pages and a sitemap of the same URLs.`);

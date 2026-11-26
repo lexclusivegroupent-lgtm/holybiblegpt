@@ -39,19 +39,23 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
   assert.equal(config.main, 'src/worker.ts');
   assert.equal(config.assets.binding, 'ASSETS', 'src/worker.ts calls env.ASSETS.fetch');
   assert.equal(config.assets.not_found_handling, 'single-page-application');
-  assert.ok(
-    Array.isArray(config.assets.run_worker_first) && config.assets.run_worker_first.includes('/api/*'),
-    'API routes must run the Worker before the SPA fallback',
+  assert.equal(
+    config.assets.run_worker_first,
+    true,
+    'The Worker must run before assets so unknown URLs can 404 and /api/* is not the SPA shell',
   );
 
   const assetsDir = await mkdtemp(path.join(tmpdir(), 'hbgpt-assets-'));
   t.after(() => rm(assetsDir, { recursive: true, force: true }));
   await mkdir(path.join(assetsDir, 'bible', 'genesis', '1'), { recursive: true });
-  await writeFile(path.join(assetsDir, 'index.html'), '<!doctype html><title>APP_SHELL</title>\n');
+  await mkdir(path.join(assetsDir, 'assets'), { recursive: true });
+  await writeFile(path.join(assetsDir, 'index.html'), '<!doctype html><title>APP_SHELL</title><div id="root"></div>\n');
   await writeFile(
     path.join(assetsDir, 'bible', 'genesis', '1', 'index.html'),
     '<!doctype html><title>GENESIS_1</title>\n',
   );
+  await writeFile(path.join(assetsDir, 'assets', 'app.js'), 'console.log("bundle")\n');
+  await writeFile(path.join(assetsDir, 'robots.txt'), 'User-agent: *\nAllow: /\n');
 
   const port = 18000 + (process.pid % 2000);
   const worker = await unstable_dev(path.resolve('src/worker.ts'), {
@@ -73,12 +77,13 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
     return {
       status: response.status,
       location: response.headers.get('location'),
+      robots: response.headers.get('x-robots-tag'),
       body: await response.text(),
     };
   }
 
   // No static file: these are the routes that returned HTTP 500 / error 1101.
-  for (const pathname of ['/search', '/settings', '/library', '/prayer', '/bible/john/3', '/bible/revelation/22']) {
+  for (const pathname of ['/search', '/settings', '/library', '/prayer', '/about', '/privacy', '/faq', '/journal', '/bible/john/3', '/bible/revelation/22', '/bible/tobit/1']) {
     const response = await get(pathname);
     assert.equal(response.status, 200, `${pathname} should fall back to the SPA shell`);
     assert.match(response.body, /APP_SHELL/);
@@ -89,9 +94,48 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
   assert.match(prerendered.body, /GENESIS_1/);
   assert.doesNotMatch(prerendered.body, /APP_SHELL/);
 
+  function locationPath(location) {
+    if (!location) return '';
+    if (location.startsWith('http')) {
+      const url = new URL(location);
+      return `${url.pathname}${url.search}`;
+    }
+    return location;
+  }
+
   const trailing = await get('/bible/genesis/1/');
-  assert.ok(trailing.status === 307 || trailing.status === 308);
-  assert.equal(trailing.location, '/bible/genesis/1');
+  assert.equal(trailing.status, 301);
+  assert.equal(locationPath(trailing.location), '/bible/genesis/1');
+
+  const aboutSlash = await get('/about/?from=nav');
+  assert.equal(aboutSlash.status, 301);
+  assert.equal(locationPath(aboutSlash.location), '/about?from=nav');
+
+  const missing = await get('/this-page-does-not-exist-xyz', {
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Dest': 'document',
+  });
+  assert.equal(missing.status, 404);
+  assert.match(missing.body, /Page Not Found/);
+  assert.match(missing.body, /noindex/);
+  assert.doesNotMatch(missing.body, /canonical/);
+  assert.doesNotMatch(missing.body, /APP_SHELL/);
+  assert.equal(missing.robots, 'noindex');
+
+  for (const pathname of ['/bible/john/999', '/bible/not-a-book', '/bible/tobit/99']) {
+    const response = await get(pathname);
+    assert.equal(response.status, 404, pathname);
+    assert.match(response.body, /Page Not Found/);
+    assert.doesNotMatch(response.body, /APP_SHELL/);
+  }
+
+  const bundle = await get('/assets/app.js');
+  assert.equal(bundle.status, 200);
+  assert.match(bundle.body, /bundle/);
+
+  const robots = await get('/robots.txt');
+  assert.equal(robots.status, 200);
+  assert.match(robots.body, /Allow: \//);
 
   const navigate = await get('/bible/john/3', {
     'Sec-Fetch-Mode': 'navigate',

@@ -101,4 +101,4 @@ export interface AppSettings {
 }
 
 
-export type AppTab = 'home' | 'study' | 'read' | 'library' | 'learn' | 'references' | 'support' | 'prayer' | 'settings' | 'privacy' | 'about' | 'terms' | 'instructions' | 'search' | 'contact' | 'faq' | 'changelog' | 'faith' | 'disclaimer' | 'translations' | 'guidelines' | 'roadmap' | 'thanks' | 'kids' | 'groups' | 'theology' | 'harmony' | 'notes' | 'methodology' | 'limitations' | 'copyrights' | 'corrections' | 'journal';
+export type AppTab = 'home' | 'study' | 'read' | 'library' | 'learn' | 'references' | 'support' | 'prayer' | 'settings' | 'privacy' | 'about' | 'terms' | 'instructions' | 'search' | 'contact' | 'faq' | 'changelog' | 'faith' | 'disclaimer' | 'translations' | 'guidelines' | 'roadmap' | 'thanks' | 'kids' | 'groups' | 'theology' | 'harmony' | 'notes' | 'methodology' | 'limitations' | 'copyrights' | 'corrections' | 'journal' | 'notfound';
