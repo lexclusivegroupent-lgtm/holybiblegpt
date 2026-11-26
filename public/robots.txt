@@ -7,6 +7,10 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /assets/
+
+# /assets/ is the hashed CSS and JS. Googlebot must be allowed to fetch those
+# files so it can render pages. Disallowing the directory left info pages as
+# an empty shell. The files are not meant to be search results; _headers sends
+# X-Robots-Tag: noindex for /assets/*.
 
 Sitemap: https://holybiblegpt.com/sitemap.xml

@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/cloudflare";
 import { runScheduledPush } from "./api/push.mjs";
 import { handleApi } from "./api/router.mjs";
+import { resolveDocumentRequest } from "../services/routes.mjs";
+import { notFoundDocument } from "./notFoundPage.mjs";
 import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
 
 /**
@@ -26,7 +28,10 @@ import { cloudflareSentryOptions, sentryDsnFrom } from "./sentryConfig";
  *       A cron trigger also calls the daily send. It does not use CRON_SECRET.
  *       The HTTP route does.
  *
- * All other requests fall through to the static React SPA via env.ASSETS.
+ * All other requests fall through to static assets via env.ASSETS.
+ * Unknown document URLs return 404 (noindex). A trailing slash on a document
+ * URL redirects permanently to the slashless path. Known app and Bible routes
+ * still use the prerendered file or the SPA shell.
  */
 
 interface Env {
@@ -101,6 +106,33 @@ function parseEsvPassageText(raw: string): EsvVerse[] {
     if (num && text) results.push({ number: num, text });
   }
   return results;
+}
+
+function permanentRedirect(location: string): Response {
+  return new Response(null, {
+    status: 301,
+    headers: {
+      Location: location,
+      'Cache-Control': 'public, max-age=86400',
+    },
+  });
+}
+
+async function notFoundResponse(request: Request, env: Env): Promise<Response> {
+  const shellUrl = new URL('/', request.url);
+  const shell = await env.ASSETS.fetch(new Request(shellUrl.toString(), { method: 'GET' }));
+  const shellHtml = shell.ok ? await shell.text() : '';
+  const headers = new Headers(shell.headers);
+  headers.delete('content-length');
+  headers.delete('content-encoding');
+  headers.set('content-type', 'text/html; charset=utf-8');
+  headers.set('cache-control', 'no-store');
+  headers.set('x-robots-tag', 'noindex');
+  headers.set('x-content-type-options', 'nosniff');
+  headers.set('x-frame-options', 'DENY');
+  headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+  headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=()');
+  return new Response(notFoundDocument(shellHtml), { status: 404, headers });
 }
 
 function corsHeaders(): Record<string, string> {
@@ -184,9 +216,15 @@ const worker = {
           headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
         });
       }
+      // Unknown /api paths stay on the asset fallback, same as before.
+      return env.ASSETS.fetch(request);
     }
 
-    // ── Static SPA (React build in dist/) ───────────────────────────────────
+    const decision = resolveDocumentRequest(url.pathname, url.search);
+    if (decision.type === 'redirect') return permanentRedirect(decision.location);
+    if (decision.type === 'not-found') return notFoundResponse(request, env);
+
+    // Known app routes, Bible routes, and static files.
     return env.ASSETS.fetch(request);
   },
 

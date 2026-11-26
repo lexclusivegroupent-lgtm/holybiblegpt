@@ -8,7 +8,7 @@ The public site is [https://holybiblegpt.com](https://holybiblegpt.com).
 
 - A React and Vite reader for the King James Version and the World English Bible. The King James Version is committed in `public/bible/kjv.json` (public domain, 1,189 chapters). The build fails if that file is incomplete or a stored quotation does not match it.
 - Sign-in and the study aid use [Puter.js](https://js.puter.com/v2/) in the browser. There is no separate account system.
-- Chapter pages, book indexes, and the homepage are prerendered with the King James text, a title, a description, a canonical URL, and breadcrumb markup.
+- Chapter pages, book indexes, the homepage, and the info and legal pages in the sitemap are prerendered with a title, a description, a canonical URL, and the page content in the initial HTML. Chapter pages include the King James text.
 - The Cloudflare Worker serves the site, the ESV proxy, sync, the free-question counter, billing, and daily verse push. Account data uses D1 once it is bound. Billing and push stay off until their secrets are set. See `docs/cloudflare-api.md`. The `api/` folder is the previous Vercel copy and is not what holybiblegpt.com runs.
 - The English Standard Version is not offered. Do not label King James text as ESV.
 
@@ -46,7 +46,7 @@ Workers Logs and traces are on in `wrangler.jsonc`. Sentry stays off until `SENT
 
 Canonical URLs have no trailing slash and use `https://holybiblegpt.com`. `holy-bible-gpt-new.vercel.app` redirects to that host in `vercel.json`. Other `*.vercel.app` hosts are sent there by `public/canonical-host.js`, which also marks `*.workers.dev` as `noindex`.
 
-The Worker asset setting `html_handling: "drop-trailing-slash"` is a separate change so it can land after the asset-binding fix. Until that setting is deployed, Cloudflare may redirect `/about` to `/about/`.
+A trailing slash such as `/about/` is a 301 to `/about`. Unknown paths and invalid Bible book or chapter URLs are HTTP 404 with `noindex`. `html_handling: "drop-trailing-slash"` still maps `/about` to `about/index.html`.
 
 ## Not in this repo
 

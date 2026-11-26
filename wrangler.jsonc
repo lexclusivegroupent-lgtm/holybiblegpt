@@ -38,10 +38,31 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    // /api/* must hit the Worker even for browser navigations. Otherwise the
-    // SPA fallback above would return index.html for /api/esv.
-    "run_worker_first": ["/api/*"],
-    // Serve /about as 200. /about/ redirects to /about, matching canonical URLs.
+    // The Worker runs before assets so /api/* is never the SPA shell, unknown
+    // document URLs can return HTTP 404, and a trailing slash can 301.
+    // "/*" already covers /api/*, and Wrangler rejects a redundant /api/* rule.
+    // Negative patterns win, so hashed bundles, icons, and journal images stay
+    // on the asset path and remain crawlable.
+    "run_worker_first": [
+      "/*",
+      "!/assets/*",
+      "!/icons/*",
+      "!/journal/*",
+      "!/*.js",
+      "!/*.css",
+      "!/*.png",
+      "!/*.webp",
+      "!/*.ico",
+      "!/*.svg",
+      "!/*.txt",
+      "!/*.xml",
+      "!/*.json",
+      "!/*.webmanifest",
+      "!/*.map"
+    ],
+    // Serve /about from about/index.html. The Worker answers /about/ with 301
+    // before this layer's 307. If a trailing slash skips the Worker, this
+    // still sends it to the slashless URL.
     "html_handling": "drop-trailing-slash"
   },
   // Public Stripe return origin. Not a secret. Checkout stays off until

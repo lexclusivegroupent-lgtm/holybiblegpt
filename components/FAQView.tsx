@@ -1,30 +1,38 @@
 
 import React, { useEffect } from 'react';
 
-const FAQView: React.FC = () => {
-  const faqs = [
-    { q: "Is this app free?", a: "Reading, search, and AI study are free forever, with no question limit. Plus is an optional subscription for cross-device sync and cloud backup. It does not change access to Scripture or the study aid." },
-    { q: "Can I use it offline?", a: "Yes. Use the Scriptorium Settings to download the full KJV for offline use." },
-    { q: "Is my data private?", a: "Notes and prayers start on your device. A question sent to the study aid goes to Puter and its model provider. Plus sync, if you use it, stores a copy in Cloudflare D1. We do not sell your data. Read the privacy policy for the full list." },
-    { q: "Who built this?", a: "Built by a small team dedicated to sharing the Word through modern technology." },
-    { q: "Is the AI always right?", a: "No. AI is a tool for study. Always check everything against Scripture." }
-  ];
+export const FAQ_ITEMS = [
+  { q: "Is this app free?", a: "Reading, search, and AI study are free forever, with no question limit. Plus is an optional subscription for cross-device sync and cloud backup. It does not change access to Scripture or the study aid." },
+  { q: "Can I use it offline?", a: "Yes. Use the Scriptorium Settings to download the full KJV for offline use." },
+  { q: "Is my data private?", a: "Notes and prayers start on your device. A question sent to the study aid goes to Puter and its model provider. Plus sync, if you use it, stores a copy in Cloudflare D1. We do not sell your data. Read the privacy policy for the full list." },
+  { q: "Who built this?", a: "Built by a small team dedicated to sharing the Word through modern technology." },
+  { q: "Is the AI always right?", a: "No. AI is a tool for study. Always check everything against Scripture." }
+];
 
-  // Inject FAQPage structured data while this view is mounted so Google can
-  // surface these as an expandable rich result directly in search.
+export function faqPageSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ_ITEMS.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+}
+
+const FAQView: React.FC = () => {
+  // Prerender writes this schema into the initial HTML. The effect adds it
+  // again on a client-side visit, and removes it when the view unmounts so
+  // it does not stay on the next page.
   useEffect(() => {
+    if (document.getElementById('faq-schema')) {
+      return () => { document.getElementById('faq-schema')?.remove(); };
+    }
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.id = 'faq-schema';
-    script.text = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faqs.map(f => ({
-        '@type': 'Question',
-        name: f.q,
-        acceptedAnswer: { '@type': 'Answer', text: f.a },
-      })),
-    });
+    script.text = JSON.stringify(faqPageSchema());
     document.head.appendChild(script);
     return () => { document.getElementById('faq-schema')?.remove(); };
   }, []);
@@ -37,7 +45,7 @@ const FAQView: React.FC = () => {
       </header>
 
       <div className="space-y-6">
-        {faqs.map((f, i) => (
+        {FAQ_ITEMS.map((f, i) => (
           <div key={i} className="glass-dark border border-white/5 p-8 rounded-3xl space-y-3">
             <h3 className="text-xs font-bold text-[#D4AF37] uppercase tracking-widest">Q: {f.q}</h3>
             <p className="text-stone-400 text-sm leading-relaxed">{f.a}</p>
