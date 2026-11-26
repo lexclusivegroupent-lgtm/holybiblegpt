@@ -39,18 +39,10 @@ test('Worker serves chapter pages, SPA routes, and /api/esv', { timeout: 60_000 
   assert.equal(config.main, 'src/worker.ts');
   assert.equal(config.assets.binding, 'ASSETS', 'src/worker.ts calls env.ASSETS.fetch');
   assert.equal(config.assets.not_found_handling, 'single-page-application');
-  assert.ok(Array.isArray(config.assets.run_worker_first));
-  assert.ok(
-    config.assets.run_worker_first.includes('/*'),
-    'Document and API routes must run the Worker before the SPA fallback',
-  );
-  assert.ok(
-    config.assets.run_worker_first.includes('!/assets/*'),
-    'Hashed bundles stay on the asset path so crawlers can fetch them',
-  );
-  assert.ok(
-    !config.assets.run_worker_first.some((rule) => rule === '!/api/*' || rule.startsWith('!/api/')),
-    'API routes must not be excluded from the Worker',
+  assert.equal(
+    config.assets.run_worker_first,
+    true,
+    'The Worker must run before assets so unknown URLs can 404 and /api/* is not the SPA shell',
   );
 
   const assetsDir = await mkdtemp(path.join(tmpdir(), 'hbgpt-assets-'));

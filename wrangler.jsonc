@@ -38,28 +38,10 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    // The Worker runs before assets so /api/* is never the SPA shell, unknown
-    // document URLs can return HTTP 404, and a trailing slash can 301.
-    // "/*" already covers /api/*, and Wrangler rejects a redundant /api/* rule.
-    // Negative patterns win, so hashed bundles, icons, and journal images stay
-    // on the asset path and remain crawlable.
-    "run_worker_first": [
-      "/*",
-      "!/assets/*",
-      "!/icons/*",
-      "!/journal/*",
-      "!/*.js",
-      "!/*.css",
-      "!/*.png",
-      "!/*.webp",
-      "!/*.ico",
-      "!/*.svg",
-      "!/*.txt",
-      "!/*.xml",
-      "!/*.json",
-      "!/*.webmanifest",
-      "!/*.map"
-    ],
+    // The Worker runs before every asset. That keeps /api/* off the SPA shell,
+    // returns HTTP 404 for unknown URLs, and sends a trailing slash to a 301.
+    // Static files are passed straight through to ASSETS.
+    "run_worker_first": true,
     // Serve /about from about/index.html. The Worker answers /about/ with 301
     // before this layer's 307. If a trailing slash skips the Worker, this
     // still sends it to the slashless URL.
