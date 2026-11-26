@@ -10,6 +10,7 @@ import '@fontsource/crimson-pro/400-italic.css';
 import '@fontsource/crimson-pro/700.css';
 import '@fontsource/cinzel/400.css';
 import '@fontsource/cinzel/700.css';
+import './src/tailwind.css';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from './components/AuthProvider';
